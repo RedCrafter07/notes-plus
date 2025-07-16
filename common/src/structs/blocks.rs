@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use validator::Validate;
+use ts_rs::TS;
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 pub enum ContentBlock {
     Image(ImageBlock),
     Shape(ShapeBlock),
@@ -10,7 +10,7 @@ pub enum ContentBlock {
     Text(TextBlock),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 pub struct ImageBlock {
     pub id: String,
     pub source: String,
@@ -19,7 +19,7 @@ pub struct ImageBlock {
     pub position: (f32, f32),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct ShapeBlock {
     pub id: String,
@@ -28,27 +28,25 @@ pub struct ShapeBlock {
     pub stroke_width: f32,
     pub shape: ShapeType,
 }
-#[derive(Debug, Serialize, Deserialize, Validate)]
+
+#[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct StrokeBlock {
     pub id: String,
     pub tool: String,
     pub color: String,
     pub stroke_width: f32,
-
-    #[validate(length(min = 1))]
     pub points: Vec<Point>,
 }
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 pub struct TextBlock {
     pub id: String,
-    #[validate(length(min = 1))]
     pub content: String,
     pub position: (f32, f32),
     pub size: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 pub enum ShapeType {
     Rectangle {
         x: f32,
@@ -70,7 +68,7 @@ pub enum ShapeType {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 pub struct Point {
     pub x: f32,
     pub y: f32,

@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 use validator::Validate;
 
 use super::blocks::ContentBlock;
@@ -10,7 +11,7 @@ use super::blocks::ContentBlock;
 type Layers = Vec<Content>;
 type Content = Vec<ContentBlock>;
 
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Debug, Validate, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct Note {
     pub metadata: Metadata,
@@ -18,7 +19,7 @@ pub struct Note {
     pub last_state: LastState,
 }
 
-#[derive(Debug, Validate, Serialize, Deserialize)]
+#[derive(Debug, Validate, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
     pub id: String,
@@ -33,7 +34,7 @@ pub struct Metadata {
     pub tags: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 pub struct LastState {
     position: (f32, f32),
     zoom: u16,

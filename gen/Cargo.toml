@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+ts-rs = { version = "11.0.1", features = [
+  "chrono-impl",
+  "serde-compat",
+  "serde-json-impl",
+] }
+common = { path = "../common/" }

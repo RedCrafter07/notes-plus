@@ -4,8 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-chrono = "0.4.41"
-serde = "1.0.219"
+chrono = { version = "0.4.41", features = ["serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
+ts-rs = { version = "11.0.1", features = [
+  "chrono-impl",
+  "serde-compat",
+  "serde-json-impl",
+] }
 validator = { version = "0.20.0", features = ["derive"] }
 
 [lib]
