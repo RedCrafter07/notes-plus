@@ -3,7 +3,7 @@ use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
-pub enum ContentBlocks {
+pub enum ContentBlock {
     Image(ImageBlock),
     Shape(ShapeBlock),
     Stroke(StrokeBlock),

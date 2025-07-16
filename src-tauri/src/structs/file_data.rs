@@ -2,13 +2,19 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use super::blocks::ContentBlocks;
+use super::blocks::ContentBlock;
+
+/// This is the layer data.
+/// Layers don't have a specific ID as moving them up or down is simply changing the index in the
+/// Vec structure. Both layers and content blocks are rendered from bottom to top.
+type Layers = Vec<Content>;
+type Content = Vec<ContentBlock>;
 
 #[derive(Debug, Validate, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Note {
     pub metadata: Metadata,
-    pub content_blocks: Vec<ContentBlocks>,
+    pub layers: Layers,
     pub last_state: LastState,
 }
 
