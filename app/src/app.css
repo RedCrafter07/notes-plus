@@ -1,4 +1,12 @@
 @import "tailwindcss";
+
+.font-display {
+  font-family: "Funnel Display Variable", sans-serif;
+}
+body {
+  font-family: "Funnel Sans Variable", sans-serif;
+}
+
 @theme {
   --color-primary: var(--primary);
   --color-accent: var(--accent);
