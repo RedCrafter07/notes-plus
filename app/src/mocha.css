@@ -1,0 +1,26 @@
+@layer base {
+  :root {
+    /* Mapped from Catppuccin Mocha Palette */
+    --primary: hsl(267.4 83.5% 81%); /* Mauve */
+    --accent: hsl(9.6 55.6% 91.2%); /* Rosewater */
+
+    --base-1: hsl(240 21.1% 14.9%); /* Base */
+    --base-2: hsl(240 21.3% 12%); /* Mantle */
+    --base-3: hsl(240 22.7% 8.6%); /* Crust */
+
+    --content-1: hsl(226.2 63.9% 88%); /* Text */
+    --content-2: hsl(226.7 35.3% 80%); /* Subtext1 */
+    --content-3: hsl(227.6 23.6% 71.8%); /* Subtext0 */
+
+    --info: hsl(217.2 91.9% 75.9%); /* Blue */
+    --success: hsl(115.5 54.1% 76.1%); /* Green */
+    --warning: hsl(41.4 86% 83.1%); /* Yellow */
+    --destructive: hsl(343.3 81.2% 74.9%); /* Red */
+
+    /* A single dark content color provides great contrast for all status colors */
+    --info-content: hsl(240 22.7% 8.6%); /* Crust */
+    --success-content: hsl(240 22.7% 8.6%); /* Crust */
+    --warning-content: hsl(240 22.7% 8.6%); /* Crust */
+    --destructive-content: hsl(240 22.7% 8.6%); /* Crust */
+  }
+}

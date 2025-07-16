@@ -1,1 +1,25 @@
 @import "tailwindcss";
+@theme {
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+
+  /* base color variants (darker shades for backgrounds) */
+  --color-base-1: var(--base-1);
+  --color-base-2: var(--base-2);
+  --color-base-3: var(--base-3);
+
+  /* text color variants (darker shades for text) */
+  --color-content-1: var(--content-1);
+  --color-content-2: var(--content-2);
+  --color-content-3: var(--content-3);
+
+  /* Semantic/status colors */
+  --color-info: var(--info);
+  --color-info-content: var(--info-content);
+  --color-success: var(--success);
+  --color-success-content: var(--success-content);
+  --color-warning: var(--warning);
+  --color-warning-content: var(--warning-content);
+  --color-destructive: var(--destructive);
+  --color-destructive-content: var(--destructive-content);
+}
