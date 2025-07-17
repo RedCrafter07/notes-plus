@@ -7,4 +7,6 @@
   const { children } = $props();
 </script>
 
-{@render children()}
+<div class="w-full min-h-screen text-content-1 bg-base-1">
+  {@render children()}
+</div>
