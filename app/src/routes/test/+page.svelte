@@ -33,12 +33,16 @@
       case "pen":
         {
           pointerId = e.pointerId;
-          button = e.button;
+          button = e.buttons;
           pressure = e.pressure;
           tiltX = e.tiltX;
           tiltY = e.tiltY;
           width = e.width;
           height = e.height;
+
+          console.log(e);
+
+          e.preventDefault();
         }
         break;
     }
