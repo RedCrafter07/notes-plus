@@ -11,6 +11,9 @@ use super::blocks::ContentBlock;
 type Layers = Vec<Content>;
 type Content = Vec<ContentBlock>;
 
+/// The property containing the main data.
+/// The file format is a zip archive, which includes a file with the structure of the Note struct,
+/// as well as a folder with attachments and a preview image used for displaying the actual data.
 #[derive(Debug, Validate, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct Note {
