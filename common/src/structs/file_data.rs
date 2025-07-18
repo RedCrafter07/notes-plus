@@ -36,6 +36,6 @@ pub struct Metadata {
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 pub struct LastState {
-    position: (f32, f32),
-    zoom: u16,
+    pub position: (f32, f32),
+    pub zoom: u16,
 }
