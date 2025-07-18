@@ -8,6 +8,22 @@
   let tiltY = $state(0);
   let width = $state(0);
   let height = $state(0);
+
+  let draw = $state(false);
+  let currentIndex = $state(0);
+  let paths = $state<[number, number][][]>([]);
+  let pathString = $derived(
+    paths
+      .map((p) => {
+        return p
+          .map((d, i) => {
+            if (i == 0) return `M ${d[0]} ${d[1]}`;
+            else return `L ${d[0]} ${d[1]}`;
+          })
+          .join(" ");
+      })
+      .join(" "),
+  );
 </script>
 
 <div class="top-4 left-4 absolute z-20">
@@ -47,4 +63,26 @@
         break;
     }
   }}
-></div>
+>
+  <svg
+    width="100%"
+    height="100%"
+    onpointerdown={(e) => {
+      e.preventDefault();
+      if (!paths[currentIndex]) paths[currentIndex] = [];
+      draw = true;
+    }}
+    onpointerup={() => {
+      currentIndex += 1;
+      draw = false;
+    }}
+    onpointermove={(e) => {
+      if (!draw) return;
+
+      paths[currentIndex].push([e.clientX, e.clientY]);
+    }}
+    stroke="#ffffff"
+  >
+    <path d={pathString}></path>
+  </svg>
+</div>
