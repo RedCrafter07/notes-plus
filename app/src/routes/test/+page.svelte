@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { generateData, type Point } from "$lib/functions/stroke";
+
   let type = $state("N/A");
 
   let pointerId = $state(0);
@@ -10,20 +12,34 @@
   let height = $state(0);
 
   let draw = $state(false);
-  let currentIndex = $state(0);
-  let paths = $state<[number, number][][]>([]);
-  let pathString = $derived(
-    paths
-      .map((p) => {
-        return p
-          .map((d, i) => {
-            if (i == 0) return `M ${d[0]} ${d[1]}`;
-            else return `L ${d[0]} ${d[1]}`;
-          })
-          .join(" ");
-      })
-      .join(" "),
-  );
+  let currentPoints = $state<Point[]>([]);
+  let currentData = $state<string>();
+  let allPoints = $state<Point[][]>([]);
+  let allData = $state<string[]>([]);
+
+  function handlePointerUp() {
+    draw = false;
+
+    allPoints.push(currentPoints);
+    if (currentData) allData.push(currentData);
+    currentPoints = [];
+    currentData = "";
+  }
+
+  function handlePointerDown(e: PointerEvent) {
+    e.preventDefault();
+    draw = true;
+  }
+
+  function handlePointerMove(e: PointerEvent) {
+    if (!draw) return;
+    let pressure = 0.5;
+    if (e.pointerType === "pen") pressure = e.pressure;
+
+    currentPoints.push({ x: e.clientX, y: e.clientY, pressure });
+
+    if (currentPoints) currentData = generateData(currentPoints);
+  }
 </script>
 
 <div class="top-4 left-4 absolute z-20">
@@ -35,10 +51,19 @@
   <p>tiltX: {tiltX}</p>
   <p>tiltY {tiltY}</p>
   <p>pressure: {pressure}</p>
+  <button
+    class="cursor-pointer"
+    onclick={() => {
+      allData = [];
+      allPoints = [];
+      currentData = undefined;
+      currentPoints = [];
+    }}>Clear</button
+  >
 </div>
 
 <div
-  class="w-full h-full absolute top-0 left-0 z-10 bg-black"
+  class="w-full h-full absolute top-0 left-0 z-10"
   onpointermove={(e) => {
     type = e.pointerType;
 
@@ -56,8 +81,6 @@
           width = e.width;
           height = e.height;
 
-          console.log(e);
-
           e.preventDefault();
         }
         break;
@@ -67,22 +90,17 @@
   <svg
     width="100%"
     height="100%"
-    onpointerdown={(e) => {
-      e.preventDefault();
-      if (!paths[currentIndex]) paths[currentIndex] = [];
-      draw = true;
-    }}
-    onpointerup={() => {
-      currentIndex += 1;
-      draw = false;
-    }}
-    onpointermove={(e) => {
-      if (!draw) return;
-
-      paths[currentIndex].push([e.clientX, e.clientY]);
-    }}
-    stroke="#ffffff"
+    onpointerdown={handlePointerDown}
+    onpointerup={handlePointerUp}
+    onpointerleave={handlePointerUp}
+    onpointermove={handlePointerMove}
+    stroke="none"
+    fill="#ffffff"
+    class="touch-none"
   >
-    <path d={pathString}></path>
+    <path d={currentData} />
+    {#each [...allData].reverse() as path}
+      <path d={path} />
+    {/each}
   </svg>
 </div>
