@@ -3,9 +3,13 @@ export type Point = {
   y: number;
   pressure: number;
 };
+export type OutlinePoint = Record<"x" | "y", number>;
 
-export function generateData(input: Point[], width: number = 5): string {
-  if (input.length < 2) return ""; // A path needs at least two points
+export function generateData(
+  input: Point[],
+  width: number = 5,
+): OutlinePoint[] {
+  if (input.length < 2) return []; // A path needs at least two points
 
   // Use reduce to create two arrays of outline points (top and bottom)
   const outlines = input
@@ -32,14 +36,12 @@ export function generateData(input: Point[], width: number = 5): string {
         {
           x: x + unitNormal.x * distancePerSide,
           y: y + unitNormal.y * distancePerSide,
-          pressure,
         },
         {
           x: x - unitNormal.x * distancePerSide,
           y: y - unitNormal.y * distancePerSide,
-          pressure,
         },
-      ] as [Point, Point];
+      ] as [OutlinePoint, OutlinePoint];
     })
     .reduce(
       (acc, [topPoint, bottomPoint]) => {
@@ -47,41 +49,32 @@ export function generateData(input: Point[], width: number = 5): string {
         acc.bottom.push(bottomPoint);
         return acc;
       },
-      { top: [], bottom: [] } as Record<"top" | "bottom", Point[]>,
+      { top: [], bottom: [] } as Record<"top" | "bottom", OutlinePoint[]>,
     );
 
-  // --- Construct the SVG path string ---
+  const path = [...outlines.top, ...outlines.bottom.slice().reverse()];
 
-  const topPath = outlines.top
-    .map((p0, i, a) => {
-      if (i === a.length - 1) return ""; // Skip the last point
+  return path;
+}
 
-      const p1 = a[i + 1];
+export function buildPath(input: OutlinePoint[]): string {
+  let path = "";
+  console.log(input.length, input[0]);
 
-      const midPoint = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+  for (let i = 0; i <= input.length - 1; i++) {
+    const p0 = input[i];
+    const p1 = i === input.length - 1 ? input[0] : input[i + 1];
 
-      if (i === 0) {
-        return `M${p0.x},${p0.y} Q${p0.x},${p0.y} ${midPoint.x},${midPoint.y}`;
-      }
-      return `Q${p0.x},${p0.y} ${midPoint.x},${midPoint.y}`;
-    })
-    .join(" ");
+    const midPoint = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
 
-  const bottomPath = outlines.bottom
-    .slice()
-    .reverse()
-    .map((p0, i, a) => {
-      if (i === a.length - 1) return "";
+    if (i === 0) {
+      path += `M${p0.x},${p0.y} `;
+    }
 
-      const p1 = a[i + 1];
-      const midPoint = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+    path += `Q${p0.x},${p0.y} ${midPoint.x},${midPoint.y} `;
+  }
 
-      if (i === 0) {
-        return `L${p0.x},${p0.y} Q${p0.x},${p0.y} ${midPoint.x},${midPoint.y}`;
-      }
-      return `Q${p0.x},${p0.y} ${midPoint.x},${midPoint.y}`;
-    })
-    .join(" ");
+  path += "Z";
 
-  return `${topPath} ${bottomPath} Z`;
+  return path;
 }

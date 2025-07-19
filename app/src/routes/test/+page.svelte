@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { generateData, type Point } from "$lib/functions/stroke";
+  import {
+    buildPath,
+    generateData,
+    type OutlinePoint,
+    type Point,
+  } from "$lib/functions/stroke";
 
   let type = $state("N/A");
 
@@ -14,15 +19,17 @@
   let draw = $state(false);
   let currentPoints = $state<Point[]>([]);
   let currentData = $state<string>();
-  let allPoints = $state<Point[][]>([]);
+  let outlinePoints = $state<OutlinePoint[]>([]);
+  let allPoints = $state<OutlinePoint[][]>([]);
   let allData = $state<string[]>([]);
 
   function handlePointerUp() {
     draw = false;
 
-    allPoints.push(currentPoints);
+    allPoints.push(outlinePoints);
     if (currentData) allData.push(currentData);
     currentPoints = [];
+    outlinePoints = [];
     currentData = "";
   }
 
@@ -38,7 +45,10 @@
 
     currentPoints.push({ x: e.clientX, y: e.clientY, pressure });
 
-    if (currentPoints) currentData = generateData(currentPoints);
+    if (currentPoints) {
+      outlinePoints = generateData(currentPoints, 20);
+      currentData = buildPath(outlinePoints);
+    }
   }
 </script>
 
