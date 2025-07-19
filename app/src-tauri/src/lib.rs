@@ -2,36 +2,15 @@
 use tauri::Manager;
 
 mod commands;
-use crate::commands::load;
+
+use crate::commands::{load, quit};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![load])
+        .invoke_handler(tauri::generate_handler![load, quit])
         .setup(|app| {
-            #[cfg(desktop)]
-            {
-                use tauri_plugin_global_shortcut::{
-                    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
-                };
-
-                let ctrl_q_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyQ);
-
-                app.handle().plugin(
-                    tauri_plugin_global_shortcut::Builder::new()
-                        .with_handler(move |app, shortcut, event| {
-                            if shortcut == &ctrl_q_shortcut {
-                                if let ShortcutState::Pressed = event.state {
-                                    app.exit(0);
-                                }
-                            }
-                        })
-                        .build(),
-                )?;
-
-                app.global_shortcut().register(ctrl_q_shortcut)?;
-            }
             if std::env::var("RNP_TESTING").is_ok() {
                 let window = app.get_webview_window("main").unwrap();
                 window.eval("window.location.replace('/test')").unwrap();
