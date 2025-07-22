@@ -1,10 +1,15 @@
 <script lang="ts">
-  import { StrokeBuilder } from "$lib/classes/strokeBuilder.svelte";
+  import {
+    InputThrottler,
+    StrokeBuilder,
+  } from "$lib/classes/strokeBuilder.svelte";
 
   let currentStrokeBuilder = $state<StrokeBuilder>(new StrokeBuilder(5));
   let paths = $state<string[]>([]);
 
   let drawing = $state(false);
+
+  const throttler = new InputThrottler();
 
   function handlePointerDown(e: PointerEvent) {
     drawing = true;
@@ -18,8 +23,9 @@
   }
   function handlePointerMove(e: PointerEvent) {
     if (!drawing) return;
-    currentStrokeBuilder?.addPoint(e.clientX, e.clientY, e.pressure ?? 0.5);
-    console.log("Hi");
+    throttler.update(() => {
+      currentStrokeBuilder?.addPoint(e.clientX, e.clientY, e.pressure ?? 0.5);
+    });
   }
 
   $effect(() => {

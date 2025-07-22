@@ -41,4 +41,14 @@ export class StrokeBuilder {
   private calculateOutline() {}
 }
 
-export class InputThrottler {}
+export class InputThrottler {
+  pendingUpdate: boolean = false;
+
+  update(callback: () => void) {
+    this.pendingUpdate = true;
+    requestAnimationFrame(() => {
+      callback();
+      this.pendingUpdate = false;
+    });
+  }
+}
