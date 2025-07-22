@@ -15,11 +15,12 @@
     drawing = true;
     currentStrokeBuilder?.addPoint(e.clientX, e.clientY, e.pressure ?? 0.5);
   }
-  function handlePointerUp() {
+  async function handlePointerUp() {
     drawing = false;
-    currentStrokeBuilder?.finalizePath();
-    paths.push(currentStrokeBuilder.path);
-    currentStrokeBuilder = new StrokeBuilder();
+    throttler.cancel();
+    paths.push(await currentStrokeBuilder.finalizePath());
+
+    currentStrokeBuilder.clear();
   }
   function handlePointerMove(e: PointerEvent) {
     if (!drawing) return;
@@ -54,5 +55,5 @@
     <path d={path} />
   {/each}
 
-  <path d={currentStrokeBuilder?.path} />
+  <path d={currentStrokeBuilder?.immediatePath} />
 </svg>

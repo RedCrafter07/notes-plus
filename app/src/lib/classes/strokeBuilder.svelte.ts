@@ -1,25 +1,75 @@
+type Point = Record<"x" | "y" | "pressure", number>;
+
 export class StrokeBuilder {
-  #points = $state<Record<"x" | "y" | "pressure", number>[]>([]);
+  #points = $state<Point[]>([]);
   #width: number;
+  #immediatePath = $state("");
+  #optimizedPath = $state<string | null>(null);
+  #isOptimizing = $state(false);
+  #isOptimized = $state(false);
+  #lastPoint: Point | undefined = undefined;
 
   constructor(width: number = 5) {
     this.#width = width;
   }
 
   public addPoint(x: number, y: number, pressure: number) {
-    this.#points.push({ x, y, pressure });
+    if (this.#lastPoint) {
+      const distance = Math.sqrt(
+        Math.pow(x - this.#lastPoint.x, 2) + Math.pow(y - this.#lastPoint.y, 2),
+      );
+
+      if (distance < 5) return;
+    }
+    this.#points.push(this.smoothPoints({ x, y, pressure }));
+    this.#immediatePath = this.buildImmediatePath();
+
+    this.#isOptimized = false;
   }
 
+  public get immediatePath() {
+    return this.#immediatePath;
+  }
+  public get optimizedPath() {
+    return this.#optimizedPath;
+  }
+  public get isOptimizing() {
+    return this.#isOptimizing;
+  }
   public get points() {
     return this.#points;
   }
-
-  public get path() {
-    return this.buildPath(this.#points);
+  public get isOptimized() {
+    return this.#isOptimized;
   }
 
-  private buildPath(points: { x: number; y: number }[]): string {
+  private smoothPoints(current: Point): Point {
+    const previous = this.#lastPoint;
+    this.#lastPoint = current;
+    if (!previous) return current;
+    const predictionStrength = 0.2;
+    const smoothingFactor = 0.4;
+
+    const predicted = {
+      x: current.x + (current.x - previous.x) * predictionStrength,
+      y: current.y + (current.y - previous.y) * predictionStrength,
+    };
+
+    const smoothed = {
+      x: previous.x * smoothingFactor + predicted.x * (1 - smoothingFactor),
+      y: previous.y * smoothingFactor + predicted.y * (1 - smoothingFactor),
+    };
+
+    return { ...smoothed, pressure: current.pressure };
+  }
+
+  private buildImmediatePath() {
+    return this.buildQuadraticBezierPath();
+  }
+
+  private buildSimplePath(): string {
     let path = "";
+    const points = this.#points;
 
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
@@ -32,24 +82,106 @@ export class StrokeBuilder {
 
     return path;
   }
+  private buildQuadraticBezierPath(): string {
+    if (this.#points.length < 3) return this.buildSimplePath();
 
-  public finalizePath() {}
+    let path = `M${this.#points[0].x},${this.#points[0].y}`;
+
+    for (let i = 1; i < this.#points.length - 1; i++) {
+      const current = this.#points[i];
+      const next = this.#points[i + 1];
+      const midPoint = {
+        x: (current.x + next.x) / 2,
+        y: (current.y + next.y) / 2,
+      };
+
+      path += ` Q${current.x},${current.y} ${midPoint.x},${midPoint.y}`;
+    }
+
+    return path;
+  }
+
+  private buildOptimizedPath(): string {
+    this.#points = this.chaikinSmooth(2);
+
+    return this.buildQuadraticBezierPath();
+  }
+
+  public finalizePath() {
+    return new Promise<string>((resolve) => {
+      this.#optimizedPath = this.buildOptimizedPath();
+      this.#isOptimizing = false;
+      this.#isOptimized = true;
+      resolve(this.#optimizedPath);
+    });
+  }
+
+  private chaikinSmooth(iter: number = 2, points?: Point[]) {
+    let currentPoints = points ? points : this.#points;
+
+    for (let i = 0; i < iter; i++) {
+      currentPoints = chaikinSmooth(currentPoints);
+    }
+
+    return currentPoints;
+  }
+
   public clear() {
     this.#points = [];
+    this.#immediatePath = "";
+    this.#optimizedPath = null;
+    this.#isOptimized = false;
+    this.#isOptimizing = false;
+    this.#lastPoint = undefined;
   }
 
   private calculateOutline() {}
 }
 
 export class InputThrottler {
-  pendingUpdate: boolean = false;
+  #pendingUpdate: boolean = false;
+  #cancelled = false;
+
+  cancel() {
+    this.#cancelled = true;
+  }
 
   update(callback: () => void) {
-    if (this.pendingUpdate) return;
-    this.pendingUpdate = true;
+    if (this.#pendingUpdate) return;
+    this.#pendingUpdate = true;
     requestAnimationFrame(() => {
-      callback();
-      this.pendingUpdate = false;
+      if (!this.#cancelled) callback();
+      this.#cancelled = false;
+      this.#pendingUpdate = false;
     });
   }
+}
+
+function chaikinSmooth(points: Point[]): Point[] {
+  if (points.length < 3) return points;
+
+  const result: Point[] = [];
+
+  result.push(points[0]);
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i + 1];
+
+    result.push({
+      x: 0.75 * p1.x + 0.25 * p2.x,
+      y: 0.75 * p1.y + 0.25 * p2.y,
+      pressure: (p1.pressure + p2.pressure) / 2.0,
+    });
+
+    result.push({
+      x: 0.25 * p1.x + 0.75 * p2.x,
+      y: 0.25 * p1.y + 0.75 * p2.y,
+      pressure: (p1.pressure + p2.pressure) / 2.0,
+    });
+  }
+
+  result.push(points[points.length - 1]);
+
+  return result;
 }
