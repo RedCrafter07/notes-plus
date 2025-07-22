@@ -45,6 +45,7 @@ export class InputThrottler {
   pendingUpdate: boolean = false;
 
   update(callback: () => void) {
+    if (this.pendingUpdate) return;
     this.pendingUpdate = true;
     requestAnimationFrame(() => {
       callback();
