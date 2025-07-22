@@ -61,6 +61,7 @@
   <p>tiltX: {tiltX}</p>
   <p>tiltY {tiltY}</p>
   <p>pressure: {pressure}</p>
+  <a href="/test/new">New test</a>
   <button
     class="cursor-pointer"
     onclick={() => {
