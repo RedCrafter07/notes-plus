@@ -1,8 +1,6 @@
 <script lang="ts">
-  import {
-    InputThrottler,
-    StrokeBuilder,
-  } from "$lib/classes/strokeBuilder.svelte";
+  import { StrokeBuilder } from "$lib/classes/StrokeBuilder.svelte";
+  import { InputThrottler } from "$lib/classes/InputThrottler";
 
   let currentStrokeBuilder = $state<StrokeBuilder>(new StrokeBuilder(5));
   let paths = $state<string[]>([]);
