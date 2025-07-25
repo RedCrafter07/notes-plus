@@ -46,8 +46,8 @@
   onpointerup={handlePointerUp}
   onpointermove={handlePointerMove}
   class="select-none touch-none w-full h-full absolute top-0"
-  stroke="#ffffff"
-  fill="none"
+  stroke="#ff3434"
+  fill="#fff"
 >
   {#each paths as path}
     <path d={path} />

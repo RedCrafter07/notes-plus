@@ -1,4 +1,6 @@
-type Point = Record<"x" | "y" | "pressure", number>;
+import { OutlineBuilder, type SimplePoint } from "./OutlineBuilder.svelte";
+
+export type Point = Record<"x" | "y" | "pressure", number>;
 
 export class StrokeBuilder {
   #points = $state<Point[]>([]);
@@ -8,6 +10,7 @@ export class StrokeBuilder {
   #isOptimizing = $state(false);
   #isOptimized = $state(false);
   #lastPoint: Point | undefined = undefined;
+  #outlineBuilder = new OutlineBuilder(20);
 
   constructor(width: number = 5) {
     this.#width = width;
@@ -82,20 +85,24 @@ export class StrokeBuilder {
 
     return path;
   }
-  private buildQuadraticBezierPath(): string {
-    if (this.#points.length < 3) return this.buildSimplePath();
+  private buildQuadraticBezierPath(
+    connectLastPoint: boolean = false,
+    points: SimplePoint[] = this.#points,
+  ): string {
+    if (points.length < 3) return this.buildSimplePath();
 
-    let path = `M${this.#points[0].x},${this.#points[0].y}`;
+    let path = `M${points[0].x},${this.#points[0].y}`;
 
-    for (let i = 1; i < this.#points.length - 1; i++) {
-      const current = this.#points[i];
-      const next = this.#points[i + 1];
+    for (let i = 1; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
       const midPoint = {
         x: (current.x + next.x) / 2,
         y: (current.y + next.y) / 2,
       };
 
-      path += ` Q${current.x},${current.y} ${midPoint.x},${midPoint.y}`;
+      if (i === points.length - 1) path += ` L${next.x},${next.y}`;
+      else path += ` Q${current.x},${current.y} ${midPoint.x},${midPoint.y}`;
     }
 
     return path;
@@ -104,7 +111,10 @@ export class StrokeBuilder {
   private buildOptimizedPath(): string {
     this.#points = this.chaikinSmooth(2);
 
-    return this.buildQuadraticBezierPath();
+    return this.buildQuadraticBezierPath(
+      true,
+      this.#outlineBuilder.generateOutline(this.#points),
+    );
   }
 
   public finalizePath() {

@@ -34,12 +34,12 @@ export function generateData(
 
       return [
         {
-          x: x + unitNormal.x * distancePerSide,
-          y: y + unitNormal.y * distancePerSide,
-        },
-        {
           x: x - unitNormal.x * distancePerSide,
           y: y - unitNormal.y * distancePerSide,
+        },
+        {
+          x: x + unitNormal.x * distancePerSide,
+          y: y + unitNormal.y * distancePerSide,
         },
       ] as [OutlinePoint, OutlinePoint];
     })
