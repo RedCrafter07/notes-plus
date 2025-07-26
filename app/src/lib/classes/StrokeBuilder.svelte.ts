@@ -1,4 +1,3 @@
-
 import { OutlineBuilder } from "./OutlineBuilder.svelte";
 import type { Point, SimplePoint } from "$lib/types/canvas";
 
@@ -7,10 +6,14 @@ export class StrokeBuilder {
   #width: number;
   #immediatePath = $state("");
   #optimizedPath = $state<string | null>(null);
-  #isOptimizing = $state(false);
   #isOptimized = $state(false);
   #lastPoint: Point | undefined = undefined;
   #outlineBuilder = new OutlineBuilder(20);
+
+  #lastPreviewTime: number = 0;
+  #previewUpdateScheduled: boolean = false;
+  #previewDirty: boolean = true;
+  #cachedPreviewPaths: string[] = [];
 
   constructor(width: number = 5) {
     this.#width = width;
@@ -21,37 +24,48 @@ export class StrokeBuilder {
       const distance = Math.sqrt(
         Math.pow(x - this.#lastPoint.x, 2) + Math.pow(y - this.#lastPoint.y, 2),
       );
-
       if (distance < 5) return;
     }
+
     this.#points.push(this.smoothPoints({ x, y, pressure }));
     this.#immediatePath = this.buildImmediatePath();
-
     this.#isOptimized = false;
-
     this.#outlineBuilder.addNewPoints(this.#points);
+
+    const now = performance.now();
+
+    this.#previewDirty = true;
+
+    if (now - this.#lastPreviewTime > 10) {
+      this.updatePreviewPaths();
+      this.#lastPreviewTime = now;
+    } else if (!this.#previewUpdateScheduled) {
+      this.#previewUpdateScheduled = true;
+      requestAnimationFrame(() => {
+        this.updatePreviewPaths();
+        this.#lastPreviewTime = now;
+        this.#previewUpdateScheduled = false;
+      });
+    }
   }
 
-  public get immediatePath() {
-    return this.#immediatePath;
+  private updatePreviewPaths() {
+    if (!this.#previewDirty) return;
+
+    this.#cachedPreviewPaths = this.generatePreviewPaths();
+    this.#previewDirty = false;
   }
-  public get optimizedPath() {
-    return this.#optimizedPath;
-  }
-  public get isOptimizing() {
-    return this.#isOptimizing;
-  }
-  public get points() {
-    return this.#points;
-  }
-  public get isOptimized() {
-    return this.#isOptimized;
+
+  private generatePreviewPaths(): string[] {
+    const currentOutline = this.generateSimplePreview();
+    return [currentOutline];
   }
 
   private smoothPoints(current: Point): Point {
     const previous = this.#lastPoint;
     this.#lastPoint = current;
     if (!previous) return current;
+
     const predictionStrength = 0.2;
     const smoothingFactor = 0.4;
 
@@ -69,48 +83,50 @@ export class StrokeBuilder {
   }
 
   public get previewPaths() {
-    return this.#outlineBuilder
-      .generatePreviewOutlines()
-      .map((o) => this.buildQuadraticBezierPath(false, o));
+    return this.#cachedPreviewPaths;
+  }
+
+  private generateSimplePreview(): string {
+    const smoothedPoints = this.applySmoothingToPoints(this.#points, 2);
+    const outlinePoints =
+      this.#outlineBuilder.generateFinalOutline(smoothedPoints);
+    return buildGentleCurves(outlinePoints, 0.12);
   }
 
   private buildImmediatePath() {
-    return this.buildQuadraticBezierPath();
-  }
-
-  private buildQuadraticBezierPath(
-    connectLastPoint: boolean = false,
-    points: SimplePoint[] = this.#points,
-  ): string {
-    return buildQuadraticBezierPath(connectLastPoint, points);
-  }
-
-  private buildOptimizedPath(): string {
-    this.#points = this.chaikinSmooth(2);
-
-    return this.buildQuadraticBezierPath(
-      true,
-      this.#outlineBuilder.generateOutline(this.#points),
-    );
+    return buildQuadraticBezierPath(false, this.#points);
   }
 
   public finalizePath() {
     return new Promise<string>((resolve) => {
-      this.#optimizedPath = this.buildOptimizedPath();
-      this.#isOptimizing = false;
+      // Apply more smoothing for final result
+      const smoothedPoints = this.applySmoothingToPoints(this.#points, 2); // 2 iterations
+      const finalOutline =
+        this.#outlineBuilder.generateFinalOutline(smoothedPoints);
+
+      this.#optimizedPath = this.buildConsistentPath(finalOutline, false);
+
       this.#isOptimized = true;
       resolve(this.#optimizedPath);
     });
   }
 
-  private chaikinSmooth(iter: number = 2, points?: Point[]) {
-    let currentPoints = points ? points : this.#points;
+  private buildConsistentPath(
+    points: SimplePoint[],
+    isPreview: boolean,
+  ): string {
+    if (points.length < 4) return buildSimplePath(points);
 
-    for (let i = 0; i < iter; i++) {
-      currentPoints = chaikinSmooth(currentPoints);
+    const smoothingStrength = isPreview ? 0.08 : 0.12; // Slightly more smoothing for final
+    return buildGentleCurves(points, smoothingStrength);
+  }
+
+  private applySmoothingToPoints(points: Point[], iterations: number): Point[] {
+    let result = [...points];
+    for (let i = 0; i < iterations; i++) {
+      result = chaikinSmooth(result);
     }
-
-    return currentPoints;
+    return result;
   }
 
   public clear() {
@@ -118,20 +134,102 @@ export class StrokeBuilder {
     this.#immediatePath = "";
     this.#optimizedPath = null;
     this.#isOptimized = false;
-    this.#isOptimizing = false;
     this.#lastPoint = undefined;
     this.#outlineBuilder.clear();
   }
 
-  private calculateOutline() {}
+  // Getters
+  public get immediatePath() {
+    return this.#immediatePath;
+  }
+  public get optimizedPath() {
+    return this.#optimizedPath;
+  }
+  public get isOptimized() {
+    return this.#isOptimized;
+  }
+  public get points() {
+    return this.#points;
+  }
+}
+
+function buildGentleCurves(
+  points: SimplePoint[],
+  smoothingStrength: number,
+): string {
+  if (points.length < 4) return buildSimplePath(points);
+
+  let path = `M${points[0].x},${points[0].y}`;
+
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i - 1];
+    const current = points[i];
+    const next = points[i + 1];
+
+    // Calculate very gentle control point
+    const controlPoint = {
+      x: current.x + (current.x - (prev.x + next.x) / 2) * smoothingStrength,
+      y: current.y + (current.y - (prev.y + next.y) / 2) * smoothingStrength,
+    };
+
+    path += ` Q${controlPoint.x},${controlPoint.y} ${current.x},${current.y}`;
+  }
+
+  const lastPoint = points[points.length - 1];
+  path += ` L${lastPoint.x},${lastPoint.y}`;
+
+  // Close if it looks like a closed shape
+  if (isClosedShape(points)) {
+    path += " Z";
+  }
+
+  return path;
+}
+
+function isClosedShape(points: SimplePoint[]): boolean {
+  if (points.length < 4) return false;
+  const first = points[0];
+  const last = points[points.length - 1];
+  const distance = Math.sqrt((first.x - last.x) ** 2 + (first.y - last.y) ** 2);
+  return distance < 10;
+}
+
+function buildSimplePath(points: SimplePoint[]): string {
+  if (points.length === 0) return "";
+
+  let path = `M${points[0].x},${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    path += ` L${points[i].x},${points[i].y}`;
+  }
+  return path;
+}
+
+function buildQuadraticBezierPath(
+  connectLastPoint: boolean,
+  points: SimplePoint[],
+): string {
+  if (points.length < 3) return buildSimplePath(points);
+
+  let path = `M${points[0].x},${points[0].y}`;
+  const subtractionAmount = connectLastPoint ? 2 : 1;
+
+  for (let i = 1; i < points.length - subtractionAmount; i++) {
+    const current = points[i];
+    const next = points[i + 1];
+    const midPoint = {
+      x: (current.x + next.x) / 2,
+      y: (current.y + next.y) / 2,
+    };
+    path += ` Q${current.x},${current.y} ${midPoint.x},${midPoint.y}`;
+  }
+
+  if (connectLastPoint) path += " Z";
+  return path;
 }
 
 function chaikinSmooth(points: Point[]): Point[] {
   if (points.length < 3) return points;
-
-  const result: Point[] = [];
-
-  result.push(points[0]);
+  const result: Point[] = [points[0]];
 
   for (let i = 0; i < points.length - 1; i++) {
     const p1 = points[i];
@@ -151,47 +249,5 @@ function chaikinSmooth(points: Point[]): Point[] {
   }
 
   result.push(points[points.length - 1]);
-
   return result;
-}
-
-export function buildQuadraticBezierPath(
-  connectLastPoint: boolean = false,
-  points: SimplePoint[],
-): string {
-  if (points.length < 3) return buildSimplePath(points);
-
-  let path = `M${points[0].x},${points[0].y}`;
-
-  const subtractionAmount = connectLastPoint ? 2 : 1;
-
-  for (let i = 1; i < points.length - subtractionAmount; i++) {
-    const current = points[i];
-    const next = points[i + 1];
-    const midPoint = {
-      x: (current.x + next.x) / 2,
-      y: (current.y + next.y) / 2,
-    };
-
-    path += ` Q${current.x},${current.y} ${midPoint.x},${midPoint.y}`;
-  }
-
-  if (connectLastPoint) path += " Z";
-
-  return path;
-}
-
-export function buildSimplePath(points: SimplePoint[]): string {
-  let path = "";
-
-  for (let i = 0; i < points.length; i++) {
-    const point = points[i];
-
-    if (i === 0) path += "M";
-    else path += "L";
-
-    path += `${point.x},${point.y} `;
-  }
-
-  return path;
 }

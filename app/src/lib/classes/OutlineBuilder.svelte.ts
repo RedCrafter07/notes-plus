@@ -1,114 +1,85 @@
-import type { SimplePoint } from "$lib/types/canvas";
-import type { Point } from "$lib/types/canvas";
+import type { SimplePoint, Point } from "$lib/types/canvas";
 
 export class OutlineBuilder {
   #width: number;
-  #normalsCache: SimplePoint[] = [];
   #points: Point[] = [];
+  #consolidatedPoints: SimplePoint[] = [];
+  #consolidatedUntil: number = 0;
+  #recentOutline: SimplePoint[] = $state([]);
 
-  #previewOutlines: string[] = $state([]);
+  private static CONSOLIDATION_THRESHOLD = 40;
+  private static CONSOLIDATE_EVERY = 25;
 
   constructor(width: number = 5) {
     this.#width = width;
-  }
-
-  get width() {
-    return this.#width;
-  }
-
-  get previewOutlines() {
-    return this.#previewOutlines;
-  }
-
-  set width(input: number) {
-    this.#width = input;
   }
 
   public addNewPoints(points: Point[]) {
     const newPointCount = points.length - this.#points.length;
     this.#points.push(...points.slice(-newPointCount));
 
-    this.revalidateNormalsCache(newPointCount, true);
-    this.generatePreviewOutlines();
+    this.checkConsolidation();
+    this.updateRecentOutline();
   }
 
-  public generatePreviewOutlines(): { x: number; y: number }[][] {
-    let points = [];
-    for (let i = 0; i < this.#normalsCache.length; i++) {
-      const current = this.#normalsCache[i];
-      const p = this.#points[i];
+  private checkConsolidation() {
+    const totalPoints = this.#points.length;
+    const unconsolidatedCount = totalPoints - this.#consolidatedUntil;
 
-      const width = this.#width * p.pressure;
-
-      const result = [
-        { x: p.x - current.x * width, y: p.y - current.y * width },
-        { x: p.x + current.x * width, y: p.y + current.y * width },
-      ];
-
-      points.push(result);
+    if (
+      totalPoints > OutlineBuilder.CONSOLIDATION_THRESHOLD &&
+      unconsolidatedCount >= OutlineBuilder.CONSOLIDATE_EVERY
+    ) {
+      this.consolidate();
     }
+  }
 
-    const connection = points.reduce(
-      (p, current, i) => {
-        if (i < 1) return p;
-        const sliceCount = Math.min(20, i);
-
-        const slices = [current];
-
-        for (let j = 1; j <= sliceCount; j++) {
-          slices.push(points[i - j]);
-        }
-
-        const newPoints = slices.reduce((p, c) => {
-          const [p1, p2] = c;
-
-          p.unshift(p1);
-          p.push(p2);
-
-          return p;
-        }, []);
-
-        p.push(newPoints);
-        return p;
-      },
-      [] as { x: number; y: number }[][],
+  private consolidate() {
+    const leaveForPreview = 8;
+    const consolidateUpTo = Math.max(
+      this.#consolidatedUntil,
+      this.#points.length - leaveForPreview,
     );
 
-    return connection;
+    if (consolidateUpTo <= this.#consolidatedUntil) return;
+
+    const pointsToConsolidate = this.#points.slice(0, consolidateUpTo);
+    this.#consolidatedPoints = this.generateOutlinePoints(pointsToConsolidate);
+    this.#consolidatedUntil = consolidateUpTo;
   }
 
-  private revalidateNormalsCache(amount: number = 5, append: boolean = false) {
-    const points = this.#points.slice(-amount - 1);
-    const normals: SimplePoint[] = [];
+  private updateRecentOutline() {
+    const overlapSize = 3;
+    const startIndex = Math.max(0, this.#consolidatedUntil - overlapSize);
+    const recentPoints = this.#points.slice(startIndex);
 
-    for (let i = 0; i < points.length - 1; i++) {
-      const p1 = points[i];
-      const p2 = points[i + 1];
-
-      const velocity = { x: p2.x - p1.x, y: p2.y - p1.y };
-      const perpendicular = { x: -velocity.y, y: velocity.x };
-
-      const distance = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
-      const normalized = {
-        x: perpendicular.x / distance,
-        y: perpendicular.y / distance,
-      };
-
-      normals.push(normalized);
+    if (recentPoints.length >= 3) {
+      this.#recentOutline = this.generateOutlinePoints(recentPoints);
+    } else {
+      this.#recentOutline = [];
     }
-
-    if (append) this.#normalsCache.push(...normals);
-    else this.#normalsCache.splice(-amount, amount, ...normals);
   }
 
-  public generateOutline(points: Point[]) {
+  public getJoinedOutlines(): {
+    consolidated: SimplePoint[];
+    recent: SimplePoint[];
+  } {
+    return {
+      consolidated: this.#consolidatedPoints,
+      recent: this.#recentOutline,
+    };
+  }
+
+  public generateFinalOutline(smoothedPoints: Point[]): SimplePoint[] {
+    return this.generateOutlinePoints(smoothedPoints);
+  }
+
+  private generateOutlinePoints(points: Point[]): SimplePoint[] {
     if (points.length <= 1) return [];
+
     points = this.filterDuplicatePoints(points);
+    if (points.length <= 1) return [];
 
-    return this.generatePoints(points);
-  }
-
-  private generatePoints(points: Point[]): SimplePoint[] {
     const topOutline: SimplePoint[] = [];
     const bottomOutline: SimplePoint[] = [];
 
@@ -117,11 +88,13 @@ export class OutlineBuilder {
       const p2 = points[i + 1];
 
       const velocity = { x: p2.x - p1.x, y: p2.y - p1.y };
-      const perpendicular = { x: -velocity.y, y: velocity.x };
+      const distance = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
 
+      if (distance === 0) continue; // Skip zero-length segments
+
+      const perpendicular = { x: -velocity.y, y: velocity.x };
       const widthPerSide = this.#width * p1.pressure;
 
-      const distance = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
       const normalized = {
         x: perpendicular.x / distance,
         y: perpendicular.y / distance,
@@ -137,33 +110,35 @@ export class OutlineBuilder {
       });
     }
 
-    return [...topOutline, ...bottomOutline.reverse(), topOutline[0]];
+    return [...topOutline, ...bottomOutline.reverse()];
   }
 
   private filterDuplicatePoints(
     points: Point[],
     threshold: number = 0.1,
   ): Point[] {
-    const filtered = [points[0]];
+    if (points.length === 0) return [];
 
+    const filtered = [points[0]];
     for (let i = 1; i < points.length; i++) {
       const current = points[i];
       const previous = filtered[filtered.length - 1];
 
-      if (this.distance(current, previous) > threshold) {
+      const distance = Math.sqrt(
+        (current.x - previous.x) ** 2 + (current.y - previous.y) ** 2,
+      );
+
+      if (distance > threshold) {
         filtered.push(current);
       }
     }
-
     return filtered;
   }
 
-  private distance(p1: Point, p2: Point): number {
-    return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
-  }
-
   public clear() {
-    this.#normalsCache = [];
     this.#points = [];
+    this.#consolidatedPoints = [];
+    this.#consolidatedUntil = 0;
+    this.#recentOutline = [];
   }
 }

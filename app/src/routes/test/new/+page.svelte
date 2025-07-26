@@ -56,7 +56,6 @@
     <path fill="#fff" stroke="none" d={path} />
   {/each}
 
-  <path stroke="#ffc700" d={currentStrokeBuilder?.immediatePath} />
   {#each previewPaths as path}
     <path d={path} stroke="#fff" fill="#fff" />
   {/each}
