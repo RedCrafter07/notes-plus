@@ -1,5 +1,5 @@
-import type { Point } from "./StrokeBuilder.svelte";
-export type SimplePoint = Record<"x" | "y", number>;
+import type { SimplePoint } from "$lib/types/canvas";
+import type { Point } from "$lib/types/canvas";
 
 export class OutlineBuilder {
   #width: number;

@@ -1,6 +1,6 @@
-import { OutlineBuilder, type SimplePoint } from "./OutlineBuilder.svelte";
 
-export type Point = Record<"x" | "y" | "pressure", number>;
+import { OutlineBuilder } from "./OutlineBuilder.svelte";
+import type { Point, SimplePoint } from "$lib/types/canvas";
 
 export class StrokeBuilder {
   #points = $state<Point[]>([]);
