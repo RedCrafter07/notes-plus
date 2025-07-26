@@ -7,6 +7,8 @@
 
   let drawing = $state(false);
 
+  let previewPaths = $state<string[]>([]);
+
   const throttler = new InputThrottler();
 
   function handlePointerDown(e: PointerEvent) {
@@ -17,6 +19,7 @@
     drawing = false;
     throttler.cancel();
     paths.push(await currentStrokeBuilder.finalizePath());
+    previewPaths = [];
 
     currentStrokeBuilder.clear();
   }
@@ -24,6 +27,7 @@
     if (!drawing) return;
     throttler.update(() => {
       currentStrokeBuilder?.addPoint(e.clientX, e.clientY, e.pressure ?? 0.5);
+      previewPaths = currentStrokeBuilder.previewPaths;
     });
   }
 
@@ -45,13 +49,15 @@
   onpointerdown={handlePointerDown}
   onpointerup={handlePointerUp}
   onpointermove={handlePointerMove}
+  fill="none"
   class="select-none touch-none w-full h-full absolute top-0"
-  stroke="#ff3434"
-  fill="#fff"
 >
   {#each paths as path}
-    <path d={path} />
+    <path fill="#fff" stroke="none" d={path} />
   {/each}
 
-  <path d={currentStrokeBuilder?.immediatePath} />
+  <path stroke="#ffc700" d={currentStrokeBuilder?.immediatePath} />
+  {#each previewPaths as path}
+    <path d={path} stroke="#fff" fill="#fff" />
+  {/each}
 </svg>

@@ -28,6 +28,8 @@ export class StrokeBuilder {
     this.#immediatePath = this.buildImmediatePath();
 
     this.#isOptimized = false;
+
+    this.#outlineBuilder.addNewPoints(this.#points);
   }
 
   public get immediatePath() {
@@ -66,46 +68,21 @@ export class StrokeBuilder {
     return { ...smoothed, pressure: current.pressure };
   }
 
+  public get previewPaths() {
+    return this.#outlineBuilder
+      .generatePreviewOutlines()
+      .map((o) => this.buildQuadraticBezierPath(false, o));
+  }
+
   private buildImmediatePath() {
     return this.buildQuadraticBezierPath();
   }
 
-  private buildSimplePath(): string {
-    let path = "";
-    const points = this.#points;
-
-    for (let i = 0; i < points.length; i++) {
-      const point = points[i];
-
-      if (i === 0) path += "M";
-      else path += "L";
-
-      path += `${point.x},${point.y} `;
-    }
-
-    return path;
-  }
   private buildQuadraticBezierPath(
     connectLastPoint: boolean = false,
     points: SimplePoint[] = this.#points,
   ): string {
-    if (points.length < 3) return this.buildSimplePath();
-
-    let path = `M${points[0].x},${this.#points[0].y}`;
-
-    for (let i = 1; i < points.length - 1; i++) {
-      const current = points[i];
-      const next = points[i + 1];
-      const midPoint = {
-        x: (current.x + next.x) / 2,
-        y: (current.y + next.y) / 2,
-      };
-
-      if (i === points.length - 1) path += ` L${next.x},${next.y}`;
-      else path += ` Q${current.x},${current.y} ${midPoint.x},${midPoint.y}`;
-    }
-
-    return path;
+    return buildQuadraticBezierPath(connectLastPoint, points);
   }
 
   private buildOptimizedPath(): string {
@@ -143,6 +120,7 @@ export class StrokeBuilder {
     this.#isOptimized = false;
     this.#isOptimizing = false;
     this.#lastPoint = undefined;
+    this.#outlineBuilder.clear();
   }
 
   private calculateOutline() {}
@@ -175,4 +153,45 @@ function chaikinSmooth(points: Point[]): Point[] {
   result.push(points[points.length - 1]);
 
   return result;
+}
+
+export function buildQuadraticBezierPath(
+  connectLastPoint: boolean = false,
+  points: SimplePoint[],
+): string {
+  if (points.length < 3) return buildSimplePath(points);
+
+  let path = `M${points[0].x},${points[0].y}`;
+
+  const subtractionAmount = connectLastPoint ? 2 : 1;
+
+  for (let i = 1; i < points.length - subtractionAmount; i++) {
+    const current = points[i];
+    const next = points[i + 1];
+    const midPoint = {
+      x: (current.x + next.x) / 2,
+      y: (current.y + next.y) / 2,
+    };
+
+    path += ` Q${current.x},${current.y} ${midPoint.x},${midPoint.y}`;
+  }
+
+  if (connectLastPoint) path += " Z";
+
+  return path;
+}
+
+export function buildSimplePath(points: SimplePoint[]): string {
+  let path = "";
+
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+
+    if (i === 0) path += "M";
+    else path += "L";
+
+    path += `${point.x},${point.y} `;
+  }
+
+  return path;
 }
