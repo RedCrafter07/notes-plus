@@ -1,117 +1,62 @@
 <script lang="ts">
-  import {
-    buildPath,
-    generateData,
-    type OutlinePoint,
-    type Point,
-  } from "$lib/functions/stroke";
+  import { StrokeBuilder } from "$lib/classes/StrokeBuilder.svelte";
+  import { InputThrottler } from "$lib/classes/InputThrottler";
 
-  let type = $state("N/A");
+  let currentStrokeBuilder = $state<StrokeBuilder>(new StrokeBuilder(5));
+  let paths = $state<string[]>([]);
 
-  let pointerId = $state(0);
-  let button = $state(0);
-  let pressure = $state(0);
-  let tiltX = $state(0);
-  let tiltY = $state(0);
-  let width = $state(0);
-  let height = $state(0);
+  let drawing = $state(false);
 
-  let draw = $state(false);
-  let currentPoints = $state<Point[]>([]);
-  let currentData = $state<string>();
-  let outlinePoints = $state<OutlinePoint[]>([]);
-  let allPoints = $state<OutlinePoint[][]>([]);
-  let allData = $state<string[]>([]);
+  let previewPaths = $state<string[]>([]);
 
-  function handlePointerUp() {
-    draw = false;
-
-    allPoints.push(outlinePoints);
-    if (currentData) allData.push(currentData);
-    currentPoints = [];
-    outlinePoints = [];
-    currentData = "";
-  }
+  const throttler = new InputThrottler();
 
   function handlePointerDown(e: PointerEvent) {
-    e.preventDefault();
-    draw = true;
+    drawing = true;
+    currentStrokeBuilder?.addPoint(e.clientX, e.clientY, e.pressure ?? 0.5);
   }
+  async function handlePointerUp() {
+    drawing = false;
+    throttler.cancel();
+    paths.push(await currentStrokeBuilder.finalizePath());
+    previewPaths = [];
 
+    currentStrokeBuilder.clear();
+  }
   function handlePointerMove(e: PointerEvent) {
-    if (!draw) return;
-    let pressure = 0.5;
-    if (e.pointerType === "pen") pressure = e.pressure;
-
-    currentPoints.push({ x: e.clientX, y: e.clientY, pressure });
-
-    if (currentPoints) {
-      outlinePoints = generateData(currentPoints, 20);
-      currentData = buildPath(outlinePoints);
-    }
+    if (!drawing) return;
+    throttler.update(() => {
+      currentStrokeBuilder?.addPoint(e.clientX, e.clientY, e.pressure ?? 0.5);
+      previewPaths = currentStrokeBuilder.previewPaths;
+    });
   }
+
+  $effect(() => {
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "c") {
+        currentStrokeBuilder?.clear();
+        paths = [];
+      } else if (e.key === "q") {
+        window.location.replace("/test");
+      }
+    });
+  });
 </script>
 
-<div class="top-4 left-4 absolute z-20">
-  <p>{type}</p>
-  <p>pointerId: {pointerId}</p>
-  <p>button: {button}</p>
-  <p>width: {width}</p>
-  <p>height: {height}</p>
-  <p>tiltX: {tiltX}</p>
-  <p>tiltY {tiltY}</p>
-  <p>pressure: {pressure}</p>
-  <a href="/test/new">New test</a>
-  <button
-    class="cursor-pointer"
-    onclick={() => {
-      allData = [];
-      allPoints = [];
-      currentData = undefined;
-      currentPoints = [];
-    }}>Clear</button
-  >
-</div>
-
-<div
-  class="w-full h-full absolute top-0 left-0 z-10"
-  onpointermove={(e) => {
-    type = e.pointerType;
-
-    switch (e.pointerType) {
-      case "mouse":
-      case "touch":
-        break;
-      case "pen":
-        {
-          pointerId = e.pointerId;
-          button = e.buttons;
-          pressure = e.pressure;
-          tiltX = e.tiltX;
-          tiltY = e.tiltY;
-          width = e.width;
-          height = e.height;
-
-          e.preventDefault();
-        }
-        break;
-    }
-  }}
+<svg
+  width="100%"
+  height="100%"
+  onpointerdown={handlePointerDown}
+  onpointerup={handlePointerUp}
+  onpointermove={handlePointerMove}
+  fill="none"
+  class="select-none touch-none w-full h-full absolute top-0"
 >
-  <svg
-    width="100%"
-    height="100%"
-    onpointerdown={handlePointerDown}
-    onpointerup={handlePointerUp}
-    onpointerleave={handlePointerUp}
-    onpointermove={handlePointerMove}
-    stroke="none"
-    fill="#ffffff"
-    class="touch-none"
-  >
-    <path d={currentData} />
-    {#each [...allData].reverse() as path}
-      <path d={path} />
-    {/each}
-  </svg>
-</div>
+  {#each paths as path}
+    <path fill="#fff" stroke="none" d={path} />
+  {/each}
+
+  {#each previewPaths as path}
+    <path d={path} stroke="#fff" fill="#fff" />
+  {/each}
+</svg>
