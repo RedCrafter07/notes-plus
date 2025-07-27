@@ -141,4 +141,11 @@ export class OutlineBuilder {
     this.#consolidatedUntil = 0;
     this.#recentOutline = [];
   }
+
+  get width() {
+    return this.#width;
+  }
+  set width(n: number) {
+    this.#width = n;
+  }
 }

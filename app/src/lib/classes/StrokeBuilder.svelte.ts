@@ -3,12 +3,11 @@ import type { Point, SimplePoint } from "$lib/types/canvas";
 
 export class StrokeBuilder {
   #points = $state<Point[]>([]);
-  #width: number;
   #immediatePath = $state("");
   #optimizedPath = $state<string | null>(null);
   #isOptimized = $state(false);
   #lastPoint: Point | undefined = undefined;
-  #outlineBuilder = new OutlineBuilder(20);
+  #outlineBuilder = new OutlineBuilder(5);
 
   #lastPreviewTime: number = 0;
   #previewUpdateScheduled: boolean = false;
@@ -16,7 +15,7 @@ export class StrokeBuilder {
   #cachedPreviewPaths: string[] = [];
 
   constructor(width: number = 5) {
-    this.#width = width;
+    this.#outlineBuilder.width = width;
   }
 
   public addPoint(x: number, y: number, pressure: number) {
