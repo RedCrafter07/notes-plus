@@ -1,5 +1,5 @@
 import { OutlineBuilder } from "./OutlineBuilder.svelte";
-import type { Point, SimplePoint } from "$lib/types/canvas";
+import type { Point, SimplePoint, Stroke } from "$lib/types/canvas";
 
 export class StrokeBuilder {
   #points = $state<Point[]>([]);
@@ -14,8 +14,11 @@ export class StrokeBuilder {
   #previewDirty: boolean = true;
   #cachedPreviewPaths: string[] = [];
 
-  constructor(width: number = 5) {
+  color: string = $state<string>("#ffffff");
+
+  constructor(width: number = 5, color: string = "#ffffff") {
     this.#outlineBuilder.width = width;
+    this.color = color;
   }
 
   public addPoint(x: number, y: number, pressure: number) {
@@ -128,6 +131,26 @@ export class StrokeBuilder {
     return result;
   }
 
+  public toStroke(): Stroke {
+    const data: Stroke = {
+      id: crypto.randomUUID(),
+      width: this.#outlineBuilder.width,
+      points: [...this.#points],
+      color: this.color,
+      timestamp: Date.now(),
+    };
+
+    return data;
+  }
+
+  public static fromStroke(input: Stroke): StrokeBuilder {
+    const { color, points, width } = input;
+    const newBuilder = new StrokeBuilder(width, color);
+    newBuilder.points = points;
+
+    return newBuilder;
+  }
+
   public clear() {
     this.#points = [];
     this.#immediatePath = "";
@@ -149,6 +172,13 @@ export class StrokeBuilder {
   }
   public get points() {
     return this.#points;
+  }
+
+  public set points(input: Point[]) {
+    this.#points = input;
+
+    this.#previewDirty = true;
+    this.updatePreviewPaths();
   }
 }
 
