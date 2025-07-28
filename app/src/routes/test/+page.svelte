@@ -1,43 +1,24 @@
 <script lang="ts">
-  import { StrokeBuilder } from "$lib/classes/StrokeBuilder.svelte";
-  import { InputThrottler } from "$lib/classes/InputThrottler";
+  import { StrokeManager } from "$lib/canvas/StrokeManager.svelte";
 
-  let currentStrokeBuilder = $state<StrokeBuilder>(new StrokeBuilder(5));
-  let paths = $state<string[]>([]);
-
-  let drawing = $state(false);
-
-  let previewPaths = $state<string[]>([]);
-
-  const throttler = new InputThrottler();
+  let strokeManager = $state(new StrokeManager());
 
   function handlePointerDown(e: PointerEvent) {
-    drawing = true;
-    currentStrokeBuilder?.addPoint(e.clientX, e.clientY, e.pressure ?? 0.5);
+    strokeManager.inputLocked = false;
+    strokeManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
   }
   async function handlePointerUp() {
-    drawing = false;
-    throttler.cancel();
-    paths.push(await currentStrokeBuilder.finalizePath());
-    previewPaths = [];
-
-    currentStrokeBuilder.clear();
+    strokeManager.inputLocked = true;
+    strokeManager.finishInput();
   }
   function handlePointerMove(e: PointerEvent) {
-    if (!drawing) return;
-    throttler.update(() => {
-      currentStrokeBuilder?.addPoint(e.clientX, e.clientY, e.pressure ?? 0.5);
-      previewPaths = currentStrokeBuilder.previewPaths;
-    });
+    strokeManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
   }
 
   $effect(() => {
     document.addEventListener("keydown", (e) => {
       if (e.key === "c") {
-        currentStrokeBuilder?.clear();
-        paths = [];
-      } else if (e.key === "q") {
-        window.location.replace("/test");
+        strokeManager = new StrokeManager();
       }
     });
   });
@@ -52,11 +33,11 @@
   fill="none"
   class="select-none touch-none w-full h-full absolute top-0"
 >
-  {#each paths as path}
+  {#each strokeManager.previewPaths as path}
     <path fill="#fff" stroke="none" d={path} />
   {/each}
 
-  {#each previewPaths as path}
+  {#each strokeManager.currentPreviewPaths as path}
     <path d={path} stroke="#fff" fill="#fff" />
   {/each}
 </svg>

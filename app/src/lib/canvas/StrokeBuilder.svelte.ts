@@ -173,6 +173,12 @@ export class StrokeBuilder {
   public get points() {
     return this.#points;
   }
+  public get width() {
+    return this.#outlineBuilder.width;
+  }
+  public set width(value: number) {
+    this.#outlineBuilder.width = value;
+  }
 
   public set points(input: Point[]) {
     this.#points = input;
