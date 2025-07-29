@@ -1,6 +1,7 @@
 import type { Point, Stroke } from "$lib/types/canvas";
 import { InputThrottler } from "./InputThrottler";
 import { StrokeBuilder } from "./StrokeBuilder.svelte";
+import { StrokeEraser } from "./StrokeEraser";
 
 export interface PenSettings {
   type: "pen";
@@ -39,9 +40,8 @@ export class StrokeManager {
   #inputLocked: boolean = true;
   #newStroke?: StrokeBuilder;
 
-  #currentPreviewPaths: string[] = $state([]);
-  #previewPaths: string[] = $state([]);
-  #allPoints: Point[] = $state([]);
+  #currentPreviewPaths: { color: string; path: string }[] = $state([]);
+  #previewPaths: { color: string; path: string }[] = $state([]);
 
   #pointThrottler = new InputThrottler();
 
@@ -86,23 +86,49 @@ export class StrokeManager {
     const currentTool = this.#toolSettings;
     switch (currentTool.type) {
       case "pen":
-        {
-          if (!this.#newStroke) {
-            this.#newStroke = new StrokeBuilder(
-              currentTool.width,
-              currentTool.color,
-            );
-          } else {
-            this.#newStroke.color = currentTool.color;
-            this.#newStroke.width = currentTool.width;
-          }
-
-          this.#pointThrottler.update(() => {
-            this.#newStroke!.addPoint(x, y, pressure);
-            this.#currentPreviewPaths = this.#newStroke!.previewPaths;
-          });
-        }
+        this.penInput(currentTool, x, y, pressure);
         break;
+      case "eraser":
+        this.eraserInput(currentTool, x, y);
+        break;
+    }
+  }
+
+  private penInput(
+    settings: PenSettings,
+    x: number,
+    y: number,
+    pressure: number,
+  ) {
+    if (!this.#newStroke) {
+      this.#newStroke = new StrokeBuilder(settings.width, settings.color);
+    } else {
+      this.#newStroke.color = settings.color;
+      this.#newStroke.width = settings.width;
+    }
+
+    this.#pointThrottler.update(() => {
+      this.#newStroke!.addPoint(x, y, pressure);
+      this.#currentPreviewPaths = this.#newStroke!.previewPaths.map((p) => ({
+        path: p,
+        color: settings.color,
+      }));
+    });
+  }
+
+  private eraserInput(settings: EraserSettings, x: number, y: number) {
+    const eraser = new StrokeEraser(settings.width);
+    eraser.setStrokes(this.strokes);
+
+    if (settings.deleteStroke) {
+      const indeces = eraser.getHitIndeces({ x, y });
+
+      indeces.forEach((i) => {
+        this.#previewPaths.splice(i, 1);
+        this.strokes.splice(i, 1);
+      });
+    } else {
+      // TODO: Implement a geometrical eraser at some point
     }
   }
 
@@ -111,7 +137,6 @@ export class StrokeManager {
     if (this.#toolSettings.type !== "pen") return;
 
     this.strokes.push(this.#newStroke.toStroke());
-    this.#allPoints.push(...this.#newStroke.points);
 
     this.#newStroke.finalizePath().then((v) => {
       this.#previewPaths.push({
@@ -125,9 +150,6 @@ export class StrokeManager {
     this.#currentPreviewPaths = [];
   }
 
-  get allPoints() {
-    return this.#allPoints;
-  }
   get previewPaths() {
     return this.#previewPaths;
   }
