@@ -1,10 +1,14 @@
-import type { SimplePoint } from "$lib/types/canvas";
+import type { SimplePoint, Stroke } from "$lib/types/canvas";
 
 export class StrokeEraser {
   #eraserRadius: number = 15;
-  #strokes: SimplePoint[][] = [];
+  #strokes: Stroke[] = [];
 
-  public setStrokes(strokes: SimplePoint[][]) {
+  constructor(strokes?: Stroke[]) {
+    if (strokes) this.#strokes = strokes;
+  }
+
+  public setStrokes(strokes: Stroke[]) {
     this.#strokes = strokes;
   }
 
@@ -32,7 +36,7 @@ export class StrokeEraser {
     point: SimplePoint,
   ): (SimplePoint & { distance: number })[][] {
     return this.#strokes.map((s) => {
-      const pointsWithDistance = s.map(({ x, y }) => {
+      const pointsWithDistance = s.points.map(({ x, y }) => {
         const distance = Math.sqrt(
           Math.pow(x - point.x, 2) + Math.pow(y - point.y, 2),
         );
