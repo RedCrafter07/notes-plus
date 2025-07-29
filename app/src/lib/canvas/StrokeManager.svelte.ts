@@ -108,18 +108,21 @@ export class StrokeManager {
 
   public finishInput() {
     if (!this.#newStroke) return;
-    if (this.#inputLocked) return;
     if (this.#toolSettings.type !== "pen") return;
-
-    this.#newStroke.finalizePath().then((v) => {
-      this.#previewPaths.push(v);
-    });
 
     this.strokes.push(this.#newStroke.toStroke());
     this.#allPoints.push(...this.#newStroke.points);
 
+    this.#newStroke.finalizePath().then((v) => {
+      this.#previewPaths.push({
+        color: (this.#toolSettings as PenSettings).color,
+        path: v,
+      });
+    });
+
     this.#newStroke.clear();
     this.#newStroke = undefined;
+    this.#currentPreviewPaths = [];
   }
 
   get allPoints() {
