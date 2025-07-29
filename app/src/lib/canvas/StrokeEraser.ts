@@ -14,19 +14,7 @@ export class StrokeEraser {
     this.#strokes = strokes;
   }
 
-  public deleteAt(point: SimplePoint) {
-    const indecesToDelete = this.getHitIndeces(point);
-
-    const newStrokes = this.#strokes;
-
-    indecesToDelete.forEach((i) => {
-      newStrokes.splice(i, 1);
-    });
-
-    return newStrokes;
-  }
-
-  private getHitIndeces(point: SimplePoint) {
+  public getHitIndeces(point: SimplePoint) {
     const hitIndeces: number[] = [];
 
     for (let i = 0; i < this.#strokes.length; i++) {
