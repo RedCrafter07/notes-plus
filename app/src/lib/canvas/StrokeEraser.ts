@@ -4,8 +4,10 @@ export class StrokeEraser {
   #eraserRadius: number = 15;
   #strokes: Stroke[] = [];
 
-  constructor(strokes?: Stroke[]) {
+  constructor(radius: number, strokes?: Stroke[]) {
     if (strokes) this.#strokes = strokes;
+
+    this.#eraserRadius = radius;
   }
 
   public setStrokes(strokes: Stroke[]) {
@@ -13,7 +15,7 @@ export class StrokeEraser {
   }
 
   public deleteAt(point: SimplePoint) {
-    const indecesToDelete = this.getHitStrokes(point).map((p) => p.i);
+    const indecesToDelete = this.getHitIndeces(point);
 
     const newStrokes = this.#strokes;
 
@@ -24,28 +26,31 @@ export class StrokeEraser {
     return newStrokes;
   }
 
-  private getHitStrokes(point: SimplePoint) {
-    const hitStrokes = this.calculateDistanceToStroke(point)
-      .map((p, i) => ({ ...p, i }))
-      .filter((s) => s.some((p) => p.distance <= this.#eraserRadius));
+  private getHitIndeces(point: SimplePoint) {
+    const hitIndeces: number[] = [];
 
-    return hitStrokes;
-  }
+    for (let i = 0; i < this.#strokes.length; i++) {
+      const { points } = this.#strokes[i];
 
-  private calculateDistanceToStroke(
-    point: SimplePoint,
-  ): (SimplePoint & { distance: number })[][] {
-    return this.#strokes.map((s) => {
-      const pointsWithDistance = s.points.map(({ x, y }) => {
+      const isHit = points.some((v) => {
+        if (
+          Math.abs(point.x - v.x) > this.#eraserRadius &&
+          Math.abs(point.y - v.y) > this.#eraserRadius
+        )
+          return false;
+
         const distance = Math.sqrt(
-          Math.pow(x - point.x, 2) + Math.pow(y - point.y, 2),
+          Math.pow(v.x - point.x, 2) + Math.pow(v.y - point.y, 2),
         );
 
-        return { x, y, distance };
+        if (distance > this.#eraserRadius) return false;
+        else return true;
       });
 
-      return pointsWithDistance;
-    });
+      if (isHit) hitIndeces.push(i);
+    }
+
+    return hitIndeces;
   }
 
   public clear() {
