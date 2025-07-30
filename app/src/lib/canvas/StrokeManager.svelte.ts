@@ -116,12 +116,12 @@ export class StrokeManager {
     });
   }
 
-  private eraserInput(settings: EraserSettings, x: number, y: number) {
+  private async eraserInput(settings: EraserSettings, x: number, y: number) {
     const eraser = new StrokeEraser(settings.width);
     eraser.setStrokes(this.strokes);
 
     if (settings.deleteStroke) {
-      const indeces = eraser.getHitIndeces({ x, y });
+      const indeces = await eraser.getHitIndeces({ x, y });
 
       indeces.forEach((i) => {
         this.#previewPaths.splice(i, 1);
