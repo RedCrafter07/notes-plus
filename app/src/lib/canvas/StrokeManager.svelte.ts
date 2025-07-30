@@ -156,4 +156,7 @@ export class StrokeManager {
   get currentPreviewPaths() {
     return this.#currentPreviewPaths;
   }
+  get tool() {
+    return this.#toolSettings;
+  }
 }
