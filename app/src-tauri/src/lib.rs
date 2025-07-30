@@ -11,9 +11,12 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![load, quit])
         .setup(|app| {
-            if std::env::var("RNP_TESTING").is_ok() {
-                let window = app.get_webview_window("main").unwrap();
-                window.eval("window.location.replace('/test')").unwrap();
+            #[cfg(debug_assertions)]
+            {
+                if std::env::var("RNP_TESTING").is_ok() {
+                    let window = app.get_webview_window("main").unwrap();
+                    window.eval("window.location.replace('/test')").unwrap();
+                }
             }
 
             Ok(())
