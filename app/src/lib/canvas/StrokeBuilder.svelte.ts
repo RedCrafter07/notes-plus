@@ -1,5 +1,6 @@
 import { OutlineBuilder } from "./OutlineBuilder.svelte";
-import type { Point, SimplePoint, Stroke } from "$lib/types/canvas";
+import type { Point, SimplePoint } from "$lib/types/canvas";
+import type { StrokeBlock } from "$lib/types/bindings/StrokeBlock";
 
 export class StrokeBuilder {
   #points = $state<Point[]>([]);
@@ -131,19 +132,18 @@ export class StrokeBuilder {
     return result;
   }
 
-  public toStroke(): Stroke {
-    const data: Stroke = {
+  public toStroke(): StrokeBlock {
+    const data: StrokeBlock = {
       id: crypto.randomUUID(),
       width: this.#outlineBuilder.width,
       points: [...this.#points],
       color: this.color,
-      timestamp: Date.now(),
     };
 
     return data;
   }
 
-  public static fromStroke(input: Stroke): StrokeBuilder {
+  public static fromStroke(input: StrokeBlock): StrokeBuilder {
     const { color, points, width } = input;
     const newBuilder = new StrokeBuilder(width, color);
     newBuilder.points = points;

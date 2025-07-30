@@ -33,9 +33,8 @@ pub struct ShapeBlock {
 #[serde(rename_all = "camelCase")]
 pub struct StrokeBlock {
     pub id: String,
-    pub tool: String,
     pub color: String,
-    pub stroke_width: f32,
+    pub width: f32,
     pub points: Vec<Point>,
 }
 #[derive(Debug, Serialize, Deserialize, TS)]

@@ -1,21 +1,12 @@
-import type { Point, Stroke } from "$lib/types/canvas";
+import type { StrokeBlock } from "$lib/types/bindings/StrokeBlock";
+import type {
+  EraserSettings,
+  PenSettings,
+  ToolSettings,
+} from "$lib/types/canvas";
 import { InputThrottler } from "./InputThrottler";
 import { StrokeBuilder } from "./StrokeBuilder.svelte";
 import { StrokeEraser } from "./StrokeEraser";
-
-export interface PenSettings {
-  type: "pen";
-  width: number;
-  color: string;
-}
-
-export interface EraserSettings {
-  type: "eraser";
-  width: number;
-  deleteStroke: boolean;
-}
-
-export type ToolSettings = PenSettings | EraserSettings;
 
 export const penDefaults: PenSettings = {
   type: "pen",
@@ -29,7 +20,7 @@ export const eraserDefaults: EraserSettings = {
 };
 
 export class StrokeManager {
-  strokes = $state<Stroke[]>([]);
+  strokes = $state<StrokeBlock[]>([]);
 
   #toolSettings: ToolSettings = $state({
     type: "pen",
@@ -134,7 +125,6 @@ export class StrokeManager {
   public finishInput() {
     if (!this.#newStroke) return;
     if (this.#toolSettings.type === "pen") {
-
       this.strokes.push(this.#newStroke.toStroke());
 
       this.#newStroke.finalizePath().then((v) => {

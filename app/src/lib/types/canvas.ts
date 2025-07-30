@@ -1,13 +1,15 @@
-export type Mode = "draw" | "erase" | "pan";
-export type Data = any;
-
 export type SimplePoint = Record<"x" | "y", number>;
 export type Point = Record<"x" | "y" | "pressure", number>;
-
-export interface Stroke {
-  id: string;
-  points: Point[];
+export interface PenSettings {
+  type: "pen";
   width: number;
   color: string;
-  timestamp: number;
 }
+
+export interface EraserSettings {
+  type: "eraser";
+  width: number;
+  deleteStroke: boolean;
+}
+
+export type ToolSettings = PenSettings | EraserSettings;

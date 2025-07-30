@@ -1,17 +1,18 @@
-import type { SimplePoint, Stroke } from "$lib/types/canvas";
+import type { SimplePoint } from "$lib/types/canvas";
 import { StrokeBuilder } from "./StrokeBuilder.svelte";
+import type { StrokeBlock } from "$lib/types/bindings/StrokeBlock";
 
 export class StrokeEraser {
   #eraserRadius: number = 15;
-  #strokes: Stroke[] = [];
+  #strokes: StrokeBlock[] = [];
 
-  constructor(radius: number, strokes?: Stroke[]) {
+  constructor(radius: number, strokes?: StrokeBlock[]) {
     if (strokes) this.#strokes = strokes;
 
     this.#eraserRadius = radius;
   }
 
-  public setStrokes(strokes: Stroke[]) {
+  public setStrokes(strokes: StrokeBlock[]) {
     this.#strokes = strokes;
   }
 
