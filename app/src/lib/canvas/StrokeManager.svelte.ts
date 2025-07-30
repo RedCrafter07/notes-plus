@@ -117,8 +117,7 @@ export class StrokeManager {
   }
 
   private async eraserInput(settings: EraserSettings, x: number, y: number) {
-    const eraser = new StrokeEraser(settings.width);
-    eraser.setStrokes(this.strokes);
+    const eraser = new StrokeEraser(settings.width, this.strokes);
 
     if (settings.deleteStroke) {
       const indeces = await eraser.getHitIndeces({ x, y });
@@ -134,16 +133,17 @@ export class StrokeManager {
 
   public finishInput() {
     if (!this.#newStroke) return;
-    if (this.#toolSettings.type !== "pen") return;
+    if (this.#toolSettings.type === "pen") {
 
-    this.strokes.push(this.#newStroke.toStroke());
+      this.strokes.push(this.#newStroke.toStroke());
 
-    this.#newStroke.finalizePath().then((v) => {
-      this.#previewPaths.push({
-        color: (this.#toolSettings as PenSettings).color,
-        path: v,
+      this.#newStroke.finalizePath().then((v) => {
+        this.#previewPaths.push({
+          color: (this.#toolSettings as PenSettings).color,
+          path: v,
+        });
       });
-    });
+    }
 
     this.#newStroke.clear();
     this.#newStroke = undefined;
