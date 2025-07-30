@@ -4,6 +4,7 @@ export interface PenSettings {
   type: "pen";
   width: number;
   color: string;
+  pressureSensitive: boolean;
 }
 
 export interface EraserSettings {

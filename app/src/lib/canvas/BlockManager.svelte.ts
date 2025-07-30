@@ -10,8 +10,9 @@ import { StrokeEraser } from "./StrokeEraser";
 
 export const penDefaults: PenSettings = {
   type: "pen",
-  color: "#ffffff",
+  color: "#000000",
   width: 5,
+  pressureSensitive: true,
 };
 export const eraserDefaults: EraserSettings = {
   type: "eraser",
@@ -23,9 +24,7 @@ export class BlockManager {
   blocks: ContentBlock[] = [];
 
   #toolSettings: ToolSettings = $state({
-    type: "pen",
-    color: "#ffffff",
-    width: 5,
+    ...penDefaults,
   });
 
   #inputLocked: boolean = true;
@@ -91,6 +90,7 @@ export class BlockManager {
     y: number,
     pressure: number,
   ) {
+    if (!settings.pressureSensitive) pressure = 0.5;
     if (!this.#newStroke) {
       this.#newStroke = new StrokeBuilder(settings.width, settings.color);
     } else {
