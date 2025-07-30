@@ -7,7 +7,7 @@ export const load: PageLoad = async ({ url }) => {
   const param = url.searchParams.get("path");
 
   if (!param) {
-    return redirect(307, "/");
+    return;
   }
 
   const pathString = decodeURIComponent(param);

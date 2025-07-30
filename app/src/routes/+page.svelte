@@ -24,7 +24,8 @@
       <h3 class="text-xl">What would you like to work on?</h3>
     </div>
     <div class="grid grid-cols-2 w-full">
-      <div
+      <a
+        href="/edit"
         class:col-span-2={recentFiles.length % 2 === 0}
         class="rounded-xl bg-base-2 group text-content-3 active:scale-95 transition-all"
       >
@@ -36,7 +37,7 @@
             class="mx-auto group-hover:opacity-80 transition-all group-active:scale-90"
           />
         </div>
-      </div>
+      </a>
     </div>
   </div>
 </main>
