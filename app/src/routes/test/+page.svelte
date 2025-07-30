@@ -12,7 +12,19 @@
     strokeManager.finishInput();
   }
   function handlePointerMove(e: PointerEvent) {
-    strokeManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
+    switch (e.buttons) {
+      case 32:
+        strokeManager.changeTool("eraser");
+        break;
+      case 2:
+        // TODO: Barrel button -> selection
+        break;
+      default:
+        strokeManager.changeTool("pen");
+        break;
+    }
+    if (e.pressure > 0)
+      strokeManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
   }
 
   $effect(() => {
@@ -28,14 +40,30 @@
   });
 </script>
 
+<div class="top-0 absolute z-50">
+  <p>Current Tool: {strokeManager.tool.type}</p>
+</div>
+
 <svg
+  role="document"
   width="100%"
   height="100%"
   onpointerdown={handlePointerDown}
   onpointerup={handlePointerUp}
   onpointermove={handlePointerMove}
+  onpointerover={(e) => {
+    console.log("Stylus Debug:", {
+      pointerType: e.pointerType,
+      pressure: e.pressure,
+      buttons: e.buttons,
+      button: e.button,
+    });
+  }}
+  oncontextmenu={(e) => {
+    e.preventDefault();
+  }}
   fill="none"
-  class="select-none touch-none w-full h-full absolute top-0"
+  class="select-none touch-none w-full h-full absolute top-0 cursor-crosshair"
 >
   {#each strokeManager.previewPaths as segment}
     <path fill={segment.color} stroke="none" d={segment.path} />
