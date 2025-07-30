@@ -1,29 +1,28 @@
 import type { SimplePoint } from "$lib/types/canvas";
 import { StrokeBuilder } from "./StrokeBuilder.svelte";
 import type { StrokeBlock } from "$lib/types/bindings/StrokeBlock";
+import type { ContentBlock } from "$lib/types/bindings/ContentBlock";
 
 export class StrokeEraser {
   #eraserRadius: number = 15;
-  #strokes: StrokeBlock[] = [];
+  #blocks: ContentBlock[] = [];
 
-  constructor(radius: number, strokes?: StrokeBlock[]) {
-    if (strokes) this.#strokes = strokes;
+  constructor(radius: number, blocks?: ContentBlock[]) {
+    if (blocks) this.#blocks = blocks;
 
     this.#eraserRadius = radius;
-  }
-
-  public setStrokes(strokes: StrokeBlock[]) {
-    this.#strokes = strokes;
   }
 
   public async getHitIndeces(point: SimplePoint) {
     const hitIndeces: number[] = [];
 
-    for (let i = 0; i < this.#strokes.length; i++) {
-      const stroke = this.#strokes[i];
+    for (let i = 0; i < this.#blocks.length; i++) {
+      const block: ContentBlock = this.#blocks[i];
+
+      const stroke: StrokeBlock = (block as any).stroke;
+      if (!stroke) continue;
 
       const strokeBuilder = StrokeBuilder.fromStroke(stroke);
-
       await strokeBuilder.finalizePath();
 
       const { points } = strokeBuilder;

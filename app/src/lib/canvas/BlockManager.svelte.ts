@@ -1,4 +1,4 @@
-import type { StrokeBlock } from "$lib/types/bindings/StrokeBlock";
+import type { ContentBlock } from "$lib/types/bindings/ContentBlock";
 import type {
   EraserSettings,
   PenSettings,
@@ -19,8 +19,8 @@ export const eraserDefaults: EraserSettings = {
   width: 15,
 };
 
-export class StrokeManager {
-  strokes = $state<StrokeBlock[]>([]);
+export class BlockManager {
+  blocks: ContentBlock[] = [];
 
   #toolSettings: ToolSettings = $state({
     type: "pen",
@@ -108,14 +108,14 @@ export class StrokeManager {
   }
 
   private async eraserInput(settings: EraserSettings, x: number, y: number) {
-    const eraser = new StrokeEraser(settings.width, this.strokes);
+    const eraser = new StrokeEraser(settings.width, this.blocks);
 
     if (settings.deleteStroke) {
       const indeces = await eraser.getHitIndeces({ x, y });
 
       indeces.forEach((i) => {
         this.#previewPaths.splice(i, 1);
-        this.strokes.splice(i, 1);
+        this.blocks.splice(i, 1);
       });
     } else {
       // TODO: Implement a geometrical eraser at some point
@@ -125,7 +125,7 @@ export class StrokeManager {
   public finishInput() {
     if (!this.#newStroke) return;
     if (this.#toolSettings.type === "pen") {
-      this.strokes.push(this.#newStroke.toStroke());
+      this.blocks.push({ stroke: this.#newStroke.toStroke() } as ContentBlock);
 
       this.#newStroke.finalizePath().then((v) => {
         this.#previewPaths.push({

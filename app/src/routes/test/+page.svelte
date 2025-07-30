@@ -1,47 +1,47 @@
 <script lang="ts">
-  import { StrokeManager } from "$lib/canvas/StrokeManager.svelte";
+  import { BlockManager } from "$lib/canvas/BlockManager.svelte";
 
-  let strokeManager = $state(new StrokeManager());
+  let blockManager = $state(new BlockManager());
 
   function handlePointerDown(e: PointerEvent) {
-    strokeManager.inputLocked = false;
-    strokeManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
+    blockManager.inputLocked = false;
+    blockManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
   }
   function handlePointerUp() {
-    strokeManager.inputLocked = true;
-    strokeManager.finishInput();
+    blockManager.inputLocked = true;
+    blockManager.finishInput();
   }
   function handlePointerMove(e: PointerEvent) {
     switch (e.buttons) {
       case 32:
-        strokeManager.changeTool("eraser");
+        blockManager.changeTool("eraser");
         break;
       case 2:
         // TODO: Barrel button -> selection
         break;
       default:
-        strokeManager.changeTool("pen");
+        blockManager.changeTool("pen");
         break;
     }
     if (e.pressure > 0)
-      strokeManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
+      blockManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
   }
 
   $effect(() => {
     document.addEventListener("keydown", (e) => {
       if (e.key === "c") {
-        strokeManager = new StrokeManager();
+        blockManager = new BlockManager();
       } else if (e.key === "e") {
-        strokeManager.changeTool("eraser");
+        blockManager.changeTool("eraser");
       } else if (e.key === "p") {
-        strokeManager.changeTool("pen");
+        blockManager.changeTool("pen");
       }
     });
   });
 </script>
 
 <div class="top-0 absolute z-50">
-  <p>Current Tool: {strokeManager.tool.type}</p>
+  <p>Current Tool: {blockManager.tool.type}</p>
 </div>
 
 <svg
@@ -65,11 +65,11 @@
   fill="none"
   class="select-none touch-none w-full h-full absolute top-0 cursor-crosshair"
 >
-  {#each strokeManager.previewPaths as segment}
+  {#each blockManager.previewPaths as segment}
     <path fill={segment.color} stroke="none" d={segment.path} />
   {/each}
 
-  {#each strokeManager.currentPreviewPaths as segment}
+  {#each blockManager.currentPreviewPaths as segment}
     <path d={segment.path} stroke={segment.color} fill={segment.color} />
   {/each}
 </svg>
