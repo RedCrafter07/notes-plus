@@ -13,5 +13,7 @@
   }
 </script>
 
-<Canvas {tool} />
-<Toolbar {tool} {updateTool} />
+<div class="w-full h-screen relative">
+  <Toolbar {tool} {updateTool} />
+  <Canvas {tool} />
+</div>

@@ -20,7 +20,7 @@
     $props();
 </script>
 
-<div class="right-4 h-full absolute pointer-events-none flex">
+<div class="right-4 h-full absolute pointer-events-none flex z-20">
   <div
     class="h-max p-2 rounded-xl bg-base-2 border-base-3 border shadow-2xl flex flex-col gap-2 my-auto pointer-events-auto relative"
   >
