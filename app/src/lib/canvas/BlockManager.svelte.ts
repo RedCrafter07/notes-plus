@@ -35,6 +35,10 @@ export class BlockManager {
 
   #pointThrottler = new InputThrottler();
 
+  constructor(blocks?: ContentBlock[]) {
+    if (blocks) this.blocks = blocks;
+  }
+
   public get inputLocked(): boolean {
     return this.#inputLocked;
   }
