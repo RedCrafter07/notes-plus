@@ -1,26 +1,44 @@
 <script lang="ts">
   import { eraserDefaults, penDefaults } from "$lib/canvas/BlockManager.svelte";
   import type { ToolSettings } from "$lib/types/canvas";
-  import { IconBallpen, IconEraser, IconPencil } from "@tabler/icons-svelte";
-  import type { Icon } from "@tabler/icons-svelte";
+  import {
+    IconEraser,
+    IconHandMove,
+    IconPencil,
+    IconSettings,
+  } from "@tabler/icons-svelte";
 
+  let toolIndex = $state(0);
+  let bgWidth = $state(0);
+  let iconOffset = $derived(toolIndex * (bgWidth + 8));
+
+  // TODO: Make tools use ToolStore, which will also work with user preferences to save tools across sessions
   let {
-    tool,
+    // tool,
     updateTool,
   }: { tool: ToolSettings; updateTool: (newTool: ToolSettings) => void } =
     $props();
 </script>
 
-<div class="bottom-4 w-full absolute mx-auto pointer-events-none">
+<div class="right-4 h-full absolute pointer-events-none flex">
   <div
-    class="w-max p-2 rounded-xl bg-base-2 border-base-3 border shadow-2xl flex flex-row gap-4 mx-auto pointer-events-auto"
+    class="h-max p-2 rounded-xl bg-base-2 border-base-3 border shadow-2xl flex flex-col gap-2 my-auto pointer-events-auto relative"
   >
+    <div
+      style="top: {iconOffset}px;"
+      class="left-0 absolute w-full aspect-square p-2 pointer-events-none transition-all"
+    >
+      <div
+        bind:clientWidth={bgWidth}
+        class="bg-content-3/20 w-full aspect-square rounded-xl"
+      ></div>
+    </div>
     <button
       class={[
         "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-content-3/10",
-        { "bg-content-3/20": tool.type === "pen" },
       ]}
       onclick={() => {
+        toolIndex = 0;
         updateTool({
           ...penDefaults,
         });
@@ -31,15 +49,34 @@
     <button
       class={[
         "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-content-3/10",
-        { "bg-content-3/20": tool.type === "eraser" },
       ]}
       onclick={() => {
+        toolIndex = 1;
         updateTool({
           ...eraserDefaults,
         });
       }}
     >
       <IconEraser />
+    </button>
+    <button
+      class={[
+        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-content-3/10",
+      ]}
+      onclick={() => {
+        toolIndex = 2;
+        // TODO: Implement this
+      }}
+    >
+      <IconHandMove />
+    </button>
+    <button
+      class={[
+        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-content-3/10",
+      ]}
+      onclick={() => {}}
+    >
+      <IconSettings />
     </button>
   </div>
 </div>
