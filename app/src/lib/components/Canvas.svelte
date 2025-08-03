@@ -1,17 +1,29 @@
 <script lang="ts">
   import { CanvasManager } from "$lib/canvas/CanvasManager.svelte";
   import { PageManager } from "$lib/canvas/PageManager.svelte";
+  import type { FileMeta } from "$lib/types/bindings/FileMeta";
   import type { ToolSettings } from "$lib/types/canvas";
+  import { invoke } from "@tauri-apps/api/core";
 
-  const { tool }: { tool: ToolSettings } = $props();
+  let {
+    tool,
+    canvasManager,
+    pageManager,
+  }: {
+    tool: ToolSettings;
+    canvasManager: CanvasManager;
+    pageManager: PageManager;
+  } = $props();
 
-  let canvasManager = $state(new CanvasManager());
-  let pageManager = $state(new PageManager());
+  // let canvasManager = $state(new CanvasManager());
+  // let pageManager = $state(new PageManager());
 
   let container = $state<HTMLDivElement>();
   canvasManager.setPage(pageManager.currentPage, pageManager.currentPageIndex);
 
   $effect(() => {
+    pageManager.currentPage;
+    pageManager.currentPageIndex;
     canvasManager.setPage(
       pageManager.currentPage,
       pageManager.currentPageIndex,

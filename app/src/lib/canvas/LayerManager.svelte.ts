@@ -8,7 +8,12 @@ export class LayerManager {
 
   constructor(layers?: ContentBlock[][]) {
     if (layers && layers.length > 0) {
-      this.#layers = layers.map((b) => new BlockManager(b));
+      this.#layers = layers.map((b) => {
+        const m = new BlockManager(b);
+        m.render();
+
+        return m;
+      });
     } else {
       // Always ensure at least one layer exists
       this.#layers = [new BlockManager()];

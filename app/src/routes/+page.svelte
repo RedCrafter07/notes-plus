@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { IconPlus, IconSettings } from "@tabler/icons-svelte";
+  import {
+    IconFileArrowLeft,
+    IconPlus,
+    IconSettings,
+  } from "@tabler/icons-svelte";
+  import { open } from "@tauri-apps/plugin-dialog";
+
+  import { goto } from "$app/navigation";
 
   let recentFiles = $state([]);
 
@@ -23,21 +30,37 @@
       <h1 class="text-3xl font-display">Welcome to RedNotes Plus!</h1>
       <h3 class="text-xl">What would you like to work on?</h3>
     </div>
-    <div class="grid grid-cols-2 w-full">
+    <div class="grid grid-cols-2 w-full gap-4">
       <a
         href="/edit"
-        class:col-span-2={recentFiles.length % 2 === 0}
-        class="rounded-xl bg-base-2 group text-content-3 active:scale-95 transition-all"
+        class="group rounded-xl bg-base-2 text-content-1 active:scale-95 transition-all border-content-1/50 border-2 hover:border-content-1 p-4"
       >
-        <div
-          class="m-4 border-dashed border-4 border-content-3 group-hover:border-content-3/80 p-4 rounded-2xl group-hover:rounded-3xl group-active:rounded-4xl flex transition-all"
-        >
-          <IconPlus
-            size={48}
-            class="mx-auto group-hover:opacity-80 transition-all group-active:scale-90"
-          />
-        </div>
+        <IconPlus
+          size={48}
+          class="mx-auto transition-all opacity-80 group-hover:opacity-100"
+        />
       </a>
+      <button
+        class="cursor-pointer group rounded-xl bg-base-2 text-content-1 active:scale-95 transition-all border-content-1/50 border-2 hover:border-content-1 p-4"
+        onclick={async () => {
+          const path = await open({
+            directory: false,
+            multiple: false,
+            filters: [{ name: "RedNotes Plus File", extensions: ["rnpf"] }],
+          });
+
+          if (!path) return;
+
+          const encodedPath = encodeURIComponent(path);
+
+          goto(`/edit?path=${encodedPath}`);
+        }}
+      >
+        <IconFileArrowLeft
+          size={48}
+          class="mx-auto transition-all opacity-80 group-hover:opacity-100"
+        />
+      </button>
     </div>
   </div>
 </main>

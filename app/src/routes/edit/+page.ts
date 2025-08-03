@@ -1,7 +1,6 @@
-import type { Note } from "$lib/types/bindings/Note";
-import { redirect } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { invoke } from "@tauri-apps/api/core";
+import type { FileMeta } from "$lib/types/bindings/FileMeta";
 
 export const load: PageLoad = async ({ url }) => {
   const param = url.searchParams.get("path");
@@ -12,9 +11,8 @@ export const load: PageLoad = async ({ url }) => {
 
   const pathString = decodeURIComponent(param);
 
-  const data = await invoke<Note>("load", { path: pathString });
+  const data = await invoke<string>("read", { path: pathString });
+  const file: FileMeta = JSON.parse(data);
 
-  console.log(data);
-
-  return data;
+  return { file };
 };

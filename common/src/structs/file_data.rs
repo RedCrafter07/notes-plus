@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -28,8 +27,8 @@ pub struct Metadata {
     pub title: String,
 
     // Date stuff
-    pub created_at: DateTime<Utc>,
-    pub last_modified: DateTime<Utc>,
+    pub created_at: String,
+    pub last_modified: String,
 
     // TODO: Make this actually useful
     pub tags: Vec<String>,
@@ -55,14 +54,14 @@ pub struct Page {
     style: PageStyle,
     background_color: String,
     style_color: String,
-    page_size: (u8, u8),
+    page_size: (f64, f64),
     page_type: PageType,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct LastState {
-    pub position: (f32, f32),
+    pub position: (f64, f64),
     pub zoom: u16,
     pub last_layer: u8,
     pub last_page: u8,
@@ -71,7 +70,7 @@ pub struct LastState {
 impl Default for LastState {
     fn default() -> Self {
         LastState {
-            position: (0_f32, 0_f32),
+            position: (0_f64, 0_f64),
             zoom: 100,
             last_layer: 0,
             last_page: 0,

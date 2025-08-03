@@ -4,6 +4,7 @@
     "": {
       "name": "rednotes-plus",
       "dependencies": {
+        "@msgpack/msgpack": "^3.1.2",
         "@tauri-apps/api": "^2.7.0",
         "@tauri-apps/plugin-global-shortcut": "~2.3.0",
         "@tauri-apps/plugin-opener": "^2.4.0",
@@ -12,7 +13,7 @@
         "@fontsource-variable/funnel-display": "^5.2.6",
         "@fontsource-variable/funnel-sans": "^5.2.6",
         "@sveltejs/adapter-static": "^3.0.8",
-        "@sveltejs/kit": "^2.27.0",
+        "@sveltejs/kit": "^2.27.1",
         "@sveltejs/vite-plugin-svelte": "^6.1.0",
         "@tabler/icons-svelte": "^3.34.1",
         "@tailwindcss/vite": "^4.1.11",
@@ -93,6 +94,8 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.4", "", {}, "sha512-VT2+G1VQs/9oz078bLrYbecdZKs912zQlkelYpuf+SXF+QvZDYJlbx/LSx+meSAwdDFnF8FVXW92AVjjkVmgFw=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.29", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-uw6guiW/gcAGPDhLmd77/6lW8QLeiV5RUTsAX46Db6oLhGaVj4lhnPwb184s1bkc8kdVg/+h988dro8GRDpmYQ=="],
+
+    "@msgpack/msgpack": ["@msgpack/msgpack@3.1.2", "", {}, "sha512-JEW4DEtBzfe8HvUYecLU9e6+XJnKDlUAIve8FvPzF3Kzs6Xo/KuZkZJsDH0wJXl/qEZbeeE7edxDNY3kMs39hQ=="],
 
     "@polka/url": ["@polka/url@1.0.0-next.29", "", {}, "sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww=="],
 

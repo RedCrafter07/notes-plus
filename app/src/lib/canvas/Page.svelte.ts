@@ -12,7 +12,7 @@ export class Page {
 
   layerManager: LayerManager = $state(new LayerManager());
 
-  backgroundColor = $state("#fffff");
+  backgroundColor = $state("#ffffff");
   pageSize: { width: number; height: number } = $state(Page.PAGE_SIZES.A4);
   pageType: "infinite" | "fixed" = $state("fixed");
 
@@ -38,6 +38,20 @@ export class Page {
   public setPredefinedPageSize(preset: keyof typeof Page.PAGE_SIZES) {
     const pageSize = Page.PAGE_SIZES[preset];
     this.pageSize = pageSize;
+  }
+
+  public export(): PageData {
+    const { width, height } = this.pageSize;
+    const data: PageData = {
+      layers: this.layerManager.export(),
+      backgroundColor: this.backgroundColor,
+      pageSize: [width, height],
+      pageType: this.pageType === "infinite" ? "Infinite" : "Fixed",
+      style: "Dots",
+      styleColor: "#cccccc",
+    };
+
+    return data;
   }
 
   public get allSVGs() {

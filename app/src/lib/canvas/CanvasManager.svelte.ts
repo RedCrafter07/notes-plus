@@ -96,7 +96,17 @@ export class CanvasManager {
     this.#position.y += y;
   }
 
-  public import(lastState: LastState) {}
+  public import(lastState: LastState) {
+    const {
+      lastPage,
+      position: [x, y],
+      zoom,
+    } = lastState;
+
+    this.#zoom = zoom;
+    this.#position = { x, y };
+    this.#pageIndex = lastPage;
+  }
 
   public export(): LastState | null {
     if (!this.#page) return null;

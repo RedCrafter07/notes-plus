@@ -1,4 +1,5 @@
 import type { ContentBlock } from "$lib/types/bindings/ContentBlock";
+import type { StrokeBlock } from "$lib/types/bindings/StrokeBlock";
 import type {
   EraserSettings,
   PenSettings,
@@ -36,7 +37,10 @@ export class BlockManager {
   #pointThrottler = new InputThrottler();
 
   constructor(blocks?: ContentBlock[]) {
-    if (blocks) this.blocks = blocks;
+    if (blocks) {
+      this.blocks = blocks;
+      this.finishInput();
+    }
   }
 
   public get inputLocked(): boolean {
@@ -86,6 +90,24 @@ export class BlockManager {
         this.eraserInput(currentTool, x, y);
         break;
     }
+  }
+
+  public render() {
+    this.blocks.forEach((b) => {
+      if (Object.keys(b).includes("stroke")) {
+        const stroke: StrokeBlock = (b as any)["stroke"];
+
+        const builder = new StrokeBuilder(stroke.width, stroke.color);
+        builder.points = stroke.points;
+
+        builder.finalizePath().then(() => {
+          this.#previewPaths.push({
+            path: builder.optimizedPath!,
+            color: stroke.color,
+          });
+        });
+      }
+    });
   }
 
   private penInput(

@@ -5,11 +5,12 @@ import type { Page as PageData } from "$lib/types/bindings/Page";
 import type { LastState } from "$lib/types/bindings/LastState";
 import type { ToolSettings } from "$lib/types/canvas";
 import { BlockManager, penDefaults } from "./BlockManager.svelte";
+import type { CanvasManager } from "./CanvasManager.svelte";
 
 export class PageManager {
   #meta: Metadata = $state({
-    createdAt: Date.now().toString(),
-    lastModified: Date.now().toString(),
+    createdAt: `${Date.now()}`,
+    lastModified: `${Date.now()}`,
     tags: [],
     title: "New Note",
     id: crypto.randomUUID(),
@@ -46,12 +47,17 @@ export class PageManager {
     this.currentPage.layerManager.finishInput();
   }
 
-  public import(data: Note) {
+  public import(data: Note, canvasManager?: CanvasManager) {
     const { lastState, metadata, pages } = data;
 
     this.#pages = pages.map((p) => new Page(p));
     this.#meta = metadata;
     this.#state = lastState;
+
+    if (canvasManager) {
+      canvasManager.import(lastState);
+      canvasManager.setPage(this.currentPage, this.currentPageIndex);
+    }
   }
 
   public get currentPage() {
@@ -82,5 +88,15 @@ export class PageManager {
     } as ToolSettings;
 
     this.currentPage.layerManager.changeTool(tool, toolSettings);
+  }
+
+  public export(canvasState: LastState): Note {
+    const data: Note = {
+      lastState: canvasState,
+      metadata: this.#meta,
+      pages: this.#pages.map((p) => p.export()),
+    };
+
+    return data;
   }
 }
