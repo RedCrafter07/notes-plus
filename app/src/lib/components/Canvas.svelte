@@ -1,12 +1,22 @@
 <script lang="ts">
   import { CanvasManager } from "$lib/canvas/CanvasManager.svelte";
+  import { PageManager } from "$lib/canvas/PageManager.svelte";
   import type { ToolSettings } from "$lib/types/canvas";
 
   const { tool }: { tool: ToolSettings } = $props();
 
   let canvasManager = $state(new CanvasManager());
+  let pageManager = $state(new PageManager());
 
   let container = $state<HTMLDivElement>();
+  canvasManager.setPage(pageManager.currentPage, pageManager.currentPageIndex);
+
+  $effect(() => {
+    canvasManager.setPage(
+      pageManager.currentPage,
+      pageManager.currentPageIndex,
+    );
+  });
 
   $effect(() => {
     if (container) {
@@ -25,7 +35,7 @@
 
   $effect(() => {
     const { type, ...settings } = tool;
-    canvasManager.layerManager.changeTool(type as any, settings);
+    pageManager.changeTool(type as any, settings);
   });
 
   function handleWheel(e: WheelEvent) {
@@ -40,16 +50,19 @@
   }
 
   function handlePointerDown(e: PointerEvent) {
-    canvasManager.layerManager.inputLocked = false;
-    canvasManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
+    pageManager.unlockInput();
+    const { x, y } = canvasManager.getSvgCoordinates(e.clientX, e.clientY)!;
+    pageManager.input(x, y, e.pressure ?? 0.5);
   }
   function handlePointerUp() {
-    canvasManager.layerManager.inputLocked = true;
-    canvasManager.finishInput();
+    pageManager.lockInput();
+    pageManager.finishInput();
   }
   function handlePointerMove(e: PointerEvent) {
-    if (e.pressure > 0)
-      canvasManager.input(e.clientX, e.clientY, e.pressure ?? 0.5);
+    if (e.pressure > 0) {
+      const { x, y } = canvasManager.getSvgCoordinates(e.clientX, e.clientY)!;
+      pageManager.input(x, y, e.pressure ?? 0.5);
+    }
   }
 </script>
 
@@ -76,20 +89,20 @@
         y={pageBounds.top}
         width={pageBounds.width}
         height={pageBounds.height}
-        fill="#fff"
+        fill={canvasManager.backgroundColor}
       />
     {/if}
   </svg>
-  {#each canvasManager.layerManager.svgLayers as layer, i (`layer ${i}`)}
+  {#each pageManager.currentPage.allSVGs as layer, i (`layer ${i}`)}
     {@const viewBox = canvasManager.viewBoxString}
     <svg {viewBox} class="absolute top-0 left-0 w-full h-full">
       {#each layer as segment}
         <path fill={segment.color} stroke="none" d={segment.path} />
       {/each}
 
-      {#if i === canvasManager.layerManager.selectedLayerIndex}
+      {#if i === pageManager.currentPage.layerManager.selectedLayerIndex}
         <g class="preview-layer">
-          {#each canvasManager.layerManager.strokePreview as segment}
+          {#each pageManager.currentPage.layerManager.strokePreview as segment}
             <path d={segment.path} fill={segment.color} stroke="none" />
           {/each}
         </g>

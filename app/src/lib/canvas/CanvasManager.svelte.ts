@@ -1,27 +1,9 @@
-import type { Metadata } from "$lib/types/bindings/Metadata";
-import type { Note } from "$lib/types/bindings/Note";
+import type { LastState } from "$lib/types/bindings/LastState";
 import type { SimplePoint } from "$lib/types/canvas";
 import { LayerManager } from "./LayerManager.svelte";
+import { Page } from "./Page.svelte";
 
 export class CanvasManager {
-  private static readonly PAGE_SIZES = {
-    A4: { width: 595.28, height: 841.89 }, // 210mm x 297mm
-    Letter: { width: 612, height: 792 }, // 8.5" x 11"
-    Legal: { width: 612, height: 1008 }, // 8.5" x 14"
-    A3: { width: 841.89, height: 1190.55 }, // 297mm x 420mm
-    A5: { width: 419.53, height: 595.28 }, // 148mm x 210mm
-  } as const;
-
-  layerManager = new LayerManager(); // Layers handled by LayerManager
-
-  #meta: Metadata = $state({
-    createdAt: Date.now().toString(),
-    lastModified: Date.now().toString(),
-    tags: [],
-    title: "New Note",
-    id: crypto.randomUUID(),
-  });
-
   #position: SimplePoint = $state({ x: 0, y: 0 });
   #zoom: number = $state(100); // Percentage; 100 is the default
   #viewport: { width: number; height: number } = $state({
@@ -29,12 +11,12 @@ export class CanvasManager {
     height: 0,
   });
 
-  #canvasMode: "fixed" | "infinite" = $state("fixed");
-  #pageSize = $state(CanvasManager.PAGE_SIZES.A4);
+  backgroundColor = $state("#ffffff");
+  #page = $state<Page>();
+  #pageIndex: number = $state(0);
 
-  constructor(data?: Note, viewport?: { width: number; height: number }) {
+  constructor(viewport?: { width: number; height: number }) {
     if (viewport) this.#viewport = viewport;
-    if (data) this.import(data);
   }
 
   public screenToSvg(screen: SimplePoint): SimplePoint {
@@ -78,18 +60,14 @@ export class CanvasManager {
     return absolute;
   }
 
-  public input(x: number, y: number, pressure: number) {
-    const pageCoordinates = this.screenToSvg({ x, y });
-
-    if (this.isInPage(pageCoordinates))
-      this.layerManager.input(pageCoordinates.x, pageCoordinates.y, pressure);
-  }
-  public finishInput() {
-    this.layerManager.finishInput();
+  public getSvgCoordinates(x: number, y: number) {
+    const coords = this.screenToSvg({ x, y });
+    if (this.isInPage(coords)) return coords;
+    else return null;
   }
 
   private isInPage(point: SimplePoint) {
-    if (this.#canvasMode === "infinite") return true;
+    if (this.#page?.pageType === "infinite") return true;
 
     const bounds = this.pageBounds!;
 
@@ -118,45 +96,44 @@ export class CanvasManager {
     this.#position.y += y;
   }
 
-  public import(data: Note) {
-    const { layers, metadata, lastState } = data;
+  public import(lastState: LastState) {}
 
-    this.#meta = metadata;
-    this.layerManager.import(layers, lastState.lastLayer);
+  public export(): LastState | null {
+    if (!this.#page) return null;
+
+    return {
+      lastLayer: this.#page?.layerManager.selectedLayerIndex,
+      lastPage: this.#pageIndex,
+      position: [this.#position.x, this.#position.y],
+      zoom: this.#zoom,
+    };
   }
 
-  public export(): Note {
-    return {
-      layers: this.layerManager.export(),
-      lastState: {
-        position: [0, 0],
-        zoom: 100,
-        lastLayer: this.layerManager.selectedLayerIndex,
-      },
-      metadata: this.#meta,
-    };
+  public setPage(page: Page, pageIndex: number) {
+    this.#page = page;
+    this.#pageIndex = pageIndex;
   }
 
   public setViewport(width: number, height: number) {
     this.#viewport = { width, height };
   }
 
-  public get title() {
-    return this.#meta.title;
-  }
   public get pageBounds() {
-    if (this.#canvasMode === "infinite") return null; // duh
+    if (!this.#page) return null;
+    if (this.#page.pageType === "infinite") return null; // duh
 
-    const halfWidth = this.#pageSize.width / 2;
-    const halfHeight = this.#pageSize.height / 2;
+    const pageSize = this.#page?.pageSize;
+
+    const halfWidth = pageSize.width / 2;
+    const halfHeight = pageSize.height / 2;
 
     return {
       left: -halfWidth,
       right: halfWidth,
       top: -halfHeight,
       bottom: halfHeight,
-      width: this.#pageSize.width,
-      height: this.#pageSize.height,
+      width: pageSize.width,
+      height: pageSize.height,
     };
   }
 

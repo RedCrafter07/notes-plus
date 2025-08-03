@@ -20,6 +20,8 @@ export class LayerManager {
   public import(layers: ContentBlock[][], lastLayer: number) {
     this.#layers = layers.map((b) => new BlockManager(b));
     this.#selectedLayerIndex = lastLayer;
+
+    return this;
   }
   public export(): ContentBlock[][] {
     return this.#layers.map((l) => l.blocks);
