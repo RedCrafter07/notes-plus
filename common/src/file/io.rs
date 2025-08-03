@@ -15,6 +15,7 @@ pub enum ReadError {
     DecodeError(rmp_serde::decode::Error),
     ConversionError(std::string::FromUtf8Error),
     HeaderError,
+    CorruptedFile,
 }
 
 impl From<std::io::Error> for ReadError {
@@ -35,7 +36,7 @@ impl From<std::string::FromUtf8Error> for ReadError {
     }
 }
 
-pub fn read(path: &str, attachment_dir: &str) -> Result<(), ReadError> {
+pub fn read(path: &str, attachment_dir: &str) -> Result<FileMeta, ReadError> {
     let file = File::options().read(true).open(path)?;
 
     let mut decoder = GzDecoder::new(file);
@@ -49,8 +50,7 @@ pub fn read(path: &str, attachment_dir: &str) -> Result<(), ReadError> {
 
     let mut version = [0_u8; 2];
     decoder.read_exact(&mut version)?;
-    let version_string = format!("{}.{}", version[0], version[1]);
-    println!("{version_string}");
+    // let version_string = format!("{}.{}", version[0], version[1]);
 
     let mut meta_len = [0_u8; 4];
     decoder.read_exact(&mut meta_len)?;
@@ -60,6 +60,11 @@ pub fn read(path: &str, attachment_dir: &str) -> Result<(), ReadError> {
     decoder.read_exact(&mut meta)?;
     let meta = rmp_serde::from_slice::<FileMeta>(&meta)?;
 
+    // Loop over every attachment found
+    // Every attachment consists of the following:
+    // <name_length> <name> <data_length> <data>
+    // This loop checks for all the attachments found and loops over them until no further
+    // attachment is found.
     loop {
         let mut id_length_bytes = [0_u8; 4];
         let id_length = match decoder.read_exact(&mut id_length_bytes) {
@@ -69,8 +74,6 @@ pub fn read(path: &str, attachment_dir: &str) -> Result<(), ReadError> {
             Ok(_) => u32::from_le_bytes(id_length_bytes),
         };
 
-        println!("ID Length: {id_length}");
-
         let mut id = vec![0_u8; id_length as usize];
         decoder.read_exact(&mut id)?;
 
@@ -78,10 +81,8 @@ pub fn read(path: &str, attachment_dir: &str) -> Result<(), ReadError> {
 
         let filename = meta.attachments.get(&id);
 
-        println!("Filename: {filename:?}");
-
         if filename.is_none() {
-            break;
+            return Err(ReadError::CorruptedFile);
         }
 
         let mut attachment_length = [0_u8; 4];
@@ -91,6 +92,7 @@ pub fn read(path: &str, attachment_dir: &str) -> Result<(), ReadError> {
         let mut attachment = vec![0_u8; attachment_length as usize];
         decoder.read_exact(&mut attachment)?;
 
+        // Write attachment to file in output directory
         let file_path = Path::new(attachment_dir).join(filename.unwrap());
 
         let mut file = File::options()
@@ -102,7 +104,7 @@ pub fn read(path: &str, attachment_dir: &str) -> Result<(), ReadError> {
         file.write_all(&attachment)?;
     }
 
-    Ok(())
+    Ok(meta)
 }
 
 pub fn write(
