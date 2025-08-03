@@ -15,9 +15,9 @@ export class StrokeBuilder {
   #previewDirty: boolean = true;
   #cachedPreviewPaths: string[] = [];
 
-  color: string = $state<string>("#ffffff");
+  color: string = $state<string>("#000000");
 
-  constructor(width: number = 5, color: string = "#ffffff") {
+  constructor(width: number = 5, color: string = "#000000") {
     this.#outlineBuilder.width = width;
     this.color = color;
   }
