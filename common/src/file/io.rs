@@ -105,7 +105,7 @@ pub fn read(path: &str, attachment_dir: &str) -> Result<(), ReadError> {
     Ok(())
 }
 
-pub fn save(
+pub fn write(
     path: &str,
     note: Note,
     attachment_input: Vec<(String, String)>, // path/id
