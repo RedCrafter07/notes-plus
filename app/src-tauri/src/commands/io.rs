@@ -2,13 +2,11 @@ use common::structs::file_data::Note;
 
 use common::file::io;
 
-use crate::get_prefs;
-
 #[tauri::command]
 pub fn read(path: &str) -> String {
-    let workdir = get_prefs().read().workdir.to_string();
-
-    let meta = io::read(path, &workdir).unwrap();
+    // TODO: Get prefs from state manager - just a temporary solution as attachments are not
+    // supported yet.
+    let meta = io::read(path, "").unwrap();
 
     serde_json::ser::to_string(&meta).unwrap()
 }
