@@ -23,6 +23,8 @@
     e.preventDefault();
     await invoke("quit");
   }
+
+  invoke("view_window");
 </script>
 
 <div class="w-full min-h-screen text-content-1 bg-base-1">
