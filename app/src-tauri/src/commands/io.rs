@@ -16,6 +16,12 @@ pub fn read(path: &str) -> String {
 #[tauri::command]
 pub fn write(path: String, note: String) {
     let note_data = serde_json::de::from_str::<Note>(&note).unwrap();
+    let mut path = path;
 
+    if !path.ends_with(".rnpf") {
+        path = format!("{path}.rnpf");
+    }
+
+    // TODO: Make attachments work
     io::write(&path, note_data, vec![]).unwrap();
 }
