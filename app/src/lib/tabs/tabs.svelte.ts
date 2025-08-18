@@ -17,14 +17,25 @@ class TabManager {
 
   #currentTab = $state(-1);
 
-  public async loadFile(path: string, newTab: boolean = true) {
+  public async loadFile(
+    path: string,
+    newTab: boolean = true,
+    go: boolean = true,
+  ) {
     const data: FileMeta = JSON.parse(await invoke("read", { path }));
 
     if (newTab) {
-      this.addTab({
-        data: data.note,
-        path,
-      });
+      this.addTab(
+        {
+          data: data.note,
+          path,
+        },
+        go,
+      );
+
+      if (go) {
+        goto("/edit");
+      }
     }
 
     return data;
@@ -54,6 +65,8 @@ class TabManager {
     } else {
       const { data, path } = file;
       id = data.metadata.id;
+
+      if (this.#tabs.findIndex((t) => t.id === id) >= 0) return;
 
       this.#tabs.push({
         id,
@@ -125,6 +138,12 @@ class TabManager {
   }
 
   public get currentTab(): Tab {
+    if (this.#currentTab === -1) {
+      const tab: Tab = { id: "", openedAt: 0, path: "", saved: true };
+      goto("/");
+      return tab;
+    }
+
     return this.tabs[this.#currentTab];
   }
 

@@ -8,16 +8,37 @@
   import { fade, fly } from "svelte/transition";
   import { expoOut } from "svelte/easing";
   import Tabs from "$lib/components/Tabs.svelte";
+  import { listen } from "@tauri-apps/api/event";
+  import { tabManager } from "$lib/tabs/tabs.svelte";
 
   const { children } = $props();
 
   $effect(() => {
     document.addEventListener("keydown", handleQuit);
 
+    document.addEventListener("focus", handleInitialFocus);
+
+    (async () => {
+      await listen<string>("open-tab", async (event) => {
+        console.log("Welcome!");
+        console.log("Requested tab opening: ", event.payload);
+        await tabManager.loadFile(event.payload, true);
+      });
+      const tabToOpen: string | null = await invoke("view_window");
+
+      if (tabToOpen) {
+        await tabManager.loadFile(tabToOpen, true, true);
+      }
+    })();
+
     return () => {
       document.removeEventListener("keydown", handleQuit);
     };
   });
+
+  async function handleInitialFocus() {
+    document.removeEventListener("focus", handleInitialFocus);
+  }
 
   async function handleQuit(e: KeyboardEvent) {
     if (!e.ctrlKey) return;
@@ -26,8 +47,6 @@
     e.preventDefault();
     await invoke("quit");
   }
-
-  invoke("view_window");
 </script>
 
 <div
