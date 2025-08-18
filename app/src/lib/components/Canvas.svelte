@@ -1,9 +1,8 @@
 <script lang="ts">
   import { CanvasManager } from "$lib/canvas/CanvasManager.svelte";
   import { PageManager } from "$lib/canvas/PageManager.svelte";
-  import type { FileMeta } from "$lib/types/bindings/FileMeta";
+  import { tabManager } from "$lib/tabs/tabs.svelte";
   import type { ToolSettings } from "$lib/types/canvas";
-  import { invoke } from "@tauri-apps/api/core";
 
   let {
     tool,
@@ -19,22 +18,26 @@
   // let pageManager = $state(new PageManager());
 
   let container = $state<HTMLDivElement>();
-  canvasManager.setPage(pageManager.currentPage, pageManager.currentPageIndex);
-
-  $effect(() => {
-    pageManager.currentPage;
-    pageManager.currentPageIndex;
-    canvasManager.setPage(
-      pageManager.currentPage,
-      pageManager.currentPageIndex,
-    );
-  });
+  // canvasManager.setPage(pageManager.currentPage, pageManager.currentPageIndex);
+  //
+  // $effect(() => {
+  //   pageManager.currentPage;
+  //   pageManager.currentPageIndex;
+  //   canvasManager.setPage(
+  //     pageManager.currentPage,
+  //     pageManager.currentPageIndex,
+  //   );
+  // });
 
   $effect(() => {
     if (container) {
+      const { width, height, top } = container.getBoundingClientRect();
+      tabManager.setViewport(width, height, top);
       const resizeObserver = new ResizeObserver(([container]) => {
         const { width, height } = container.contentRect;
-        canvasManager.setViewport(width, height);
+
+        const { top } = container.target.getBoundingClientRect();
+        tabManager.setViewport(width, height, top);
       });
 
       resizeObserver.observe(container);

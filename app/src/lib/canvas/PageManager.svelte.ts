@@ -60,6 +60,10 @@ export class PageManager {
     }
   }
 
+  public get meta() {
+    return this.#meta;
+  }
+
   public get currentPage() {
     return this.#pages[this.#state.lastPage];
   }

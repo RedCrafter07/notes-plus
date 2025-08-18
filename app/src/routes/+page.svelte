@@ -5,8 +5,8 @@
     IconSettings,
   } from "@tabler/icons-svelte";
   import { open } from "@tauri-apps/plugin-dialog";
-
   import { goto } from "$app/navigation";
+  import { tabManager } from "$lib/tabs/tabs.svelte";
 
   let recentFiles = $state([]);
 
@@ -34,6 +34,13 @@
       <a
         href="/edit"
         class="group rounded-xl bg-base-2 text-content-1 active:scale-95 transition-all border-content-1/50 border-2 hover:border-content-1 p-4"
+        onclick={(e) => {
+          e.preventDefault();
+
+          tabManager.addTab("new", true);
+
+          goto(e.currentTarget.href);
+        }}
       >
         <IconPlus
           size={48}
@@ -51,9 +58,7 @@
 
           if (!path) return;
 
-          const encodedPath = encodeURIComponent(path);
-
-          goto(`/edit?path=${encodedPath}`);
+          await tabManager.loadFile(path, true);
         }}
       >
         <IconFileArrowLeft

@@ -14,6 +14,7 @@ export class CanvasManager {
   backgroundColor = $state("#ffffff");
   #page = $state<Page>();
   #pageIndex: number = $state(0);
+  #offset: number = $state(0);
 
   constructor(viewport?: { width: number; height: number }) {
     if (viewport) this.#viewport = viewport;
@@ -22,7 +23,7 @@ export class CanvasManager {
   public screenToSvg(screen: SimplePoint): SimplePoint {
     const relative: SimplePoint = {
       x: screen.x - this.#viewport.width / 2,
-      y: screen.y - this.#viewport.height / 2,
+      y: screen.y - this.#offset - this.#viewport.height / 2,
     };
 
     const zoomFactor = this.#zoom / 100;
@@ -126,6 +127,10 @@ export class CanvasManager {
 
   public setViewport(width: number, height: number) {
     this.#viewport = { width, height };
+  }
+
+  public setOffset(offset: number) {
+    this.#offset = offset;
   }
 
   public get pageBounds() {
