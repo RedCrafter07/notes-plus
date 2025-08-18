@@ -10,12 +10,14 @@
   let nav = $state<HTMLDivElement>();
 
   $effect(() => {
-    tabManager.tabs.length > 0;
-    setTimeout(() => {
-      const { height } = nav!.getBoundingClientRect();
+    if (tabManager.tabs.length > 0) {
+      setTimeout(() => {
+        const { height } = nav!.getBoundingClientRect();
 
-      tabManager.currentPage.canvas.setOffset(height);
-    }, 110);
+        if (tabManager.currentPage)
+          tabManager.currentPage.canvas.setOffset(height);
+      }, 110);
+    }
   });
 </script>
 
