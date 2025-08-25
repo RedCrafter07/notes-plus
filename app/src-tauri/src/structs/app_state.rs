@@ -32,4 +32,8 @@ impl AppState {
 
         AppState::default()
     }
+
+    pub fn clear_files(&mut self) {
+        self.file_to_open = None;
+    }
 }

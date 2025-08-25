@@ -32,10 +32,6 @@ class TabManager {
         },
         go,
       );
-
-      if (go) {
-        goto("/edit");
-      }
     }
 
     return data;
@@ -85,6 +81,10 @@ class TabManager {
 
     if (go) this.#currentTab = this.#tabs.length - 1;
     else if (this.#currentTab < 0) this.#currentTab = 0;
+
+    if (go) {
+      goto("/edit");
+    }
   }
 
   public tabInfo(id: string) {

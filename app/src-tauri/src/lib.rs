@@ -1,5 +1,7 @@
+use std::sync::Mutex;
+
 use structs::app_state::AppState;
-use tauri::{Emitter, Manager};
+use tauri::Emitter;
 
 mod commands;
 mod structs;
@@ -25,11 +27,15 @@ pub fn run() {
 
     // App specific stuff
     builder = builder
-        .manage(AppState::new())
+        .manage(Mutex::new(AppState::new()))
         .invoke_handler(tauri::generate_handler![quit, read, view_window, write])
-        .setup(|app| {
+        .setup(|_app| {
             #[cfg(debug_assertions)]
             {
+                use tauri::Manager;
+
+                let app = _app;
+
                 if std::env::var("RNP_TESTING").is_ok() {
                     let window = app.get_webview_window("main").unwrap();
                     window.eval("window.location.replace('/test')").unwrap();

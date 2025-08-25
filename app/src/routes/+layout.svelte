@@ -22,7 +22,7 @@
       await listen<string>("open-tab", async (event) => {
         console.log("Welcome!");
         console.log("Requested tab opening: ", event.payload);
-        await tabManager.loadFile(event.payload, true);
+        await tabManager.loadFile(event.payload, true, true);
       });
       const tabToOpen: string | null = await invoke("view_window");
 
