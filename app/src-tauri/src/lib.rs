@@ -1,12 +1,14 @@
 use std::sync::Mutex;
 
 use structs::app_state::AppState;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 mod commands;
 mod structs;
 
 use crate::commands::*;
+
+pub type State = Mutex<AppState>;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -28,19 +30,29 @@ pub fn run() {
     // App specific stuff
     builder = builder
         .manage(Mutex::new(AppState::new()))
-        .invoke_handler(tauri::generate_handler![quit, read, view_window, write])
-        .setup(|_app| {
+        .invoke_handler(tauri::generate_handler![
+            get_prefs,
+            quit,
+            read,
+            set_prefs,
+            view_window,
+            write
+        ])
+        .setup(|app| {
             #[cfg(debug_assertions)]
             {
                 use tauri::Manager;
-
-                let app = _app;
 
                 if std::env::var("RNP_TESTING").is_ok() {
                     let window = app.get_webview_window("main").unwrap();
                     window.eval("window.location.replace('/test')").unwrap();
                 }
             }
+
+            let state = app.state::<State>();
+            let state = state.lock().unwrap();
+
+            state.user_prefs.create_dirs();
 
             Ok(())
         });

@@ -1,8 +1,9 @@
 use std::{fs, io::Write};
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, TS)]
 pub struct UserPrefs {
     version: u8,
     pub default_document_dir: String,
@@ -20,6 +21,14 @@ impl UserPrefs {
         let prefs = rmp_serde::from_slice::<UserPrefs>(&file_data)?;
 
         Ok(prefs)
+    }
+    pub fn create_dirs(&self) {
+        // Check if dirs exist
+        let dirs: [&str; 2] = [&self.default_document_dir, &self.workdir];
+
+        dirs.iter().for_each(|path| {
+            let _ = fs::create_dir_all(path);
+        });
     }
     pub fn to_file(&self, path: &str) -> Result<(), PrefWriteError> {
         let mut file = fs::File::options()

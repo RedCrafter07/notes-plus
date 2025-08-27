@@ -7,23 +7,35 @@
   import { open } from "@tauri-apps/plugin-dialog";
   import { goto } from "$app/navigation";
   import { tabManager } from "$lib/tabs/tabs.svelte";
+  import Prefs from "$lib/components/Prefs.svelte";
 
+  let prefsOpen = $state(false);
+
+  // TODO: Display recently opened files
   let recentFiles = $state([]);
 
   async function getRecentFiles() {}
+
+  function closePrefs() {
+    prefsOpen = false;
+  }
 </script>
 
+<Prefs visible={prefsOpen} closeCb={closePrefs} />
 <main class="w-full flex-col gap-4 select-none">
   <div class="bg-base-2 w-full py-2 px-4 items-center flex flex-row gap-2">
     <div class="text-xl font-display font-black">RedNotes Plus</div>
-    <div
+    <button
       class="ml-auto p-2 rounded-xl bg-base-3 aspect-square active:scale-90 active:opacity-90 transition-all group"
+      onclick={() => {
+        prefsOpen = true;
+      }}
     >
       <IconSettings
         size={24}
         class="group-hover:opacity-100 opacity-90 transition-opacity"
       />
-    </div>
+    </button>
   </div>
   <div class="container mx-auto p-2 flex flex-col lg:gap-4 gap-2">
     <div>
