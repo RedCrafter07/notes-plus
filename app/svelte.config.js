@@ -10,6 +10,9 @@ const config = {
   kit: {
     adapter: adapter(),
   },
+  compilerOptions: {
+    hmr: true,
+  },
 };
 
 export default config;
