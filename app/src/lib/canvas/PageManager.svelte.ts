@@ -64,6 +64,10 @@ export class PageManager {
     return this.#meta;
   }
 
+  public set meta(newMeta: Metadata) {
+    this.#meta = newMeta;
+  }
+
   public get currentPage() {
     return this.#pages[this.#state.lastPage];
   }
