@@ -21,6 +21,8 @@ body {
   --color-content-2: var(--content-2);
   --color-content-3: var(--content-3);
 
+  --color-overlay: var(--overlay);
+
   /* Semantic/status colors */
   --color-info: var(--info);
   --color-info-content: var(--info-content);
@@ -30,4 +32,7 @@ body {
   --color-warning-content: var(--warning-content);
   --color-destructive: var(--destructive);
   --color-destructive-content: var(--destructive-content);
+
+  --color-cursor: var(--cursor);
+  --color-selection: var(--selection);
 }

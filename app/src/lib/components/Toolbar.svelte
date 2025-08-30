@@ -30,12 +30,12 @@
     >
       <div
         bind:clientWidth={bgWidth}
-        class="bg-content-3/20 w-full aspect-square rounded-xl"
+        class="bg-overlay/20 w-full aspect-square rounded-xl"
       ></div>
     </div>
     <button
       class={[
-        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-content-3/10",
+        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-overlay/20",
       ]}
       onclick={() => {
         toolIndex = 0;
@@ -48,7 +48,7 @@
     </button>
     <button
       class={[
-        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-content-3/10",
+        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-overlay/20",
       ]}
       onclick={() => {
         toolIndex = 1;
@@ -61,7 +61,7 @@
     </button>
     <button
       class={[
-        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-content-3/10",
+        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-overlay/20",
       ]}
       onclick={() => {
         toolIndex = 2;
@@ -72,7 +72,7 @@
     </button>
     <button
       class={[
-        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-content-3/10",
+        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-overlay/20",
       ]}
       onclick={() => {}}
     >

@@ -29,7 +29,7 @@
 
 <Prefs visible={prefsOpen} closeCb={closePrefs} />
 <NewNote visible={newNoteOpen} closeCb={closeNewNote} />
-<main class="w-full flex-col gap-4 select-none">
+<main class="w-full flex-col gap-4">
   <div class="bg-base-2 w-full py-2 px-4 items-center flex flex-row gap-2">
     <div class="text-xl font-display font-black">RedNotes Plus</div>
     <button

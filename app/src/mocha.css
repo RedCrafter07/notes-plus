@@ -1,26 +1,31 @@
 @layer base {
   :root {
     /* Mapped from Catppuccin Mocha Palette */
-    --primary: hsl(267.4 83.5% 81%); /* Mauve */
-    --accent: hsl(9.6 55.6% 91.2%); /* Rosewater */
+    --primary: hsl(267deg, 84%, 81%); /* Mauve */
+    --accent: hsl(10deg, 56%, 91%); /* Rosewater */
 
-    --base-1: hsl(240 21.1% 14.9%); /* Base */
-    --base-2: hsl(240 21.3% 12%); /* Mantle */
-    --base-3: hsl(240 22.7% 8.6%); /* Crust */
+    --base-1: hsl(240deg, 21%, 15%); /* Base */
+    --base-2: hsl(240deg, 21%, 12%); /* Mantle */
+    --base-3: hsl(240deg, 23%, 9%); /* Crust */
 
-    --content-1: hsl(226.2 63.9% 88%); /* Text */
-    --content-2: hsl(226.7 35.3% 80%); /* Subtext1 */
-    --content-3: hsl(227.6 23.6% 71.8%); /* Subtext0 */
+    --content-1: hsl(226deg, 64%, 88%); /* Text */
+    --content-2: hsl(227deg, 35%, 80%); /* Subtext1 */
+    --content-3: hsl(228deg, 24%, 72%); /* Subtext0 */
 
-    --info: hsl(217.2 91.9% 75.9%); /* Blue */
-    --success: hsl(115.5 54.1% 76.1%); /* Green */
-    --warning: hsl(41.4 86% 83.1%); /* Yellow */
-    --destructive: hsl(343.3 81.2% 74.9%); /* Red */
+    --overlay: hsl(231deg, 11%, 47%); /* Overlay 0 */
+
+    --info: hsl(217deg, 92%, 76%); /* Blue */
+    --success: hsl(115deg, 54%, 76%); /* Green */
+    --warning: hsl(41deg, 86%, 83%); /* Yellow */
+    --destructive: hsl(343deg, 81%, 75%); /* Red */
 
     /* A single dark content color provides great contrast for all status colors */
-    --info-content: hsl(240 22.7% 8.6%); /* Crust */
-    --success-content: hsl(240 22.7% 8.6%); /* Crust */
-    --warning-content: hsl(240 22.7% 8.6%); /* Crust */
-    --destructive-content: hsl(240 22.7% 8.6%); /* Crust */
+    --info-content: hsl(240deg, 23%, 9%); /* Crust */
+    --success-content: hsl(240deg, 23%, 9%); /* Crust */
+    --warning-content: hsl(240deg, 23%, 9%); /* Crust */
+    --destructive-content: hsl(240deg, 23%, 9%); /* Crust */
+
+    --selection: hsl(228deg, 17%, 64%); /* Overlay 2 */
+    --cursor: hsl(10deg, 56%, 91%); /* Rosewater */
   }
 }

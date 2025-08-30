@@ -31,7 +31,7 @@
 <div class="flex flex-row gap-2 w-full py-2 px-3 rounded-xl bg-base-3">
   <input
     type="text"
-    class="w-full flex-1 focus:outline-none"
+    class="w-full flex-1 focus:outline-none select-text"
     {value}
     onblur={onBlur}
     {id}

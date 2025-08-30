@@ -37,7 +37,7 @@
       >
         <div
           class={[
-            "pointer-events-auto w-3/4  rounded-xl bg-base-2 drop-shadow-lg p-4 flex flex-col gap-4",
+            "pointer-events-auto w-3/4 max-h-3/4 overflow-auto rounded-xl bg-base-2 drop-shadow-lg p-4 flex flex-col gap-4",
             { "h-3/4": !minHeight },
           ]}
         >

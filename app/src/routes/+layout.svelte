@@ -50,7 +50,7 @@
 </script>
 
 <div
-  class="w-full min-h-screen text-content-1 bg-base-3 relative overflow-hidden flex flex-col"
+  class="w-full min-h-screen text-content-1 bg-base-3 relative overflow-hidden flex flex-col selection:bg-selection/20 select-none caret-cursor"
 >
   <!-- Static elements -->
   <Tabs />
