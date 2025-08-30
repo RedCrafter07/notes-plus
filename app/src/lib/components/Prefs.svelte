@@ -98,20 +98,21 @@
           </button>
         </Input>
       </div>
-      <button
-        class="flex flex-row gap-4 justify-center w-full border-success text-success border hover:text-success-content hover:bg-success active:scale-95 transition-all py-2 px-3 rounded-xl cursor-pointer"
-        onclick={async () => {
-          await invoke("set_prefs", {
-            newPrefs: prefs,
-          });
-        }}
-      >
-        <IconDeviceFloppy /> <span>Save</span>
-      </button>
     </div>
+
+    <button
+      class="flex flex-row gap-4 justify-center w-full border-success text-success border hover:text-success-content hover:bg-success active:scale-95 transition-all py-2 px-3 rounded-xl cursor-pointer"
+      onclick={async () => {
+        await invoke("set_prefs", {
+          newPrefs: prefs,
+        });
+      }}
+    >
+      <IconDeviceFloppy /> <span>Save</span>
+    </button>
 
     <hr class="text-content-1/50" />
 
-    <p>More settings soon!</p>
+    <p>More settings are coming soon!</p>
   </div>
 </Overlay>
