@@ -1,18 +1,47 @@
 # RedNotes Plus
 
-An SVG note taking application for the desktop users
+An SVG note taking application
 
 ## What is RedNotes Plus?
 
-RedNotes plus is my take on a modern, simple and intuitive note taking
+RedNotes Plus is my take on a modern, simple and intuitive note taking
 application for stylus input. It was primarily developed for my use in classes,
-but is of course available for any use case imaginable.
+but is of course available for any use case imaginable. By default, it uses [Catppuccin
+Mocha](https://github.com/catppuccin/catppuccin) as its color palette, but custom themes are planned soon as well.
+
+## What was your motivation?
+
+Apart from being sick that most software not only asks you to pay a subscription
+but also limits is functionality if you don't pay, I wanted to improve the note
+taking experience on Windows. While there is great note taking software
+available, many of the ones I tried were paid and didn't fit my expectations
+in one way or another, which is why I started a journey of making a simple, intuitive
+yet powerful software for note taking.
 
 ## Features
 
-Well, it is work in progress now, so unfortunately none yet. I have however
-finished a decently working version for drawing, so after implementing the eraser,
-there will be actually usable features coming!
+- 📄 Limited and infinite canvas
+- 🎨 Multiple page styles (to be implemented)
+- ✏️ Pressure-sensitive stylus input
+- 📂 Custom file format
+
+## Planned features/TODO
+
+- Canvas panning restrictions
+- Page style
+- General bugfixes
+- Infinite canvas fixes
+- Custom themes
+- Attachment support
+- PNG/JPG/PDF exports
+- Pinch to zoom
+- Differentiate between mouse/touch and stylus
+- Recently opened notes
+- Rich text support
+- Proper, precise eraser
+- UI for tool settings (changing colors, width, etc.)
+- Allow changing toolbar positions
+- Rust rewrite of the SVG generation
 
 ## License
 
