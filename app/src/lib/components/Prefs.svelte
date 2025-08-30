@@ -99,7 +99,7 @@
         </Input>
       </div>
       <button
-        class="flex flex-row gap-4 justify-center w-max border-success text-success border hover:text-success-content hover:bg-success transition-all py-2 px-3 rounded-xl cursor-pointer"
+        class="flex flex-row gap-4 justify-center w-full border-success text-success border hover:text-success-content hover:bg-success active:scale-95 transition-all py-2 px-3 rounded-xl cursor-pointer"
         onclick={async () => {
           await invoke("set_prefs", {
             newPrefs: prefs,
