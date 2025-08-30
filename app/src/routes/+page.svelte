@@ -8,8 +8,10 @@
   import { goto } from "$app/navigation";
   import { tabManager } from "$lib/tabs/tabs.svelte";
   import Prefs from "$lib/components/Prefs.svelte";
+  import NewNote from "$lib/components/NewNote.svelte";
 
   let prefsOpen = $state(false);
+  let newNoteOpen = $state(false);
 
   // TODO: Display recently opened files
   let recentFiles = $state([]);
@@ -19,9 +21,14 @@
   function closePrefs() {
     prefsOpen = false;
   }
+
+  function closeNewNote() {
+    newNoteOpen = false;
+  }
 </script>
 
 <Prefs visible={prefsOpen} closeCb={closePrefs} />
+<NewNote visible={newNoteOpen} closeCb={closeNewNote} />
 <main class="w-full flex-col gap-4 select-none">
   <div class="bg-base-2 w-full py-2 px-4 items-center flex flex-row gap-2">
     <div class="text-xl font-display font-black">RedNotes Plus</div>
@@ -43,22 +50,17 @@
       <h3 class="text-xl">What would you like to work on?</h3>
     </div>
     <div class="grid grid-cols-2 w-full gap-4">
-      <a
-        href="/edit"
+      <button
         class="group rounded-xl bg-base-2 text-content-1 active:scale-95 transition-all border-content-1/50 border-2 hover:border-content-1 p-4"
-        onclick={(e) => {
-          e.preventDefault();
-
-          tabManager.addTab("new", true);
-
-          goto(e.currentTarget.href);
+        onclick={() => {
+          newNoteOpen = true;
         }}
       >
         <IconPlus
           size={48}
           class="mx-auto transition-all opacity-80 group-hover:opacity-100"
         />
-      </a>
+      </button>
       <button
         class="cursor-pointer group rounded-xl bg-base-2 text-content-1 active:scale-95 transition-all border-content-1/50 border-2 hover:border-content-1 p-4"
         onclick={async () => {

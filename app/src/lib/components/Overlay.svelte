@@ -9,11 +9,13 @@
     visible,
     children,
     title,
+    minHeight,
   }: {
     closeCb: () => void;
     visible: boolean;
     children: Snippet<[]>;
     title: string;
+    minHeight?: boolean;
   } = $props();
 </script>
 
@@ -26,7 +28,7 @@
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
-        class="absolute top-0 pointer-events-auto w-full h-full backdrop-blur-3xl bg-base-1/75"
+        class="absolute top-0 pointer-events-auto w-full h-full backdrop-blur-3xl bg-base-1/50"
         onclick={closeCb}
       ></div>
 
@@ -34,7 +36,10 @@
         class="absolute top-0 pointer-events-none w-full h-full grid place-items-center"
       >
         <div
-          class="pointer-events-auto w-3/4 h-3/4 rounded-xl bg-base-2 drop-shadow-lg p-4 flex flex-col gap-4"
+          class={[
+            "pointer-events-auto w-3/4  rounded-xl bg-base-2 drop-shadow-lg p-4 flex flex-col gap-4",
+            { "h-3/4": !minHeight },
+          ]}
         >
           <div class="flex flex-row items-center w-full">
             <h1 class="text-3xl font-display font-medium">{title}</h1>

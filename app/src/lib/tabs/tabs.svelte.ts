@@ -2,6 +2,7 @@ import { goto } from "$app/navigation";
 import { CanvasManager } from "$lib/canvas/CanvasManager.svelte";
 import { PageManager } from "$lib/canvas/PageManager.svelte";
 import type { FileMeta } from "$lib/types/bindings/FileMeta";
+import type { Metadata } from "$lib/types/bindings/Metadata";
 import type { Note } from "$lib/types/bindings/Note";
 import type { Tab } from "$lib/types/tabs";
 import { invoke } from "@tauri-apps/api/core";
@@ -40,6 +41,7 @@ class TabManager {
   public addTab(
     file: { data: Note; path: string } | "new",
     go: boolean = true,
+    meta?: Partial<Metadata>,
   ) {
     let id: string;
     if (file === "new") {
@@ -52,6 +54,7 @@ class TabManager {
       });
 
       const pageManager = new PageManager();
+      if (meta) pageManager.meta = { ...pageManager.meta, ...meta };
       const canvasManager = new CanvasManager(this.#viewport);
       canvasManager.setPage(
         pageManager.currentPage,
