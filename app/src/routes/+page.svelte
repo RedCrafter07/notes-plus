@@ -33,7 +33,7 @@
   <div class="bg-base-2 w-full py-2 px-4 items-center flex flex-row gap-2">
     <div class="text-xl font-display font-black">RedNotes Plus</div>
     <button
-      class="ml-auto p-2 rounded-xl bg-base-3 aspect-square active:scale-90 active:opacity-90 transition-all group"
+      class="ml-auto p-2 rounded-xl bg-base-3 aspect-square active:scale-90 active:opacity-90 transition-all group border-selection/10 hover:border-selection/25 border-2"
       onclick={() => {
         prefsOpen = true;
       }}

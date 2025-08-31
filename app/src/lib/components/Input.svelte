@@ -10,6 +10,7 @@
     placeholder,
     onBlur,
     children,
+    tabIndex,
   }: {
     value?: string;
     id: string;
@@ -18,6 +19,7 @@
     placeholder?: string;
     onBlur?: FocusEventHandler<HTMLInputElement>;
     children?: Snippet<[]>;
+    tabIndex?: number;
   } = $props();
 </script>
 
@@ -30,6 +32,7 @@
 {/if}
 <div class="flex flex-row gap-2 w-full py-2 px-3 rounded-xl bg-base-3">
   <input
+    tabindex={tabIndex}
     type="text"
     class="w-full flex-1 focus:outline-none select-text"
     {value}

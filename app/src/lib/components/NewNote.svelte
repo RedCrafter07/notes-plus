@@ -26,6 +26,7 @@
 <Overlay {closeCb} {visible} title="Create new note" minHeight={true}>
   <div>
     <Input
+      tabIndex={0}
       id="note-title"
       label="Note Title"
       description="The display name of the note."

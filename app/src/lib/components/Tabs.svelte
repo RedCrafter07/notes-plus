@@ -31,7 +31,7 @@
   ]}
 >
   <button
-    class="p-2 mr-1 rounded-xl active:scale-90 bg-base-1/75 hover:bg-base-1 transition-all"
+    class="p-2 mr-1 rounded-xl active:scale-90 bg-base-1/75 hover:bg-base-1 transition-all border-selection/10 hover:border-selection/25 border-2"
     onclick={() => {
       tabManager.unsetSelection();
       goto("/");
@@ -59,8 +59,12 @@
           goto("/edit");
         }}
       >
-        {data?.title}
-        {data?.saved ? "" : "*"}
+        <span>
+          {data?.title}
+        </span>
+        <span>
+          {data?.saved ? "" : "*"}
+        </span>
       </button>
       <IconX
         onclick={() => {
