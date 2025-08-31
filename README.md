@@ -11,12 +11,12 @@ Mocha](https://github.com/catppuccin/catppuccin) as its color palette, but custo
 
 ## What was your motivation?
 
-Apart from being sick that most software not only asks you to pay a subscription
-but also limits is functionality if you don't pay, I wanted to improve the note
-taking experience on Windows. While there is great note taking software
-available, many of the ones I tried were paid and didn't fit my expectations
-in one way or another, which is why I started a journey of making a simple, intuitive
-yet powerful software for note taking.
+Apart from being fed up with the fact that most software asks you to pay a subscription,
+but also limits its functionality if you don't pay, I wanted to improve the
+note-taking experience on Windows. While there is great note-taking software
+available, many of the ones I tried were paid for and didn't meet my
+expectations. In one way or another. That's why I embarked on a journey to create
+a simple, intuitive yet powerful note-taking software.
 
 ## Features
 
