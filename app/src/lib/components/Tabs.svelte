@@ -23,11 +23,15 @@
 
 <div
   bind:this={nav}
-  class="w-full bg-base-3 h-0 overflow-hidden flex flex-row items-center transition-all"
-  class:h-12={tabManager.tabs.length > 0}
+  class={[
+    "px-2 gap-1 w-full bg-base-3 h-0 overflow-hidden flex flex-row items-center transition-all",
+    {
+      "h-14 pt-1": tabManager.tabs.length > 0,
+    },
+  ]}
 >
   <button
-    class="p-2 rounded-xl active:scale-90 bg-base-2 hover:bg-base-1 transition-all mx-2"
+    class="p-2 mr-1 rounded-xl active:scale-90 bg-base-1/75 hover:bg-base-1 transition-all"
     onclick={() => {
       tabManager.unsetSelection();
       goto("/");
@@ -39,10 +43,10 @@
     {@const data = tabManager.tabInfo(tab.id)}
     <div
       class={[
-        "flex-1 flex items-center justify-center px-2 text-content-1/50 h-full transition-all",
+        "flex-1 flex items-center justify-center px-2 text-content-1/50 h-full transition-all border-x border-t rounded-t-md",
         {
-          "bg-base-2 text-content-1/100": data?.current,
-          "bg-base-3": !data?.current,
+          "bg-base-1 text-content-1/100 border-selection/25": data?.current,
+          "bg-base-2 border-selection/10": !data?.current,
         },
       ]}
       in:fly={{ duration: 100, easing: circOut, y: -100 }}
