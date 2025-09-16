@@ -59,17 +59,17 @@
     >
       <IconEraser />
     </button>
-    <button
-      class={[
-        "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-overlay/20",
-      ]}
-      onclick={() => {
-        toolIndex = 2;
-        // TODO: Implement this
-      }}
-    >
-      <IconHandMove />
-    </button>
+    <!-- <button -->
+    <!--   class={[ -->
+    <!--     "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-overlay/20", -->
+    <!--   ]} -->
+    <!--   onclick={() => { -->
+    <!--     toolIndex = 2; -->
+    <!--     // TODO: Implement this -->
+    <!--   }} -->
+    <!-- > -->
+    <!--   <IconHandMove /> -->
+    <!-- </button> -->
     <button
       class={[
         "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-overlay/20",
