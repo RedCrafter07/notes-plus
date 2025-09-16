@@ -16,8 +16,12 @@
   let {
     // tool,
     updateTool,
-  }: { tool: ToolSettings; updateTool: (newTool: ToolSettings) => void } =
-    $props();
+    openSettings,
+  }: {
+    tool: ToolSettings;
+    updateTool: (newTool: ToolSettings) => void;
+    openSettings: () => void;
+  } = $props();
 </script>
 
 <div class="right-4 h-full absolute pointer-events-none flex z-20">
@@ -74,7 +78,9 @@
       class={[
         "aspect-square p-2 rounded-xl active:scale-90 transition-all hover:bg-overlay/20",
       ]}
-      onclick={() => {}}
+      onclick={() => {
+        openSettings();
+      }}
     >
       <IconSettings />
     </button>

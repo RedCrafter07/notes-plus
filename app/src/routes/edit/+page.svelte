@@ -7,15 +7,18 @@
   import { save } from "@tauri-apps/plugin-dialog";
   import { tabManager } from "$lib/tabs/tabs.svelte";
   import { goto } from "$app/navigation";
+  import NoteSettings from "$lib/components/NoteSettings.svelte";
 
   let tool: ToolSettings = $state(penDefaults);
+  let settingsOpen = $state(false);
 
-  const tab = $derived(tabManager.currentPage);
-  const pageManager = $derived(tab.page);
-  const canvasManager = $derived(tab.canvas);
+  const currentTab = $derived(tabManager.currentTab);
+  const data = $derived(tabManager.currentPage);
+  const pageManager = $derived(data.page);
+  const canvasManager = $derived(data.canvas);
 
   $effect(() => {
-    if (!tab) goto("/");
+    if (!data) goto("/");
   });
 
   function updateTool(newTool: ToolSettings) {
@@ -24,12 +27,17 @@
 
   const hotkeys = async (e: KeyboardEvent) => {
     if (!e.ctrlKey) return;
-    if (e.key === "s") {
+    if (e.key === "s" && currentTab.path) {
       // TODO: Save to user directory
-      alert(
-        "This feature is being implemented; please consider using Ctrl+Shift+S instead!",
-      );
-    } else if (e.key === "S" || (e.key === "s" && e.shiftKey)) {
+      await invoke("write", {
+        path: currentTab.path,
+        note: JSON.stringify(pageManager.export(canvasManager.export()!)),
+      });
+    } else if (
+      e.key === "S" ||
+      (e.key === "s" && e.shiftKey) ||
+      (e.key === "s" && currentTab.path === null)
+    ) {
       // Open file save dialog
 
       const path = await save({
@@ -38,6 +46,8 @@
       });
 
       if (!path) return;
+
+      currentTab.path = path;
 
       await invoke("write", {
         path,
@@ -52,9 +62,23 @@
       document.removeEventListener("keydown", hotkeys);
     };
   });
+
+  function openSettings() {
+    settingsOpen = true;
+  }
+  function closeSettings() {
+    settingsOpen = false;
+  }
 </script>
 
 <div class="w-full h-screen relative touch-none">
-  <Toolbar {tool} {updateTool} />
+  <NoteSettings
+    data={{
+      page: pageManager,
+    }}
+    closeCb={closeSettings}
+    visible={settingsOpen}
+  />
+  <Toolbar {tool} {updateTool} {openSettings} />
   <Canvas {tool} {pageManager} {canvasManager} />
 </div>
