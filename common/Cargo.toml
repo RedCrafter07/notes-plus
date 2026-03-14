@@ -1,0 +1,10 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2024"
+authors = ["RedCrafter07"]
+description = "Shared components for RedNotes Plus"
+
+[dependencies]
+serde = "1.0.228"
+specta = "2.0.0-rc.21"
