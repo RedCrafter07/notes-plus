@@ -7,6 +7,26 @@ body {
   font-family: "Funnel Sans Variable", sans-serif;
 }
 
+* {
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+
+  /* Prevent native drag-and-drop of images and links */
+  -webkit-user-drag: none;
+
+  /* Optional: Make the cursor a default arrow everywhere by default */
+  cursor: default;
+}
+
+input,
+textarea,
+[contenteditable] {
+  user-select: auto;
+  -webkit-user-select: auto;
+  cursor: text;
+}
+
 @theme {
   --color-primary: var(--primary);
   --color-accent: var(--accent);

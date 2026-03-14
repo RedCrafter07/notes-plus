@@ -1,68 +1,42 @@
 <script lang="ts">
-  import "@fontsource-variable/funnel-sans";
+  import { onMount } from "svelte";
   import "@fontsource-variable/funnel-display";
+  import "@fontsource-variable/funnel-sans";
   import "../app.css";
   import "../mocha.css";
-  import { page } from "$app/state";
-  import { invoke } from "@tauri-apps/api/core";
-  import { fade, fly } from "svelte/transition";
-  import { expoOut } from "svelte/easing";
-  import Tabs from "$lib/components/Tabs.svelte";
-  import { listen } from "@tauri-apps/api/event";
-  import { tabManager } from "$lib/tabs/tabs.svelte";
+  import { commands } from "$lib/tauri/bindings";
+  import { timeout } from "$lib/util/timeout";
 
   const { children } = $props();
 
-  $effect(() => {
-    document.addEventListener("keydown", handleQuit);
-
-    document.addEventListener("focus", handleInitialFocus);
-
-    (async () => {
-      await listen<string>("open-tab", async (event) => {
-        console.log("Welcome!");
-        console.log("Requested tab opening: ", event.payload);
-        await tabManager.loadFile(event.payload, true, true);
-      });
-      const tabToOpen: string | null = await invoke("view_window");
-
-      if (tabToOpen) {
-        await tabManager.loadFile(tabToOpen, true, true);
-      }
-    })();
-
-    return () => {
-      document.removeEventListener("keydown", handleQuit);
-    };
+  onMount(async () => {
+    await timeout(50);
+    await commands.ready();
   });
 
-  async function handleInitialFocus() {
-    document.removeEventListener("focus", handleInitialFocus);
-  }
+  $effect(() => {
+    const keydownEvent = async (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key == "q") {
+        await commands.quit();
+      }
+    };
+    const contextMenuEvent = (e: PointerEvent) => e.preventDefault();
 
-  async function handleQuit(e: KeyboardEvent) {
-    if (!e.ctrlKey) return;
-    if (e.key !== "q") return;
+    // We use capture: true to ensure it catches the event before anything else
+    document.addEventListener("contextmenu", contextMenuEvent, {
+      capture: true,
+    });
+    document.addEventListener("keydown", keydownEvent);
 
-    e.preventDefault();
-    await invoke("quit");
-  }
+    return () => {
+      document.removeEventListener("keydown", keydownEvent);
+      document.removeEventListener("contextmenu", contextMenuEvent, {
+        capture: true,
+      });
+    };
+  });
 </script>
 
-<div
-  class="w-full min-h-screen text-content-1 bg-base-3 relative overflow-hidden flex flex-col selection:bg-selection/20 select-none caret-cursor"
->
-  <!-- Static elements -->
-  <Tabs />
-  <div class="relative flex-1">
-    {#key page.url.pathname}
-      <div
-        class="w-full h-screen bg-base-1 absolute top-0 overflow-auto flex-1"
-        in:fly={{ duration: 300, x: -200, easing: expoOut }}
-        out:fade={{ duration: 300 }}
-      >
-        {@render children()}
-      </div>
-    {/key}
-  </div>
+<div class="min-h-screen bg-base-3 text-content-1">
+  {@render children()}
 </div>

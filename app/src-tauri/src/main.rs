@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    rednotes_plus_lib::run()
+    notes_plus_lib::run()
 }

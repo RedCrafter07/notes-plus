@@ -13,7 +13,6 @@
     "windows": [
       {
         "title": "RedNotes Plus",
-        "label": "main",
         "width": 800,
         "height": 600,
         "maximized": true,
@@ -26,8 +25,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
     "publisher": "RedCrafter07",
+    "targets": "all",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
