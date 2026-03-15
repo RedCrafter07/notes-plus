@@ -11,7 +11,15 @@ use tauri_specta::{Builder, collect_commands};
 pub fn run() {
     let builder = Builder::<tauri::Wry>::new()
         // Then register them (separated by a comma)
-        .commands(collect_commands![ready, quit, get_recent])
+        .commands(collect_commands![
+            ready,
+            quit,
+            get_recent,
+            add_note,
+            remove_note,
+            edit_note,
+            list_notes
+        ])
         .typ::<common::structs::note::Block>()
         .typ::<common::structs::note::Path>()
         .typ::<common::structs::note::Point>()
