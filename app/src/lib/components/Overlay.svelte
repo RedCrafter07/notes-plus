@@ -48,6 +48,7 @@
               onclick={() => {
                 closeCb();
               }}
+              tabindex="-1"
             >
               <IconX />
             </button>
