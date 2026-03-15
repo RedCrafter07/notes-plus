@@ -1,5 +1,6 @@
 <script lang="ts">
   import { commands, events } from "$lib/tauri/bindings";
+  import { timeout } from "$lib/util/timeout";
   import { IconClock } from "@tabler/icons-svelte";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -19,6 +20,13 @@
       unlisten = await getCurrentWindow().onCloseRequested(async (e) => {
         e.preventDefault();
         jotNoteInputs.forEach((v) => v.blur());
+
+        if (
+          jotNoteInputs.length === 1 &&
+          jotNoteInputs[0]?.value.trim().length === 0
+        )
+          await commands.removeNote(0);
+
         await commands.quit();
       });
 
@@ -57,7 +65,7 @@
                     e.currentTarget.value.length === 0
                   ) {
                     e.preventDefault();
-                    commands.removeNote(i);
+                    await commands.removeNote(i);
                     if (i !== 0) jotNoteInputs[i - 1].focus();
                     else jotNoteInputs[i + 1].focus();
                   }
@@ -69,6 +77,9 @@
             </div>
           {/each}
         </div>
+        <p class="opacity-50 text-sm">
+          Press Ctrl+J anywhere to add a new note
+        </p>
       </div>
     {/if}
 
