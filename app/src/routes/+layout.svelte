@@ -6,6 +6,8 @@
   import "../mocha.css";
   import { commands } from "$lib/tauri/bindings";
   import { timeout } from "$lib/util/timeout";
+  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import Modals from "$lib/components/Modals.svelte";
 
   const { children } = $props();
 
@@ -16,8 +18,17 @@
 
   $effect(() => {
     const keydownEvent = async (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key == "q") {
+      if (e.key == "Escape" && overlayManager.open !== undefined) {
+        overlayManager.close();
+        return;
+      }
+
+      if (!e.ctrlKey) return;
+      if (e.key == "q") {
         await commands.quit();
+      } else if (e.key == "j") {
+        e.preventDefault();
+        overlayManager.setOpen("jotDown");
       }
     };
     const contextMenuEvent = (e: PointerEvent) => e.preventDefault();
@@ -38,5 +49,6 @@
 </script>
 
 <div class="min-h-screen bg-base-3 text-content-1">
+  <Modals />
   {@render children()}
 </div>
