@@ -5,7 +5,7 @@
   const {
     label,
     description,
-    value,
+    value = $bindable(),
     id,
     placeholder,
     onBlur,
@@ -14,7 +14,7 @@
   }: {
     value?: string;
     id: string;
-    label: string;
+    label?: string;
     description?: string;
     placeholder?: string;
     onBlur?: FocusEventHandler<HTMLInputElement>;
@@ -23,7 +23,9 @@
   } = $props();
 </script>
 
-<label for={`#${id}`} class="text-xl">{label}</label>
+{#if label}
+  <label for={`#${id}`} class="text-xl">{label}</label>
+{/if}
 
 {#if description}
   <p class="text-content-1/75">
