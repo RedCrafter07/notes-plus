@@ -40,8 +40,9 @@
     tabindex={tabIndex}
     type="text"
     class="w-full flex-1 focus:outline-none select-text"
-    {value}
+    bind:value
     onblur={onBlur}
+    autocomplete="off"
     {id}
     {placeholder}
   />

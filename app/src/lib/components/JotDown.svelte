@@ -21,6 +21,8 @@
 
   async function submit(text: string) {
     await commands.addNote(text);
+    note = "";
+    overlayManager.close();
   }
 </script>
 
