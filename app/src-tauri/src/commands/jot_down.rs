@@ -1,5 +1,4 @@
 use crate::events::JotDown;
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri_plugin_store::StoreExt;
 use tauri_specta::Event;
