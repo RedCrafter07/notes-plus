@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "RedNotes Plus",
-        "width": 800,
+        "visible": false,
+        "width": 1200,
         "height": 600,
-        "maximized": true,
-        "visible": false
+        "center": true
       }
     ],
     "security": {
