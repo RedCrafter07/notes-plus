@@ -8,6 +8,7 @@ use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 
 use crate::structs::note::Note;
 
+#[derive(Debug)]
 pub enum NoteFileError {
     Serialization(rmp_serde::encode::Error),
     Deserialization(rmp_serde::decode::Error),
