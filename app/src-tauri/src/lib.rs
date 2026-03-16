@@ -58,10 +58,6 @@ pub fn run() {
             }
             store.close_resource();
 
-            Note::new("Test note".into())
-                .to_file(Path::new("C:\\Users\\R07\\Downloads\\rnp-test\\test.rnpf"))
-                .unwrap();
-
             Ok(())
         })
         .run(tauri::generate_context!())
