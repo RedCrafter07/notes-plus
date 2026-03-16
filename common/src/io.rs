@@ -36,7 +36,7 @@ impl From<rmp_serde::encode::Error> for NoteFileError {
 
 pub(crate) fn note_to_file(note: &Note, path: &Path) -> Result<(), NoteFileError> {
     let file = File::options()
-        .create_new(true)
+        .create(true)
         .write(true)
         .truncate(true)
         .open(path)?;
