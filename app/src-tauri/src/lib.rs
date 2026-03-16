@@ -18,10 +18,10 @@ pub fn run() {
             ready,
             quit,
             get_recent,
-            add_note,
-            remove_note,
-            edit_note,
-            list_notes
+            add_jot_note,
+            remove_jot_note,
+            edit_jot_note,
+            list_jot_notes
         ])
         .events(collect_events![events::JotDown])
         .typ::<common::structs::note::Block>()

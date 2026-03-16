@@ -5,7 +5,7 @@ use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
-pub fn add_note(app: tauri::AppHandle, content: String) {
+pub fn add_jot_note(app: tauri::AppHandle, content: String) {
     let store = app.store("data.json").unwrap();
     let mut jot_notes: Vec<String> =
         serde_json::from_value(store.get("jotNotes").unwrap()).unwrap_or_else(|_| Vec::new());
@@ -20,7 +20,7 @@ pub fn add_note(app: tauri::AppHandle, content: String) {
 
 #[tauri::command]
 #[specta::specta]
-pub fn remove_note(app: tauri::AppHandle, index: u8) -> bool {
+pub fn remove_jot_note(app: tauri::AppHandle, index: u8) -> bool {
     let store = app.store("data.json").unwrap();
     let mut jot_notes: Vec<String> =
         serde_json::from_value(store.get("jotNotes").unwrap()).unwrap_or_else(|_| Vec::new());
@@ -41,7 +41,7 @@ pub fn remove_note(app: tauri::AppHandle, index: u8) -> bool {
 
 #[tauri::command]
 #[specta::specta]
-pub fn edit_note(app: tauri::AppHandle, index: u8, content: String) -> bool {
+pub fn edit_jot_note(app: tauri::AppHandle, index: u8, content: String) -> bool {
     let store = app.store("data.json").unwrap();
     let mut jot_notes: Vec<String> =
         serde_json::from_value(store.get("jotNotes").unwrap()).unwrap_or_else(|_| Vec::new());
@@ -62,7 +62,7 @@ pub fn edit_note(app: tauri::AppHandle, index: u8, content: String) -> bool {
 
 #[tauri::command]
 #[specta::specta]
-pub fn list_notes(app: tauri::AppHandle) -> Vec<String> {
+pub fn list_jot_notes(app: tauri::AppHandle) -> Vec<String> {
     let store = app.store("data.json").unwrap();
     let jot_notes: Vec<String> =
         serde_json::from_value(store.get("jotNotes").unwrap()).unwrap_or_else(|_| Vec::new());

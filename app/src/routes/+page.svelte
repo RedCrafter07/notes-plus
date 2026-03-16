@@ -25,12 +25,12 @@
           jotNoteInputs.length === 1 &&
           jotNoteInputs[0]?.value.trim().length === 0
         )
-          await commands.removeNote(0);
+          await commands.removeJotNote(0);
 
         await commands.quit();
       });
 
-      jotNotes = await commands.listNotes();
+      jotNotes = await commands.listJotNotes();
       recentNotes = await commands.getRecent();
     })();
 
@@ -58,20 +58,20 @@
                 value={note}
                 onkeydown={async (e) => {
                   if (e.key === "Enter") {
-                    await commands.addNote("");
+                    await commands.addJotNote("");
                     jotNoteInputs[i + 1].focus();
                   } else if (
                     e.key === "Backspace" &&
                     e.currentTarget.value.length === 0
                   ) {
                     e.preventDefault();
-                    await commands.removeNote(i);
+                    await commands.removeJotNote(i);
                     if (i !== 0) jotNoteInputs[i - 1].focus();
                     else jotNoteInputs[i + 1].focus();
                   }
                 }}
                 onblur={async (e) => {
-                  await commands.editNote(i, e.currentTarget.value);
+                  await commands.editJotNote(i, e.currentTarget.value);
                 }}
               />
             </div>
