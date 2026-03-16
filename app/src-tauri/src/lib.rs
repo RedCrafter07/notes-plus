@@ -3,7 +3,10 @@
 mod commands;
 mod events;
 
+use std::path::Path;
+
 use commands::*;
+use common::structs::note::Note;
 use serde_json::json;
 #[cfg(debug_assertions)]
 use specta_typescript::Typescript;
@@ -21,9 +24,11 @@ pub fn run() {
             add_jot_note,
             remove_jot_note,
             edit_jot_note,
-            list_jot_notes
+            list_jot_notes,
+            open_notes_dialog,
         ])
         .events(collect_events![events::JotDown])
+        .typ::<commands::NoteData>()
         .typ::<common::structs::note::Block>()
         .typ::<common::structs::note::Path>()
         .typ::<common::structs::note::Point>()
@@ -52,6 +57,10 @@ pub fn run() {
                 store.save()?;
             }
             store.close_resource();
+
+            Note::new("Test note".into())
+                .to_file(Path::new("C:\\Users\\R07\\Downloads\\rnp-test\\test.rnpf"))
+                .unwrap();
 
             Ok(())
         })
