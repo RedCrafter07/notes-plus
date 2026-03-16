@@ -20,7 +20,7 @@
   };
 
   async function submit(text: string) {
-    await commands.addNote(text);
+    await commands.addJotNote(text);
     note = "";
     overlayManager.close();
   }
