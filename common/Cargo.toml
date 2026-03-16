@@ -6,5 +6,7 @@ authors = ["RedCrafter07"]
 description = "Shared components for RedNotes Plus"
 
 [dependencies]
+flate2 = "1.1.9"
+rmp-serde = "1.3.1"
 serde = "1.0.228"
 specta = "2.0.0-rc.21"
