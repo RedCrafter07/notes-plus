@@ -2361,26 +2361,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 
 [[package]]
-name = "notes-plus"
-version = "0.1.0"
-dependencies = [
- "common",
- "serde",
- "serde_json",
- "serde_yml",
- "specta",
- "specta-typescript",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-notification",
- "tauri-plugin-opener",
- "tauri-plugin-sql",
- "tauri-plugin-store",
- "tauri-specta",
-]
-
-[[package]]
 name = "notify-rust"
 version = "4.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3252,6 +3232,26 @@ name = "raw-window-handle"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
+
+[[package]]
+name = "rednotes-plus"
+version = "0.1.0"
+dependencies = [
+ "common",
+ "serde",
+ "serde_json",
+ "serde_yml",
+ "specta",
+ "specta-typescript",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-notification",
+ "tauri-plugin-opener",
+ "tauri-plugin-sql",
+ "tauri-plugin-store",
+ "tauri-specta",
+]
 
 [[package]]
 name = "redox_syscall"
