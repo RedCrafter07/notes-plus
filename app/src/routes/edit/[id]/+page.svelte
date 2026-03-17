@@ -64,6 +64,8 @@
     if (drawing) return;
     if (!ctx) return;
 
+    clearCanvas();
+
     ctx.resetTransform();
     ctx.translate(width / 2, height / 2);
     ctx.scale(dpr, dpr);
@@ -89,6 +91,15 @@
 
     ctx.fillStyle = c;
     ctx?.fill(path);
+  }
+
+  function clearCanvas() {
+    if (!canvas || !ctx) return;
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
   }
 
   function finishStroke() {
