@@ -28,6 +28,7 @@ pub struct Path {
 pub struct Point {
     x: f32,
     y: f32,
+    pressure: f32,
 }
 
 impl Note {
