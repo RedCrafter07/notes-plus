@@ -21,6 +21,7 @@ pub fn run() {
             edit_jot_note,
             list_jot_notes,
             open_notes_dialog,
+            save_note_dialog,
         ])
         .events(collect_events![events::JotDown])
         .typ::<commands::NoteData>()

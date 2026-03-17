@@ -55,4 +55,26 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
 
 pub fn save_note(note_data: NoteData) {}
 
-pub fn save_note_dialog() {}
+#[tauri::command]
+#[specta::specta]
+pub fn save_note_dialog(app: tauri::AppHandle, note: Note) -> Option<NoteData> {
+    let path = app
+        .dialog()
+        .file()
+        .add_filter("RedNotes Plus File", &["rnpf"])
+        .set_picker_mode(tauri_plugin_dialog::PickerMode::Document)
+        .blocking_save_file();
+
+    if let Some(path) = path {
+        let path = path.as_path().unwrap();
+        note.to_file(path).unwrap();
+
+        return Some(NoteData {
+            content: note,
+            path: path.to_string_lossy().into_owned(),
+            id: Uuid::new_v4().to_string(),
+        });
+    }
+
+    None
+}
