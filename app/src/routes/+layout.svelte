@@ -8,6 +8,9 @@
   import { timeout } from "$lib/util/timeout";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import Modals from "$lib/components/Modals.svelte";
+  import { contentManager } from "$lib/state/contentManager.svelte";
+  import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
 
   const { children } = $props();
 
@@ -29,6 +32,19 @@
       } else if (e.key == "j") {
         e.preventDefault();
         overlayManager.setOpen("jotDown");
+      } else if (e.key == "o") {
+        e.preventDefault();
+        const data = await commands.openNotesDialog();
+
+        if (data[0]) {
+          const d = data[0];
+          goto(resolve("/edit/[id]", { id: d.id }));
+          await timeout(20);
+          contentManager.import(d.content, {
+            id: d.id,
+            path: d.path,
+          });
+        }
       }
     };
     const contextMenuEvent = (e: PointerEvent) => e.preventDefault();
