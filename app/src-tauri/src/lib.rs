@@ -3,13 +3,8 @@
 mod commands;
 mod events;
 
-use std::path::Path;
-
 use commands::*;
-use common::structs::note::Note;
 use serde_json::json;
-#[cfg(debug_assertions)]
-use specta_typescript::Typescript;
 use tauri_plugin_store::StoreExt;
 use tauri_specta::{Builder, collect_commands, collect_events};
 
@@ -29,15 +24,15 @@ pub fn run() {
         ])
         .events(collect_events![events::JotDown])
         .typ::<commands::NoteData>()
-        .typ::<common::structs::note::Block>()
-        .typ::<common::structs::note::Path>()
-        .typ::<common::structs::note::Point>()
         .typ::<common::structs::note::Note>();
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
-    builder
-        .export(Typescript::default(), "../src/lib/tauri/bindings.ts")
-        .expect("Failed to export typescript bindings");
+    {
+        use specta_typescript::Typescript;
+        builder
+            .export(Typescript::default(), "../src/lib/tauri/bindings.ts")
+            .expect("Failed to export typescript bindings");
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
