@@ -14,11 +14,11 @@ pub struct Note {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub enum Block {
-    Path(Path),
+    Stroke(Stroke),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct Path {
+pub struct Stroke {
     points: Vec<Point>,
     color: String,
     thickness: f32,
