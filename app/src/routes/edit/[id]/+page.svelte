@@ -1,21 +1,11 @@
 <script lang="ts">
-  import {
-    commands,
-    type Block,
-    type Note,
-    type Point,
-    type Stroke,
-  } from "$lib/tauri/bindings";
+  import { commands, type Point } from "$lib/tauri/bindings";
   import { getSvgPathFromStroke } from "$lib/util/getSvgPathFromStroke";
   import { getStroke } from "perfect-freehand";
+  import { contentManager } from "$lib/state/contentManager.svelte";
+  import { tick } from "svelte";
 
   let dpr = $state(typeof window !== "undefined" ? window.devicePixelRatio : 1);
-
-  let title = $state("Arnold Testus 2");
-  let tags = $state<string[]>([]);
-  let createdAt = $state(Math.floor(Date.now() / 1000));
-  let id = $state(crypto.randomUUID());
-  let path = $state<string | undefined>();
 
   let width = $state(0);
   let height = $state(0);
@@ -24,7 +14,7 @@
   let canvas = $state<HTMLCanvasElement>();
   let ctx = $derived(canvas?.getContext("2d"));
 
-  let strokes = $state<Stroke[]>([]);
+  // let strokes = $state<Stroke[]>([]);
 
   let color = $state("#000000");
   let thickness = $state(8);
@@ -33,21 +23,30 @@
   let preview = $state<string>();
 
   $effect(() => {
+    redrawStrokes();
+  });
+
+  $effect(() => {
     preview = inputToPath(points);
   });
 
   $effect(() => {
     width;
     height;
-    redrawStrokes();
+    contentManager.id;
+
+    (async () => {
+      await tick();
+      redrawStrokes();
+    })();
   });
 
   $effect(() => {
     const event = async (e: KeyboardEvent) => {
       if (!e.ctrlKey) return;
 
-      if (e.key == "s") {
-        await commands.saveNoteDialog(serializeData());
+      if (e.key === "S" || (e.key === "s" && e.shiftKey)) {
+        await commands.saveNoteDialog(contentManager.export());
       }
     };
     document.addEventListener("keydown", event);
@@ -63,8 +62,13 @@
 
   function redrawStrokes() {
     if (drawing) return;
+    if (!ctx) return;
 
-    for (const { color, points, thickness } of strokes) {
+    ctx.resetTransform();
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(dpr, dpr);
+
+    for (const { color, points, thickness } of contentManager.strokes) {
       drawOnCanvas(inputToPath(points, thickness), color);
     }
   }
@@ -83,44 +87,42 @@
     if (!ctx) return;
     if (typeof path === "string") path = new Path2D(path);
 
-    ctx.resetTransform();
-    ctx.translate(width / 2, height / 2);
-    ctx.scale(dpr, dpr);
-
     ctx.fillStyle = c;
     ctx?.fill(path);
   }
 
   function finishStroke() {
     drawOnCanvas(inputToPath(points));
-    strokes.push({
+
+    contentManager.strokes.push({
       color,
       thickness,
       points,
     });
+
     points = [];
   }
 
   async function save() {}
 
-  function serializeData(): Note {
-    const blocks: Block[] = [
-      ...strokes.map(
-        (s) =>
-          ({
-            Stroke: s,
-          }) as Block,
-      ),
-    ];
+  // function serializeData(): Note {
+  //   const blocks: Block[] = [
+  //     ...strokes.map(
+  //       (s) =>
+  //         ({
+  //           Stroke: s,
+  //         }) as Block,
+  //     ),
+  //   ];
 
-    return {
-      blocks,
-      created_at: createdAt,
-      edited_at: Math.floor(Date.now() / 1000),
-      tags,
-      title,
-    };
-  }
+  //   return {
+  //     blocks,
+  //     created_at: createdAt,
+  //     edited_at: Math.floor(Date.now() / 1000),
+  //     tags,
+  //     title,
+  //   };
+  // }
 
   function createNoteData() {}
 </script>
