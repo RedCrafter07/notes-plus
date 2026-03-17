@@ -45,8 +45,6 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
             })
             .collect();
 
-        dbg!(&notes);
-
         return notes;
     }
 
