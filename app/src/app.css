@@ -7,6 +7,12 @@ body {
   font-family: "Funnel Sans Variable", sans-serif;
 }
 
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 * {
   /* Prevent text selection */
   user-select: none;

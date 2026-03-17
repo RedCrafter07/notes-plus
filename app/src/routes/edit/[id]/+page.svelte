@@ -139,7 +139,7 @@
 </script>
 
 <div
-  class="bg-white w-full h-screen relative"
+  class="bg-white w-full h-screen relative touch-none"
   bind:clientWidth={width}
   bind:clientHeight={height}
   onpointerdown={(e) => {
