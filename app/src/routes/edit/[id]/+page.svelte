@@ -10,9 +10,13 @@
   let canvasWidth = $state(0);
   let canvasHeight = $state(0);
 
+  const activeLayerID = $derived(
+    contentManager.layers[contentManager.activeLayer].id,
+  );
+
   let drawing = $state(false);
   let layers = $derived(contentManager.layers);
-  let layerCtx = $state<CanvasRenderingContext2D[]>([]);
+  let layerCtx = $state<Record<string, CanvasRenderingContext2D>>({});
 
   let color = $state("#000000");
   let thickness = $state(8);
@@ -20,14 +24,14 @@
 
   let preview = $state<string>();
 
-  function assignContext(element: HTMLCanvasElement, index: number) {
+  function assignContext(element: HTMLCanvasElement, id: string) {
     const ctx = element.getContext("2d");
     if (!ctx) {
       console.error("Fatal error: Couldn't get canvas context");
       return;
     }
 
-    layerCtx[index] = ctx;
+    layerCtx[id] = ctx;
   }
 
   $effect(() => {
@@ -76,10 +80,12 @@
     if (drawing) return;
     clearCanvas();
 
-    layerCtx.forEach((ctx, i) => {
-      const strokes = layers[i].blocks
+    layers.forEach((l) => {
+      const strokes = l.blocks
         .filter((b) => b.Stroke !== undefined)
         .map((b) => b.Stroke);
+
+      const ctx = layerCtx[l.id];
 
       ctx.resetTransform();
       ctx.translate(canvasWidth / 2, canvasHeight / 2);
@@ -102,7 +108,7 @@
   }
 
   function drawOnCanvas(path: string | Path2D, c = color) {
-    const ctx = layerCtx[contentManager.activeLayer];
+    const ctx = layerCtx[activeLayerID];
     if (!ctx) return;
     if (typeof path === "string") path = new Path2D(path);
 
@@ -111,7 +117,9 @@
   }
 
   function clearCanvas() {
-    for (const ctx of layerCtx) {
+    for (const id in layerCtx) {
+      const ctx = layerCtx[id];
+
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -172,14 +180,14 @@
   }}
   role="document"
 >
-  {#each layers as layer, i (`layer-${i}`)}
+  {#each layers as layer (`layer-${layer.id}`)}
     <canvas
       class="absolute w-full h-full top-0"
       style="width: {canvasWidth}px; height: {canvasHeight}px;"
       width={canvasWidth * dpr}
       height={canvasHeight * dpr}
       class:opacity-0={!layer.visible}
-      use:assignContext={i}
+      use:assignContext={layer.id}
     ></canvas>
   {/each}
 
