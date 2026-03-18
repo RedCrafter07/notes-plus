@@ -8,10 +8,10 @@
   import { timeout } from "$lib/util/timeout";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import Modals from "$lib/components/Modals.svelte";
-  import { contentManager } from "$lib/state/contentManager.svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import Tabs from "$lib/components/Tabs.svelte";
+  import { tabManager } from "$lib/state/tabManager.svelte";
 
   const { children } = $props();
 
@@ -41,10 +41,10 @@
         e.preventDefault();
         const data = await commands.openNotesDialog();
 
-        if (data[0]) {
-          const d = data[0];
-          openNote(d);
-        }
+        data.forEach((d, i, a) => {
+          tabManager.add(d, i === a.length - 1);
+          if (i === a.length - 1) goto(resolve("/edit/[id]", { id: d.id }));
+        });
       }
     };
     const contextMenuEvent = (e: PointerEvent) => e.preventDefault();
@@ -64,8 +64,8 @@
   });
 
   function openNote(data: NoteData) {
+    tabManager.add(data, true);
     goto(resolve("/edit/[id]", { id: data.id }));
-    contentManager.import(data);
   }
 </script>
 
