@@ -4,7 +4,7 @@
   import "@fontsource-variable/funnel-sans";
   import "../app.css";
   import "../mocha.css";
-  import { commands } from "$lib/tauri/bindings";
+  import { commands, events, type NoteData } from "$lib/tauri/bindings";
   import { timeout } from "$lib/util/timeout";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import Modals from "$lib/components/Modals.svelte";
@@ -15,6 +15,10 @@
   const { children } = $props();
 
   onMount(async () => {
+    events.open.listen((e) => {
+      openNote(e.payload);
+    });
+
     await timeout(50);
     await commands.ready();
   });
@@ -38,12 +42,7 @@
 
         if (data[0]) {
           const d = data[0];
-          goto(resolve("/edit/[id]", { id: d.id }));
-          await timeout(20);
-          contentManager.import(d.content, {
-            id: d.id,
-            path: d.path,
-          });
+          openNote(d);
         }
       }
     };
@@ -62,6 +61,14 @@
       });
     };
   });
+
+  function openNote(data: NoteData) {
+    goto(resolve("/edit/[id]", { id: data.id }));
+    contentManager.import(data.content, data.state, {
+      id: data.id,
+      path: data.path,
+    });
+  }
 </script>
 
 <div class="min-h-screen bg-base-3 text-content-1">
