@@ -64,10 +64,7 @@
 
   function openNote(data: NoteData) {
     goto(resolve("/edit/[id]", { id: data.id }));
-    contentManager.import(data.content, data.state, {
-      id: data.id,
-      path: data.path,
-    });
+    contentManager.import(data);
   }
 </script>
 

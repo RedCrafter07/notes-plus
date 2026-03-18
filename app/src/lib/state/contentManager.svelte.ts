@@ -1,60 +1,83 @@
-import type { Block, Note, Stroke } from "$lib/tauri/bindings";
+import type {
+  Block,
+  Note,
+  NoteData,
+  Page,
+  State,
+  Stroke,
+} from "$lib/tauri/bindings";
 
 class ContentManager {
-  #strokes: Stroke[] = $state([]);
-  #id: string = crypto.randomUUID();
+  #id: string = $state(crypto.randomUUID());
   tags: string[] = $state([]);
   title: string = $state("New Notebook");
-  #path: string | undefined = $state(undefined);
+  #path: string | null = $state(null);
   #createdAt: number = Math.floor(Date.now() / 1000);
   #editedAt: number = Math.floor(Date.now() / 1000);
+  #pages: Page[] = $state([]);
 
-  public import(
-    note: Note,
-    meta: Partial<{
-      id: string;
-      path: string;
-    }>,
-  ) {
-    this.#strokes = note.blocks
-      .filter((b) => Object.keys(b).includes("Stroke"))
-      .map((b) => b.Stroke);
+  #activePage = $state(0); // first page
+  #activeLayer = $state(0); // 0 is the bottom layer
 
+  zoom = $state(1);
+  panX = $state(0);
+  panY = $state(0);
+
+  public import(data: NoteData) {
+    const { content: note, id, path, state } = data;
     this.title = note.title;
     this.#createdAt = note.created_at;
     this.#editedAt = note.edited_at;
     this.tags = note.tags;
-    if (meta.id) this.#id = meta.id;
-    if (meta.path) this.#path = meta.path;
+    if (id) this.#id = id;
+    if (path) this.#path = path;
 
-    this.#id = crypto.randomUUID();
+    this.zoom = state.zoom;
+    this.panX = state.pan_x;
+    this.panY = state.pan_y;
+    this.#activeLayer = state.current_layer;
+    this.#activePage = state.current_page;
+
+    this.#pages = note.pages;
   }
 
   public updateEditDate() {
     this.#editedAt = Math.floor(Date.now() / 1000);
   }
 
-  public export(): Note {
-    const blocks: Block[] = [
-      ...this.strokes.map(
-        (s) =>
-          ({
-            Stroke: s,
-          }) as Block,
-      ),
-    ];
-
-    return {
-      blocks,
+  public export(): NoteData {
+    const content: Note = {
+      pages: this.#pages,
       created_at: this.#createdAt,
       edited_at: Math.floor(Date.now() / 1000),
       tags: this.tags,
       title: this.title,
     };
+
+    const state: State = {
+      current_layer: this.#activeLayer,
+      current_page: this.#activePage,
+      pan_x: this.panX,
+      pan_y: this.panY,
+      zoom: this.zoom,
+    };
+
+    return {
+      content,
+      id: this.#id,
+      path: this.#path,
+      state,
+    };
   }
 
-  get strokes() {
-    return this.#strokes;
+  get size(): { width: number; height: number } | "Infinite" {
+    const { width, height } = this.#pages[this.#activePage];
+    if (width < 0 || height < 0) return "Infinite";
+    return { width, height };
+  }
+
+  get layers() {
+    return this.#pages[this.#activePage].layers;
   }
 
   get editedAt() {
@@ -73,10 +96,12 @@ class ContentManager {
     return this.#path;
   }
 
-  set strokes(strokes: Stroke[]) {
-    this.updateEditDate();
+  get activeLayer() {
+    return this.#activeLayer;
+  }
 
-    this.#strokes = strokes;
+  get activePage() {
+    return this.#activePage;
   }
 }
 

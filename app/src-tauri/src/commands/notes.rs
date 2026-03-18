@@ -1,19 +1,10 @@
-use common::structs::note::Note;
-use serde::{Deserialize, Serialize};
+use common::structs::note::NoteData;
 use tauri_plugin_dialog::DialogExt;
-use uuid::Uuid;
 
 #[tauri::command]
 #[specta::specta]
 pub fn snapshot_note() {
     // TODO: Implement snapshot note functionality
-}
-
-#[derive(specta::Type, Debug, Serialize, Deserialize)]
-pub struct NoteData {
-    pub content: Note,
-    pub path: String,
-    pub id: String, // temporary identifier for tab manager
 }
 
 #[tauri::command]
@@ -31,14 +22,11 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
             .iter()
             .filter_map(|path| {
                 let path = path.as_path().unwrap();
-                let note = Note::from_file(path);
+                let note_data = NoteData::from_file(path);
 
-                if let Ok(note) = note {
-                    return Some(NoteData {
-                        content: note,
-                        path: path.to_string_lossy().into_owned(),
-                        id: Uuid::new_v4().to_string(), // identifier for the tab manager
-                    });
+                if let Ok(note_data) = note_data {
+                    dbg!(&note_data.content.title);
+                    return Some(note_data);
                 } else {
                     return None;
                 }
@@ -51,11 +39,15 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
     Vec::new()
 }
 
-pub fn save_note(note_data: NoteData) {}
+#[tauri::command]
+#[specta::specta]
+pub fn new_note() -> NoteData {
+    NoteData::default()
+}
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_note_dialog(app: tauri::AppHandle, note: Note) -> Option<NoteData> {
+pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) {
     let path = app
         .dialog()
         .file()
@@ -65,14 +57,6 @@ pub fn save_note_dialog(app: tauri::AppHandle, note: Note) -> Option<NoteData> {
 
     if let Some(path) = path {
         let path = path.as_path().unwrap();
-        note.to_file(path).unwrap();
-
-        return Some(NoteData {
-            content: note,
-            path: path.to_string_lossy().into_owned(),
-            id: Uuid::new_v4().to_string(),
-        });
-    }
-
-    None
+        note_data.to_file(path).unwrap();
+    };
 }
