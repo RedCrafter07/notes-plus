@@ -140,27 +140,6 @@
 
     points = [];
   }
-
-  // function serializeData(): Note {
-  //   const blocks: Block[] = [
-  //     ...strokes.map(
-  //       (s) =>
-  //         ({
-  //           Stroke: s,
-  //         }) as Block,
-  //     ),
-  //   ];
-
-  //   return {
-  //     blocks,
-  //     created_at: createdAt,
-  //     edited_at: Math.floor(Date.now() / 1000),
-  //     tags,
-  //     title,
-  //   };
-  // }
-
-  function createNoteData() {}
 </script>
 
 <div
@@ -169,14 +148,15 @@
   bind:clientHeight={canvasHeight}
   onpointerdown={(e) => {
     drawing = true;
-    points.push(translateToRelative(e.clientX, e.clientY));
+    points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
   }}
   onpointerup={() => {
     drawing = false;
     finishStroke();
   }}
   onpointermove={(e) => {
-    if (drawing) points.push(translateToRelative(e.clientX, e.clientY));
+    if (drawing)
+      points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
   }}
   role="document"
 >
