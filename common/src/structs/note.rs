@@ -5,6 +5,7 @@ use specta::Type;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Layer {
+    pub id: String,
     pub blocks: Vec<Block>,
     pub visible: bool,
     pub locked: bool,
@@ -117,10 +118,8 @@ impl Default for Page {
 impl Layer {
     pub fn new(name: String) -> Self {
         Self {
-            blocks: Vec::new(),
-            visible: true,
-            locked: false,
             name,
+            ..Layer::default()
         }
     }
 }
@@ -128,6 +127,7 @@ impl Layer {
 impl Default for Layer {
     fn default() -> Self {
         Self {
+            id: uuid::Uuid::new_v4().to_string(),
             blocks: Vec::new(),
             visible: true,
             locked: false,
