@@ -11,6 +11,7 @@
   import { contentManager } from "$lib/state/contentManager.svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import Tabs from "$lib/components/Tabs.svelte";
 
   const { children } = $props();
 
@@ -70,5 +71,10 @@
 
 <div class="min-h-screen bg-base-3 text-content-1">
   <Modals />
-  {@render children()}
+  <div class="flex flex-col">
+    <Tabs />
+    <div class="flex-1 relative">
+      {@render children()}
+    </div>
+  </div>
 </div>
