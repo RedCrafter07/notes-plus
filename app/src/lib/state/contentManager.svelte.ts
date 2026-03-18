@@ -1,11 +1,4 @@
-import type {
-  Block,
-  Note,
-  NoteData,
-  Page,
-  State,
-  Stroke,
-} from "$lib/tauri/bindings";
+import type { Note, NoteData, Page, State } from "$lib/tauri/bindings";
 
 class ContentManager {
   #id: string = $state(crypto.randomUUID());
