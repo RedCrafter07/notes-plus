@@ -24,6 +24,18 @@
 
   let preview = $state<string>();
 
+  let svgViewBox = $derived(
+    `${translateToRelative(0, 0).x} ${translateToRelative(0, 0).y} ${canvasWidth / contentManager.zoom} ${canvasHeight / contentManager.zoom}`,
+  );
+
+  $effect(() => {
+    canvasWidth;
+    canvasHeight;
+    contentManager.zoom;
+    contentManager.panX;
+    contentManager.panY;
+  });
+
   function assignContext(element: HTMLCanvasElement, id: string) {
     const ctx = element.getContext("2d");
     if (!ctx) {
@@ -69,9 +81,19 @@
   });
 
   function translateToRelative(x: number, y: number, pressure: number = 0.5) {
+    x = x - canvasWidth / (2 * dpr);
+    y = y - canvasHeight / (2 * dpr);
+
+    x = x / contentManager.zoom;
+    y = y / contentManager.zoom;
+
+    // 3. Invert the Camera Pan
+    x = x - contentManager.panX;
+    y = y - contentManager.panY;
+
     return {
-      x: x - canvasWidth / (2 * dpr),
-      y: y - canvasHeight / (2 * dpr),
+      x,
+      y,
       pressure,
     };
   }
@@ -88,8 +110,12 @@
       const ctx = layerCtx[l.id];
 
       ctx.resetTransform();
-      ctx.translate(canvasWidth / 2, canvasHeight / 2);
       ctx.scale(dpr, dpr);
+      ctx.translate(canvasWidth / 2, canvasHeight / 2);
+
+      // zoom/pan
+      ctx.scale(contentManager.zoom, contentManager.zoom);
+      ctx.translate(contentManager.panX, contentManager.panY);
 
       for (const { color, points, thickness } of strokes) {
         drawOnCanvas(inputToPath(points, thickness), color);
@@ -158,6 +184,22 @@
     if (drawing)
       points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
   }}
+  onwheel={(e) => {
+    if (e.ctrlKey) {
+      if (e.deltaY > 0) {
+        contentManager.zoom /= Math.abs(e.deltaY / 90);
+      } else {
+        contentManager.zoom *= Math.abs(e.deltaY / 90);
+      }
+    } else {
+      let x = e.shiftKey ? e.deltaY : e.deltaX;
+      let y = e.shiftKey ? e.deltaX : e.deltaY;
+
+      contentManager.panX -= x;
+      contentManager.panY -= y;
+    }
+    redrawStrokes();
+  }}
   role="document"
 >
   {#each layers as layer (`layer-${layer.id}`)}
@@ -171,10 +213,7 @@
     ></canvas>
   {/each}
 
-  <svg
-    class="w-full h-full absolute top-0"
-    viewBox={`${translateToRelative(0, 0).x} ${translateToRelative(0, 0).y} ${canvasWidth} ${canvasHeight}`}
-  >
+  <svg class="w-full h-full absolute top-0" viewBox={svgViewBox}>
     <path d={preview} fill={color} />
   </svg>
 </div>
