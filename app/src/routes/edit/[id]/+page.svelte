@@ -1,5 +1,6 @@
 <script lang="ts">
   import { contentManager } from "$lib/state/contentManager.svelte";
+  import { tabManager } from "$lib/state/tabManager.svelte";
   import { commands, type Point } from "$lib/tauri/bindings";
   import { getSvgPathFromStroke } from "$lib/util/getSvgPathFromStroke";
   import { getStroke } from "perfect-freehand";
@@ -17,6 +18,8 @@
   let drawing = $state(false);
   let layers = $derived(contentManager.layers);
   let layerCtx = $state<Record<string, CanvasRenderingContext2D>>({});
+
+  let currentButton = $state(-1);
 
   let color = $state("#000000");
   let thickness = $state(8);
@@ -87,7 +90,6 @@
     x = x / contentManager.zoom;
     y = y / contentManager.zoom;
 
-    // 3. Invert the Camera Pan
     x = x - contentManager.panX;
     y = y - contentManager.panY;
 
@@ -164,6 +166,8 @@
       },
     });
 
+    tabManager.setEdited();
+
     points = [];
   }
 </script>
@@ -173,16 +177,35 @@
   bind:clientWidth={canvasWidth}
   bind:clientHeight={canvasHeight}
   onpointerdown={(e) => {
-    drawing = true;
-    points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
+    currentButton = e.button;
+    if (e.button === 0) {
+      drawing = true;
+      points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
+    }
   }}
   onpointerup={() => {
+    currentButton = -1;
     drawing = false;
     finishStroke();
   }}
   onpointermove={(e) => {
-    if (drawing)
-      points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
+    switch (currentButton) {
+      case 0:
+        {
+          if (drawing)
+            points.push(
+              translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5),
+            );
+        }
+        break;
+
+      case 1:
+        {
+          contentManager.panX += e.movementX;
+          contentManager.panY += e.movementY;
+        }
+        break;
+    }
   }}
   onwheel={(e) => {
     if (e.ctrlKey) {
