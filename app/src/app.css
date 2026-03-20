@@ -13,6 +13,14 @@ body {
   overscroll-behavior: none;
 }
 
+button {
+  @apply cursor-pointer;
+}
+
+#tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
 * {
   /* Prevent text selection */
   user-select: none;
