@@ -2,6 +2,7 @@ import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import type { NoteData } from "$lib/tauri/bindings";
 import { contentManager } from "./contentManager.svelte";
+import { overlayManager } from "./overlayManager.svelte";
 
 class TabManager {
   #tabs = $state<(NoteData & { unsaved: boolean })[]>([]);
@@ -21,6 +22,7 @@ class TabManager {
 
   remove(index: number, force = false) {
     if (this.activeNote?.unsaved && !force) {
+      overlayManager.setOpen(`unsaved-${index}`);
       return;
     }
     this.#activeTab--;
