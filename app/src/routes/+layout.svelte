@@ -12,6 +12,7 @@
   import { resolve } from "$app/paths";
   import Tabs from "$lib/components/Tabs.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
+  import { newNote } from "$lib/util/notes";
 
   const { children } = $props();
 
@@ -32,12 +33,12 @@
       }
 
       if (!e.ctrlKey) return;
-      if (e.key == "q") {
+      if (e.key === "q") {
         await commands.quit();
-      } else if (e.key == "j") {
+      } else if (e.key === "j") {
         e.preventDefault();
         overlayManager.setOpen("jotDown");
-      } else if (e.key == "o") {
+      } else if (e.key === "o") {
         e.preventDefault();
         const data = await commands.openNotesDialog();
 
@@ -45,6 +46,8 @@
           tabManager.add(d, i === a.length - 1);
           if (i === a.length - 1) goto(resolve("/edit/[id]", { id: d.id }));
         });
+      } else if (e.key === "n") {
+        await newNote();
       }
     };
     const contextMenuEvent = (e: PointerEvent) => e.preventDefault();
@@ -65,7 +68,6 @@
 
   function openNote(data: NoteData) {
     tabManager.add(data, true);
-    goto(resolve("/edit/[id]", { id: data.id }));
   }
 </script>
 
