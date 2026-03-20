@@ -5,7 +5,7 @@
   import Overlay from "./Overlay.svelte";
   import { commands } from "$lib/tauri/bindings";
 
-  let visible = $derived(overlayManager.open == "jotDown");
+  let visible = $derived(overlayManager.open === "jotDown");
   let note = $state("");
   let input = $state<HTMLInputElement>();
 
