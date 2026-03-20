@@ -77,7 +77,7 @@
           onpointerdown={(e) => {
             if (e.button !== 1) return;
             e.preventDefault();
-            tabManager.remove(i);
+            tabManager.remove(i, e.shiftKey);
           }}
           onclick={() => {
             updateTab(i);
