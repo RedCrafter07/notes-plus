@@ -1,6 +1,5 @@
 <script lang="ts">
   import { commands, events } from "$lib/tauri/bindings";
-  import { timeout } from "$lib/util/timeout";
   import { IconClock } from "@tabler/icons-svelte";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -42,9 +41,7 @@
 
 <div class="w-full min-h-screen bg-base-1">
   <div class="p-2 container mx-auto flex flex-col gap-8">
-    <h1 class="text-3xl font-display font-bold tracking-wider">
-      Welcome to RedNotes Plus!
-    </h1>
+    <h1 class="text-3xl font-display font-bold">Welcome to RedNotes Plus!</h1>
 
     {#if jotNotes.length > 0}
       <div class="flex flex-col gap-4 bg-base-2 p-4 rounded-xl">
@@ -87,7 +84,6 @@
       <h3 class="text-xl flex flex-row gap-2 items-center">
         <IconClock /> Recent files
       </h3>
-      <p></p>
     </div>
   </div>
 </div>
