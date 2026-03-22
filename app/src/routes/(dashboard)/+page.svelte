@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { commands, events } from "$lib/tauri/bindings";
-  import { IconClock } from "@tabler/icons-svelte";
+  import { commands, events, type NoteData } from "$lib/tauri/bindings";
+  import { IconClock, IconPencil } from "@tabler/icons-svelte";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
   let jotNotes = $state<string[]>([]);
-  let recentNotes = $state<any[]>([]);
+  let recentNotes = $state<NoteData[]>([]);
   let jotNoteInputs = $state<HTMLInputElement[]>([]);
 
   $effect(() => {
@@ -40,11 +40,12 @@
 </script>
 
 <div class="p-2 container mx-auto flex flex-col gap-8">
-  <h1 class="text-3xl font-display font-bold">Welcome to RedNotes Plus!</h1>
-
   {#if jotNotes.length > 0}
     <div class="flex flex-col gap-4 bg-base-2 p-4 rounded-xl">
-      <h3 class="text-xl font-display font-bold tracking-wide">Jot Notes</h3>
+      <h3 class="flex flex-row gap-2 items-center font-semibold text-xl">
+        <IconPencil />
+        Jot Notes
+      </h3>
       <div class="flex flex-col gap-2">
         {#each jotNotes as note, i (`jotnote${i}`)}
           <div class="flex flex-row items-center">
@@ -77,9 +78,16 @@
     </div>
   {/if}
 
-  <div class="flex flex-col gap-4">
-    <h3 class="text-xl flex flex-row gap-2 items-center">
+  <div class="flex flex-col gap-4 p-4 rounded-xl bg-base-2">
+    <h3 class="text-xl flex flex-row gap-2 items-center font-semibold">
       <IconClock /> Recent files
     </h3>
+    {#each recentNotes as note (`recent-${note.id}`)}
+      <div></div>
+    {:else}
+      <p class="text-content-2">
+        No recent files found. Why don't you create one?
+      </p>
+    {/each}
   </div>
 </div>
