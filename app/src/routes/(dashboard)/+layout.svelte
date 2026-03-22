@@ -42,7 +42,7 @@
       </button>
     </div>
   </div>
-  <div class="flex-1 p-2">
+  <div class="flex-1 p-4">
     {@render children()}
   </div>
 </div>

@@ -39,7 +39,7 @@
   });
 </script>
 
-<div class="p-2 container mx-auto flex flex-col gap-8">
+<div class="container mx-auto flex flex-col gap-8">
   {#if jotNotes.length > 0}
     <div class="flex flex-col gap-4 bg-base-2 p-4 rounded-xl">
       <h3 class="flex flex-row gap-2 items-center font-semibold text-xl">
