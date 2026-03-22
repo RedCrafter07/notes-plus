@@ -13,7 +13,8 @@ body {
   overscroll-behavior: none;
 }
 
-button {
+button,
+button * {
   @apply cursor-pointer;
 }
 
