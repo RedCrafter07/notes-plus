@@ -1,7 +1,7 @@
-use common::structs::note::Note;
+use common::structs::note::NoteData;
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_recent() -> Vec<Note> {
+pub fn get_recent() -> Vec<NoteData> {
     vec![]
 }
