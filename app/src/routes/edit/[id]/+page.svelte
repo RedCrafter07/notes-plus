@@ -234,6 +234,8 @@
     if (e.button === 0 && pointerType !== "touch" && tool === "pen") {
       drawing = true;
       points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
+    } else if (tool === "eraser") {
+      eraser(e.offsetX, e.offsetY);
     }
   }}
   onpointerup={() => {
