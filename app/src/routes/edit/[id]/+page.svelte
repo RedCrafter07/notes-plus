@@ -16,6 +16,7 @@
   );
 
   let drawing = $state(false);
+  let pointerType = $state("mouse");
   let layers = $derived(contentManager.layers);
   let layerCtx = $state<Record<string, CanvasRenderingContext2D>>({});
 
@@ -23,7 +24,7 @@
   let touchX = $state(0);
   let touchY = $state(0);
   // pinch
-  let initialPinchDistance = $state(0);
+  let initialPinchDistance = $state(1);
 
   let currentButton = $state(-1);
 
@@ -90,8 +91,8 @@
   });
 
   function translateToRelative(x: number, y: number, pressure: number = 0.5) {
-    x = x - canvasWidth / (2 * dpr);
-    y = y - canvasHeight / (2 * dpr);
+    x = x - canvasWidth / 2;
+    y = y - canvasHeight / 2;
 
     x = x / contentManager.zoom;
     y = y / contentManager.zoom;
@@ -155,8 +156,8 @@
       const ctx = layerCtx[id];
 
       ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.resetTransform();
+      ctx.clearRect(0, 0, canvasWidth * dpr, canvasHeight * dpr);
       ctx.restore();
     }
   }
@@ -191,8 +192,9 @@
   bind:clientWidth={canvasWidth}
   bind:clientHeight={canvasHeight}
   onpointerdown={(e) => {
+    pointerType = e.pointerType;
     currentButton = e.button;
-    if (e.button === 0) {
+    if (e.button === 0 && pointerType !== "touch") {
       drawing = true;
       points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
     }
@@ -238,6 +240,7 @@
     redrawStrokes();
   }}
   ontouchstart={(e) => {
+    if (pointerType !== "touch") return;
     switch (e.touches.length) {
       case 1:
         e.preventDefault();
@@ -252,18 +255,18 @@
     }
   }}
   ontouchmove={(e) => {
+    if (pointerType !== "touch") return;
     switch (e.touches.length) {
       case 1:
         {
-          e.preventDefault();
           const currentX = e.touches[0].clientX;
           const currentY = e.touches[0].clientY;
 
           const deltaX = currentX - touchX;
           const deltaY = currentY - touchY;
 
-          contentManager.panX += deltaX;
-          contentManager.panY += deltaY;
+          contentManager.panX += deltaX / contentManager.zoom;
+          contentManager.panY += deltaY / contentManager.zoom;
 
           touchX = currentX;
           touchY = currentY;
@@ -275,16 +278,13 @@
         {
           const { clientX: x1, clientY: y1 } = e.touches[0];
           const { clientX: x2, clientY: y2 } = e.touches[1];
-          const currentDistance = getPinchDistance(x1, y2, x2, y2);
+          let currentDistance = getPinchDistance(x1, y2, x2, y2);
+          if (currentDistance <= 0) currentDistance = 1;
 
           const center = getCenter(x1, y1, x2, y2);
           const zoom = currentDistance / initialPinchDistance;
 
           contentManager.zoom *= zoom;
-          contentManager.panX =
-            center.x - (center.x - contentManager.panX) * zoom;
-          contentManager.panY =
-            center.x - (center.y - contentManager.panY) * zoom;
 
           initialPinchDistance = currentDistance;
 
@@ -292,7 +292,12 @@
         }
         break;
     }
-    e.preventDefault();
+  }}
+  ontouchend={(e) => {
+    if (e.touches.length === 1) {
+      touchX = e.touches[0].clientX;
+      touchY = e.touches[0].clientY;
+    }
   }}
   role="document"
 >
