@@ -25,7 +25,6 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
                 let note_data = NoteData::from_file(path);
 
                 if let Ok(note_data) = note_data {
-                    dbg!(&note_data.content.title);
                     return Some(note_data);
                 } else {
                     return None;
