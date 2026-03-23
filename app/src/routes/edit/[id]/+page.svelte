@@ -179,7 +179,7 @@
   }
 
   function getPinchDistance(x1: number, y1: number, x2: number, y2: number) {
-    return Math.hypot(x1 - x2, y1 - y1);
+    return Math.hypot(x1 - x2, y1 - y2);
   }
 
   function getCenter(x1: number, y1: number, x2: number, y2: number) {
