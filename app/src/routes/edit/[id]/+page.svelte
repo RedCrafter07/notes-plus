@@ -37,6 +37,7 @@
   let points = $state<Point[]>([]);
   let tool = $state<"pen" | "eraser" | "lasso">("pen");
   let eraserRadius = $state(24);
+  let lockTool = $state(false);
 
   let preview = $state<string>();
 
@@ -234,6 +235,21 @@
   onpointerdown={(e) => {
     pointerType = e.pointerType;
     currentButton = e.button;
+    if (!lockTool) {
+      switch (e.button) {
+        case 0:
+          tool = "pen";
+          break;
+
+        case 1:
+          tool = "lasso";
+          break;
+
+        case 5:
+          tool = "eraser";
+          break;
+      }
+    }
     if (e.button === 0 && pointerType !== "touch" && tool === "pen") {
       drawing = true;
       points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
@@ -260,6 +276,9 @@
             eraser(e.offsetX, e.offsetY);
           }
         }
+        break;
+      case 5:
+        eraser(e.offsetX, e.offsetY);
         break;
 
       case 1:
