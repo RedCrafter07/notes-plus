@@ -22,6 +22,11 @@ button * {
   display: none;
 }
 
+.hide-cursor,
+.hide-cursor * {
+  cursor: none !important;
+}
+
 * {
   /* Prevent text selection */
   user-select: none;

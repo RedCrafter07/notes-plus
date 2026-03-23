@@ -21,6 +21,9 @@
   let layers = $derived(contentManager.layers);
   let layerCtx = $state<Record<string, CanvasRenderingContext2D>>({});
 
+  let cursorX = $state(0);
+  let cursorY = $state(0);
+
   // used for panning
   let touchX = $state(0);
   let touchY = $state(0);
@@ -225,7 +228,7 @@
 </script>
 
 <div
-  class="bg-white w-full h-screen relative touch-none"
+  class="bg-white w-full h-screen relative touch-none hide-cursor"
   bind:clientWidth={canvasWidth}
   bind:clientHeight={canvasHeight}
   onpointerdown={(e) => {
@@ -244,6 +247,8 @@
     finishStroke();
   }}
   onpointermove={(e) => {
+    cursorX = e.offsetX;
+    cursorY = e.offsetY;
     switch (currentButton) {
       case 0:
         {
@@ -324,6 +329,7 @@
           if (currentDistance <= 0) currentDistance = 1;
 
           const center = getCenter(x1, y1, x2, y2);
+          // TODO: Pan to center of pinch
           const zoom = currentDistance / initialPinchDistance;
 
           contentManager.zoom *= zoom;
@@ -357,6 +363,22 @@
   <svg class="w-full h-full absolute top-0" viewBox={svgViewBox}>
     <path d={preview} fill={color} />
   </svg>
+
+  <div
+    class={[
+      "rounded-full aspect-square absolute pointer-events-none opacity-50",
+      {
+        "border border-destructive": tool === "eraser",
+      },
+    ]}
+    style="width: {tool === 'eraser'
+      ? eraserRadius * 2
+      : thickness}px; background-color: {tool === 'pen'
+      ? color
+      : '#ffffff'}; top: {cursorY -
+      (tool === 'eraser' ? eraserRadius : thickness / 2)}px; left:{cursorX -
+      (tool === 'eraser' ? eraserRadius : thickness / 2)}px;"
+  ></div>
 </div>
 <button
   class="absolute right-4 top-4 p-2 rounded-xl bg-destructive text-destructive-content"
