@@ -1,7 +1,8 @@
 <script lang="ts">
   import { contentManager } from "$lib/state/contentManager.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
-  import { commands, type Point } from "$lib/tauri/bindings";
+  import { commands, type Block, type Point } from "$lib/tauri/bindings";
+  import { erase } from "$lib/util/erase";
   import { getSvgPathFromStroke } from "$lib/util/getSvgPathFromStroke";
   import { getStroke } from "perfect-freehand";
   import { tick } from "svelte";
@@ -31,6 +32,8 @@
   let color = $state("#000000");
   let thickness = $state(8);
   let points = $state<Point[]>([]);
+  let tool = $state<"pen" | "eraser" | "lasso">("pen");
+  let eraserRadius = $state(24);
 
   let preview = $state<string>();
 
@@ -185,6 +188,40 @@
   function getCenter(x1: number, y1: number, x2: number, y2: number) {
     return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
   }
+
+  function eraser(x: number, y: number) {
+    layers.forEach((l, i) => {
+      if (l.locked || !l.visible) return l;
+
+      const blocks = l.blocks.flatMap((b) => {
+        if (b.Stroke) {
+          const s = b.Stroke;
+          if (s.points.length === 1) return b;
+          if (s.points.length === 0) return [];
+          const newPoints = erase(
+            s.points,
+            translateToRelative(x, y, 0.5),
+            eraserRadius,
+          );
+
+          return newPoints.map(
+            (p) =>
+              ({
+                Stroke: {
+                  ...s,
+                  points: p,
+                },
+              }) satisfies Block,
+          );
+        } else return b;
+      });
+
+      contentManager.layers[i] = {
+        ...l,
+        blocks,
+      };
+    });
+  }
 </script>
 
 <div
@@ -194,7 +231,7 @@
   onpointerdown={(e) => {
     pointerType = e.pointerType;
     currentButton = e.button;
-    if (e.button === 0 && pointerType !== "touch") {
+    if (e.button === 0 && pointerType !== "touch" && tool === "pen") {
       drawing = true;
       points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
     }
@@ -212,6 +249,9 @@
             points.push(
               translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5),
             );
+          else if (tool === "eraser") {
+            eraser(e.offsetX, e.offsetY);
+          }
         }
         break;
 
@@ -324,4 +364,13 @@
   }}
 >
   Toggle color
+</button>
+
+<button
+  class="absolute right-4 top-16 p-2 rounded-xl bg-destructive text-destructive-content"
+  onclick={() => {
+    tool = tool === "pen" ? "eraser" : "pen";
+  }}
+>
+  Toggle pen/eraser
 </button>
