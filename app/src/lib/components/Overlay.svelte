@@ -28,7 +28,7 @@
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
-        class="absolute top-0 pointer-events-auto w-full h-full backdrop-blur-sm bg-base-1/50"
+        class="absolute top-0 pointer-events-auto w-full h-full backdrop-blur-sm bg-base-3/50"
         onclick={closeCb}
       ></div>
 
@@ -37,7 +37,7 @@
       >
         <div
           class={[
-            "pointer-events-auto w-3/4 max-h-3/4 overflow-auto rounded-xl bg-base-2 drop-shadow-lg p-4 flex flex-col gap-4",
+            "pointer-events-auto w-3/4 max-h-3/4 overflow-auto rounded-xl bg-base-1 drop-shadow-lg p-4 flex flex-col gap-4",
             { "h-3/4": !minHeight },
           ]}
         >
