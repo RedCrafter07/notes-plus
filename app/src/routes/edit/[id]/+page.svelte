@@ -19,6 +19,12 @@
   let layers = $derived(contentManager.layers);
   let layerCtx = $state<Record<string, CanvasRenderingContext2D>>({});
 
+  // used for panning
+  let touchX = $state(0);
+  let touchY = $state(0);
+  // pinch
+  let initialPinchDistance = $state(0);
+
   let currentButton = $state(-1);
 
   let color = $state("#000000");
@@ -170,6 +176,14 @@
 
     points = [];
   }
+
+  function getPinchDistance(x1: number, y1: number, x2: number, y2: number) {
+    return Math.hypot(x1 - x2, y1 - y1);
+  }
+
+  function getCenter(x1: number, y1: number, x2: number, y2: number) {
+    return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+  }
 </script>
 
 <div
@@ -222,6 +236,63 @@
       contentManager.panY -= y;
     }
     redrawStrokes();
+  }}
+  ontouchstart={(e) => {
+    switch (e.touches.length) {
+      case 1:
+        e.preventDefault();
+        touchX = e.touches[0].clientX;
+        touchY = e.touches[0].clientY;
+        break;
+      case 2:
+        const { clientX: x1, clientY: y1 } = e.touches[0];
+        const { clientX: x2, clientY: y2 } = e.touches[1];
+        initialPinchDistance = getPinchDistance(x1, y1, x2, y2);
+        break;
+    }
+  }}
+  ontouchmove={(e) => {
+    switch (e.touches.length) {
+      case 1:
+        {
+          e.preventDefault();
+          const currentX = e.touches[0].clientX;
+          const currentY = e.touches[0].clientY;
+
+          const deltaX = currentX - touchX;
+          const deltaY = currentY - touchY;
+
+          contentManager.panX += deltaX;
+          contentManager.panY += deltaY;
+
+          touchX = currentX;
+          touchY = currentY;
+
+          redrawStrokes();
+        }
+        break;
+      case 2:
+        {
+          const { clientX: x1, clientY: y1 } = e.touches[0];
+          const { clientX: x2, clientY: y2 } = e.touches[1];
+          const currentDistance = getPinchDistance(x1, y2, x2, y2);
+
+          const center = getCenter(x1, y1, x2, y2);
+          const zoom = currentDistance / initialPinchDistance;
+
+          contentManager.zoom *= zoom;
+          contentManager.panX =
+            center.x - (center.x - contentManager.panX) * zoom;
+          contentManager.panY =
+            center.x - (center.y - contentManager.panY) * zoom;
+
+          initialPinchDistance = currentDistance;
+
+          redrawStrokes();
+        }
+        break;
+    }
+    e.preventDefault();
   }}
   role="document"
 >
