@@ -278,7 +278,7 @@
         {
           const { clientX: x1, clientY: y1 } = e.touches[0];
           const { clientX: x2, clientY: y2 } = e.touches[1];
-          let currentDistance = getPinchDistance(x1, y2, x2, y2);
+          let currentDistance = getPinchDistance(x1, y1, x2, y2);
           if (currentDistance <= 0) currentDistance = 1;
 
           const center = getCenter(x1, y1, x2, y2);
