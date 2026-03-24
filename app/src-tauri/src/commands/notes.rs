@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use common::structs::note::NoteData;
 use tauri_plugin_dialog::DialogExt;
 
@@ -46,7 +48,23 @@ pub fn new_note() -> NoteData {
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) {
+pub fn save_note(note_data: NoteData) -> bool {
+    if note_data.path.is_none() {
+        return false;
+    }
+
+    let result = note_data.to_file(Path::new(&note_data.path.as_ref().unwrap()));
+
+    if result.is_err() {
+        return false;
+    }
+
+    true
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<String> {
     let path = app
         .dialog()
         .file()
@@ -57,5 +75,9 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) {
     if let Some(path) = path {
         let path = path.as_path().unwrap();
         note_data.to_file(path).unwrap();
-    };
+
+        return Some(path.to_string_lossy().into());
+    }
+
+    None
 }

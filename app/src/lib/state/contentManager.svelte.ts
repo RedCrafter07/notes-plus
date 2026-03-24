@@ -85,8 +85,16 @@ class ContentManager {
     return this.#id;
   }
 
+  set id(id: string) {
+    this.#id = id;
+  }
+
   get path() {
     return this.#path;
+  }
+
+  set path(path: string | null) {
+    this.#path = path;
   }
 
   get activeLayer() {

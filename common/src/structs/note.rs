@@ -65,16 +65,17 @@ pub enum Block {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Stroke {
-    points: Vec<Point>,
-    color: String,
-    thickness: f32,
+    pub id: String,
+    pub points: Vec<Point>,
+    pub color: String,
+    pub thickness: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Point {
-    x: f32,
-    y: f32,
-    pressure: f32,
+    pub x: f32,
+    pub y: f32,
+    pub pressure: f32,
 }
 
 impl Note {

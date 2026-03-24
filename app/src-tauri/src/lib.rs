@@ -22,6 +22,7 @@ pub fn run() {
             list_jot_notes,
             open_notes_dialog,
             new_note,
+            save_note,
             save_note_dialog,
         ])
         .events(collect_events![events::JotDown, events::Open])

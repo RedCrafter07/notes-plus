@@ -43,6 +43,9 @@ pub(crate) fn note_to_file(data: &NoteData, path: &Path) -> Result<(), NoteFileE
 
     file.lock()?;
 
+    let mut data = data.clone();
+    data.path = None;
+
     let mut encoder = GzEncoder::new(&file, Compression::default());
 
     encoder.write_all(b"REDNOTES")?;
