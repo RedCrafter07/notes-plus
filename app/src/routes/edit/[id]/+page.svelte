@@ -23,6 +23,7 @@
 
   let cursorX = $state(0);
   let cursorY = $state(0);
+  let cursorVisible = $state(false);
 
   // used for panning
   let touchX = $state(0);
@@ -229,9 +230,18 @@
 </script>
 
 <div
-  class="bg-white w-full h-screen relative touch-none hide-cursor"
+  class="bg-white w-full h-screen relative touch-none hide-cursor overflow-hidden"
   bind:clientWidth={canvasWidth}
   bind:clientHeight={canvasHeight}
+  onpointerenter={(e) => {
+    cursorX = e.offsetX;
+    cursorY = e.offsetY;
+
+    cursorVisible = true;
+  }}
+  onpointerleave={() => {
+    cursorVisible = false;
+  }}
   onpointerdown={(e) => {
     pointerType = e.pointerType;
     currentButton = e.button;
@@ -383,21 +393,23 @@
     <path d={preview} fill={color} />
   </svg>
 
-  <div
-    class={[
-      "rounded-full aspect-square absolute pointer-events-none opacity-50",
-      {
-        "border border-destructive": tool === "eraser",
-      },
-    ]}
-    style="width: {tool === 'eraser'
-      ? eraserRadius * 2
-      : thickness}px; background-color: {tool === 'pen'
-      ? color
-      : '#ffffff'}; top: {cursorY -
-      (tool === 'eraser' ? eraserRadius : thickness / 2)}px; left:{cursorX -
-      (tool === 'eraser' ? eraserRadius : thickness / 2)}px;"
-  ></div>
+  {#if cursorVisible}
+    <div
+      class={[
+        "rounded-full aspect-square absolute pointer-events-none opacity-50",
+        {
+          "border border-destructive": tool === "eraser",
+        },
+      ]}
+      style="width: {tool === 'eraser'
+        ? eraserRadius * 2
+        : thickness}px; background-color: {tool === 'pen'
+        ? color
+        : '#ffffff'}; top: {cursorY -
+        (tool === 'eraser' ? eraserRadius : thickness / 2)}px; left:{cursorX -
+        (tool === 'eraser' ? eraserRadius : thickness / 2)}px;"
+    ></div>
+  {/if}
 </div>
 <button
   class="absolute right-4 top-4 p-2 rounded-xl bg-destructive text-destructive-content"
@@ -413,6 +425,7 @@
   class="absolute right-4 top-16 p-2 rounded-xl bg-destructive text-destructive-content"
   onclick={() => {
     tool = tool === "pen" ? "eraser" : "pen";
+    lockTool = true;
   }}
 >
   Toggle pen/eraser
