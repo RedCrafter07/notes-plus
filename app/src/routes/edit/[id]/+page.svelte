@@ -4,8 +4,10 @@
   import { commands, type Block, type Point } from "$lib/tauri/bindings";
   import { erase } from "$lib/util/erase";
   import { getSvgPathFromStroke } from "$lib/util/getSvgPathFromStroke";
+  import { runSelection, type LassoSelection } from "$lib/util/lasso";
   import { getStroke } from "perfect-freehand";
   import { tick } from "svelte";
+  import { fade } from "svelte/transition";
 
   let dpr = $state(typeof window !== "undefined" ? window.devicePixelRatio : 1);
 
@@ -42,17 +44,62 @@
 
   let preview = $state<string>();
 
+  let isSelecting = $state(true);
+  let lassoPoints = $state<Point[]>([]);
+  let lassoSelection = $state<LassoSelection>();
+  let selectedLayers = $derived(
+    lassoSelection ? Object.keys(lassoSelection) : [],
+  );
+  let selectionBoundingBox = $derived(getSelectionBoundingBox(selectedLayers));
+
   let svgViewBox = $derived(
     `${translateToRelative(0, 0).x} ${translateToRelative(0, 0).y} ${canvasWidth / contentManager.zoom} ${canvasHeight / contentManager.zoom}`,
   );
 
-  $effect(() => {
-    canvasWidth;
-    canvasHeight;
-    contentManager.zoom;
-    contentManager.panX;
-    contentManager.panY;
-  });
+  let dragOffsetX = $state(0);
+  let dragOffsetY = $state(0);
+  let dragStart = $state({ x: 0, y: 0 });
+
+  let isDraggingSelection = $state(false);
+  let scaleFactor = $state(1);
+
+  function updateSelection() {
+    lassoSelection = runSelection(lassoPoints);
+    redrawStrokes();
+  }
+
+  function getSelectionBoundingBox(selectedLayers: string[]) {
+    if (!lassoSelection) return;
+
+    let minX = Infinity,
+      minY = Infinity;
+    let maxX = -Infinity,
+      maxY = -Infinity;
+
+    selectedLayers
+      .flatMap((l) => lassoSelection![l])
+      .flatMap((v) => v.block.Stroke.points)
+      .forEach((p) => {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      });
+
+    if (minX === Infinity) return { x: 0, y: 0, width: 0, height: 0 };
+
+    minX -= thickness / 2;
+    minY -= thickness / 2;
+    maxX += thickness / 2;
+    maxY += thickness / 2;
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  }
 
   function assignContext(element: HTMLCanvasElement, id: string) {
     const ctx = element.getContext("2d");
@@ -144,17 +191,22 @@
     clearCanvas();
 
     layers.forEach((l) => {
+      const selectedStrokes = lassoSelection
+        ? (lassoSelection[l.id] ?? [])
+        : [];
+
       const strokes = l.blocks
         .filter((b) => b.Stroke !== undefined)
-        .map((b) => b.Stroke);
+        .map((b) => b.Stroke)
+        .filter(
+          (s) => !selectedStrokes.some((sel) => sel.block.Stroke.id === s.id),
+        );
 
       const ctx = layerCtx[l.id];
 
       ctx.resetTransform();
       ctx.scale(dpr, dpr);
       ctx.translate(canvasWidth / 2, canvasHeight / 2);
-
-      // zoom/pan
       ctx.scale(contentManager.zoom, contentManager.zoom);
       ctx.translate(contentManager.panX, contentManager.panY);
 
@@ -196,9 +248,11 @@
 
   function finishStroke() {
     drawOnCanvas(inputToPath(points));
+    if (points.length === 0) return;
 
     layers[contentManager.activeLayer].blocks.push({
       Stroke: {
+        id: crypto.randomUUID(),
         color,
         thickness,
         points,
@@ -251,12 +305,56 @@
       };
     });
   }
+
+  function updateDrag() {
+    if (!lassoSelection) return;
+    // update blocks in selection object
+    selectedLayers.forEach((l) => {
+      const contents = lassoSelection![l];
+      lassoSelection![l] = contents.map((c) => ({
+        ...c,
+        block: {
+          Stroke: {
+            ...c.block.Stroke,
+            points: c.block.Stroke.points.map((p) => ({
+              ...p,
+              x: p.x + dragOffsetX,
+              y: p.y + dragOffsetY,
+            })),
+          },
+        },
+      }));
+    });
+
+    // fill into content manager
+    selectedLayers.forEach((lID) => {
+      const i = contentManager.layers.findIndex((l) => l.id === lID);
+      if (i >= 0) {
+        const selectedLayer = lassoSelection![lID];
+        const newBlocks = contentManager.layers[i].blocks;
+
+        selectedLayer.forEach((l) => {
+          newBlocks[l.index] = l.block;
+        });
+
+        contentManager.layers[i].blocks = newBlocks;
+      }
+    });
+
+    // lassoPoints = [];
+    // lassoSelection = {};
+    dragOffsetX = 0;
+    dragOffsetY = 0;
+
+    redrawStrokes();
+  }
 </script>
 
 <div
   class="bg-white w-full h-screen relative touch-none hide-cursor overflow-hidden"
   bind:clientWidth={canvasWidth}
   bind:clientHeight={canvasHeight}
+  class:hide-cursor={!(!isSelecting && tool === "lasso")}
   onpointerenter={(e) => {
     cursorX = e.offsetX;
     cursorY = e.offsetY;
@@ -265,8 +363,49 @@
   }}
   onpointerleave={() => {
     cursorVisible = false;
+    currentButton = -1;
+    if (tool === "lasso") {
+      if (!lassoSelection) isSelecting = true;
+      if (isSelecting) updateSelection();
+      else {
+        const noSelection = !selectedLayers.some(
+          (l) => lassoSelection![l].length > 0,
+        );
+
+        isSelecting = noSelection;
+        if (noSelection) lassoPoints = [];
+      }
+    }
+    if (drawing) {
+      drawing = false;
+      finishStroke();
+    }
   }}
   onpointerdown={(e) => {
+    if (tool === "lasso" && !isSelecting) {
+      const cursorRelative = translateToRelative(e.offsetX, e.offsetY);
+
+      if (
+        selectionBoundingBox &&
+        cursorRelative.x >= selectionBoundingBox.x &&
+        cursorRelative.x <=
+          selectionBoundingBox.x + selectionBoundingBox.width &&
+        cursorRelative.y >= selectionBoundingBox.y &&
+        cursorRelative.y <= selectionBoundingBox.y + selectionBoundingBox.height
+      ) {
+        isDraggingSelection = true;
+        dragStart = cursorRelative;
+        return;
+      } else {
+        lassoPoints = [];
+        isSelecting = true;
+        dragOffsetX = 0;
+        dragOffsetY = 0;
+        scaleFactor = 1;
+        lassoSelection = undefined;
+        redrawStrokes();
+      }
+    }
     pointerType = e.pointerType;
     currentButton = e.button;
     if (!lockTool) {
@@ -284,19 +423,46 @@
           break;
       }
     }
+    if (tool !== "lasso") isSelecting = true;
     if (e.button === 0 && pointerType !== "touch" && tool === "pen") {
       drawing = true;
       points.push(translateToRelative(e.offsetX, e.offsetY, e.pressure ?? 0.5));
     } else if (tool === "eraser") {
       eraser(e.offsetX, e.offsetY);
+    } else if (tool === "lasso") {
+      lassoPoints = [];
+      redrawStrokes();
+      isSelecting = true;
     }
   }}
   onpointerup={() => {
+    if (tool === "lasso") {
+      if (isDraggingSelection) {
+        isDraggingSelection = false;
+        dragStart = { x: 0, y: 0 };
+        updateDrag();
+      } else if (isSelecting) {
+        updateSelection();
+        if (!lassoSelection) isSelecting = true;
+        else {
+          const noSelection = !selectedLayers.some(
+            (l) => lassoSelection![l].length > 0,
+          );
+          isSelecting = noSelection;
+          if (noSelection) lassoPoints = [];
+        }
+      }
+    }
+
     currentButton = -1;
     drawing = false;
     finishStroke();
   }}
   onpointermove={(e) => {
+    if (isDraggingSelection) {
+      dragOffsetX = dragOffsetX + (e.offsetX - cursorX) / contentManager.zoom;
+      dragOffsetY = dragOffsetY + (e.offsetY - cursorY) / contentManager.zoom;
+    }
     cursorX = e.offsetX;
     cursorY = e.offsetY;
     switch (currentButton) {
@@ -308,6 +474,10 @@
             );
           else if (tool === "eraser") {
             eraser(e.offsetX, e.offsetY);
+          } else if (tool === "lasso") {
+            lassoPoints.push(
+              translateToRelative(e.offsetX, e.offsetY, e.pressure),
+            );
           }
         }
         break;
@@ -317,8 +487,11 @@
 
       case 1:
         {
-          contentManager.panX += e.movementX;
-          contentManager.panY += e.movementY;
+          if (tool === "lasso") {
+            lassoPoints.push(
+              translateToRelative(e.offsetX, e.offsetY, e.pressure),
+            );
+          }
         }
         break;
     }
@@ -402,22 +575,66 @@
   }}
   role="document"
 >
-  {#each layers as layer (`layer-${layer.id}`)}
-    <canvas
-      class="absolute w-full h-full top-0"
-      style="width: {canvasWidth}px; height: {canvasHeight}px;"
-      width={canvasWidth * dpr}
-      height={canvasHeight * dpr}
-      class:opacity-0={!layer.visible}
-      use:assignContext={layer.id}
-    ></canvas>
-  {/each}
+  <div
+    class={[
+      "absolute w-full h-full top-0 transition-all",
+      {
+        "contrast-20": tool === "lasso" && !isSelecting,
+      },
+    ]}
+  >
+    {#each layers as layer (`layer-${layer.id}`)}
+      <canvas
+        class="absolute w-full h-full top-0"
+        style="width: {canvasWidth}px; height: {canvasHeight}px;"
+        width={canvasWidth * dpr}
+        height={canvasHeight * dpr}
+        class:opacity-0={!layer.visible}
+        use:assignContext={layer.id}
+      ></canvas>
+    {/each}
+  </div>
 
   <svg class="w-full h-full absolute top-0" viewBox={svgViewBox}>
     <path d={preview} fill={color} />
+    {#if lassoSelection}
+      <g transform="translate({dragOffsetX}, {dragOffsetY})">
+        {#each selectedLayers as l}
+          {#each lassoSelection[l] as e}
+            {@const stroke = e.block.Stroke}
+            <path
+              d={inputToPath(stroke.points, stroke.thickness)}
+              fill={stroke.color}
+            />
+          {/each}
+        {/each}
+        <rect
+          x={selectionBoundingBox?.x}
+          y={selectionBoundingBox?.y}
+          width={selectionBoundingBox?.width}
+          height={selectionBoundingBox?.height}
+          fill="transparent"
+          stroke="var(--base-1)"
+          stroke-dasharray={`${5 / contentManager.zoom}`}
+          stroke-width={2 / contentManager.zoom}
+          class="cursor-move pointer-events-auto"
+          role="group"
+        />
+      </g>
+    {/if}
+    {#if tool === "lasso" && lassoPoints.length > 0 && isSelecting}
+      <path
+        out:fade={{ duration: 100 }}
+        d={"M " + lassoPoints.map((p) => `${p.x},${p.y}`).join(" L ") + " Z"}
+        fill="rgba(0, 120, 255, 0.1)"
+        stroke="#0078FF"
+        stroke-width={2 / contentManager.zoom}
+        stroke-dasharray={`${5 / contentManager.zoom}, ${5 / contentManager.zoom}`}
+      />
+    {/if}
   </svg>
 
-  {#if cursorVisible}
+  {#if cursorVisible && !(tool === "lasso" && !isSelecting)}
     <div
       class={[
         "rounded-full aspect-square absolute pointer-events-none opacity-50",
@@ -426,12 +643,24 @@
         },
       ]}
       style="width: {tool === 'eraser'
-        ? eraserRadius * 2
-        : thickness}px; background-color: {tool === 'pen'
+        ? eraserRadius * 2 * contentManager.zoom
+        : tool === 'pen'
+          ? thickness
+          : 8}px; background-color: {tool === 'pen'
         ? color
-        : '#ffffff'}; top: {cursorY -
-        (tool === 'eraser' ? eraserRadius : thickness / 2)}px; left:{cursorX -
-        (tool === 'eraser' ? eraserRadius : thickness / 2)}px;"
+        : tool === 'eraser'
+          ? '#ffffff'
+          : '#99ccff'}; top: {cursorY -
+        (tool === 'eraser'
+          ? eraserRadius * contentManager.zoom
+          : tool === 'pen'
+            ? thickness / 2
+            : 4)}px; left:{cursorX -
+        (tool === 'eraser'
+          ? eraserRadius * contentManager.zoom
+          : tool === 'pen'
+            ? thickness / 2
+            : 4)}px;"
     ></div>
   {/if}
 </div>
@@ -453,4 +682,14 @@
   }}
 >
   Toggle pen/eraser
+</button>
+
+<button
+  class="absolute right-4 top-28 p-2 rounded-xl bg-info text-info-content"
+  onclick={() => {
+    tool = tool === "lasso" ? "pen" : "lasso";
+    lockTool = true;
+  }}
+>
+  Toggle lasso
 </button>
