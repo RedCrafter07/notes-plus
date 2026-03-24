@@ -341,8 +341,6 @@
       }
     });
 
-    // lassoPoints = [];
-    // lassoSelection = {};
     dragOffsetX = 0;
     dragOffsetY = 0;
 
@@ -443,8 +441,10 @@
         updateDrag();
       } else if (isSelecting) {
         updateSelection();
-        if (!lassoSelection) isSelecting = true;
-        else {
+        if (!lassoSelection) {
+          isSelecting = true;
+          lassoPoints = [];
+        } else {
           const noSelection = !selectedLayers.some(
             (l) => lassoSelection![l].length > 0,
           );
