@@ -2,11 +2,12 @@ import { contentManager } from "$lib/state/contentManager.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
 import type { Block, Point } from "$lib/tauri/bindings";
 import { erase } from "../tools/erase";
+import { lassoManager } from "./lassoManager.svelte";
 
 export type Tool = "eraser" | "pen" | "lasso";
 
 export class CanvasManager {
-  tool = $state<Tool>("pen");
+  #tool = $state<Tool>("pen");
   lockTool = $state(false);
   color = $state("#000000");
   thickness = $state(8);
@@ -121,6 +122,17 @@ export class CanvasManager {
     tabManager.setEdited();
 
     this.points = [];
+  }
+
+  get tool() {
+    return this.#tool;
+  }
+
+  set tool(tool: Tool) {
+    if (this.#tool === "lasso" && tool !== "lasso") {
+      lassoManager.reset();
+    }
+    this.#tool = tool;
   }
 }
 
