@@ -25,6 +25,29 @@ export class CanvasManager {
     contentManager.layers[contentManager.activeLayer]?.id,
   );
 
+  addPoint(x: number, y: number, pressure: number) {
+    const p = this.translateToRelative(x, y, pressure);
+
+    if (this.points.length === 0) {
+      this.points.push(p);
+      return;
+    }
+
+    const lastPoint = this.points[this.points.length - 1];
+    if (!lastPoint) {
+      this.points.push(p);
+      return;
+    }
+
+    const dx = p.x - lastPoint.x;
+    const dy = p.y - lastPoint.y;
+    const distSq = dx * dx + dy * dy;
+
+    if (distSq > 4) {
+      this.points.push(p);
+    }
+  }
+
   assignContext(element: HTMLCanvasElement, id: string) {
     const ctx = element.getContext("2d");
     if (ctx) {

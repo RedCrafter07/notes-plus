@@ -105,13 +105,7 @@ export function canvasController(
       canvasManager.tool === "pen"
     ) {
       canvasManager.drawing = true;
-      canvasManager.points.push(
-        canvasManager.translateToRelative(
-          e.offsetX,
-          e.offsetY,
-          e.pressure ?? 0.5,
-        ),
-      );
+      canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
     } else if (canvasManager.tool === "eraser") {
       canvasManager.eraser(e.offsetX, e.offsetY);
     } else if (canvasManager.tool === "lasso") {
@@ -159,13 +153,7 @@ export function canvasController(
     switch (currentButton) {
       case 0:
         if (canvasManager.drawing) {
-          canvasManager.points.push(
-            canvasManager.translateToRelative(
-              e.offsetX,
-              e.offsetY,
-              e.pressure ?? 0.5,
-            ),
-          );
+          canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
         } else if (canvasManager.tool === "eraser") {
           canvasManager.eraser(e.offsetX, e.offsetY);
         } else if (canvasManager.tool === "lasso") {
