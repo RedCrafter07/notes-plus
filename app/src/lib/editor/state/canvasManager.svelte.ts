@@ -79,7 +79,6 @@ export class CanvasManager {
       const blocks = l.blocks.flatMap((b) => {
         if (b.Stroke) {
           const s = b.Stroke;
-          if (s.points.length === 1) return b;
           if (s.points.length === 0) return [];
           const newPoints = erase(
             s.points,

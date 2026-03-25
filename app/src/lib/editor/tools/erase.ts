@@ -5,6 +5,12 @@ export function erase(
   eraserCenter: Omit<Point, "pressure">,
   eraserRadius: number,
 ) {
+  if (points.length === 1) {
+    if (checkInEraser(points[0], eraserCenter, eraserRadius)) {
+      return [];
+    }
+    return [points];
+  }
   const resultingStrokes: Point[][] = [];
   let currentChunk: Point[] = [];
 
