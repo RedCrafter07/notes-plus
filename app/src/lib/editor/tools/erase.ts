@@ -1,4 +1,4 @@
-import type { Point } from "../tauri/bindings";
+import type { Point } from "../../tauri/bindings";
 
 export function erase(
   points: Point[],

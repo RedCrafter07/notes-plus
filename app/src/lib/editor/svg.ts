@@ -1,3 +1,6 @@
+import type { Point } from "$lib/tauri/bindings";
+import getStroke from "perfect-freehand";
+
 export function getSvgPathFromStroke(stroke: [number, number][]) {
   if (!stroke.length) return "";
 
@@ -15,4 +18,18 @@ export function getSvgPathFromStroke(stroke: [number, number][]) {
     .join(" ");
 
   return d;
+}
+
+export function inputToPath(
+  inputPoints: Point[],
+  t: number,
+  drawing: boolean,
+): string {
+  return getSvgPathFromStroke(
+    getStroke(inputPoints, {
+      size: t,
+      thinning: 0,
+      last: !drawing,
+    }),
+  );
 }
