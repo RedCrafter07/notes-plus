@@ -6,7 +6,8 @@
 </script>
 
 <svelte:boundary
-  onerror={() => {
+  onerror={(e) => {
+    console.error(e);
     goto(resolve("/"));
   }}
 >
