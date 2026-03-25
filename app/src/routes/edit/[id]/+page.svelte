@@ -292,6 +292,7 @@
               ({
                 Stroke: {
                   ...s,
+                  id: crypto.randomUUID(),
                   points: p,
                 },
               }) satisfies Block,
