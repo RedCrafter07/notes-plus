@@ -1,6 +1,7 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { runSelection, type LassoSelection } from "$lib/editor/tools/lasso";
 import type { Point } from "$lib/tauri/bindings";
+import { tabManager } from "$lib/state/tabManager.svelte";
 
 export class LassoManager {
   isSelecting = $state(true);
@@ -88,6 +89,8 @@ export class LassoManager {
         contentManager.layers[i].blocks = newBlocks;
       }
     });
+
+    tabManager.setEdited();
 
     this.dragOffsetX = 0;
     this.dragOffsetY = 0;
