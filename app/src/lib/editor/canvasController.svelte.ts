@@ -57,31 +57,41 @@ export function canvasController(
   };
 
   const onPointerDown = (e: PointerEvent) => {
-    if (canvasManager.tool === "lasso" && !lassoManager.isSelecting) {
-      const cursorRelative = canvasManager.translateToRelative(
-        e.offsetX,
-        e.offsetY,
-      );
-      if (
-        lassoManager.boundingBox &&
-        cursorRelative.x >= lassoManager.boundingBox.x &&
-        cursorRelative.x <=
-          lassoManager.boundingBox.x + lassoManager.boundingBox.width &&
-        cursorRelative.y >= lassoManager.boundingBox.y &&
-        cursorRelative.y <=
-          lassoManager.boundingBox.y + lassoManager.boundingBox.height
-      ) {
-        lassoManager.isDraggingSelection = true;
-        lassoManager.dragStart = cursorRelative;
-        return;
-      } else {
-        lassoManager.reset();
-        redrawStrokes();
-      }
-    }
-
     pointerType = e.pointerType;
     currentButton = e.button;
+
+    if (canvasManager.tool === "lasso") {
+      if (!lassoManager.isSelecting) {
+        const cursorRelative = canvasManager.translateToRelative(
+          e.offsetX,
+          e.offsetY,
+        );
+        if (
+          lassoManager.boundingBox &&
+          cursorRelative.x >= lassoManager.boundingBox.x &&
+          cursorRelative.x <=
+            lassoManager.boundingBox.x + lassoManager.boundingBox.width &&
+          cursorRelative.y >= lassoManager.boundingBox.y &&
+          cursorRelative.y <=
+            lassoManager.boundingBox.y + lassoManager.boundingBox.height
+        ) {
+          lassoManager.isDraggingSelection = true;
+          lassoManager.dragStart = cursorRelative;
+          return;
+        } else {
+          lassoManager.reset();
+          redrawStrokes();
+          return;
+        }
+      } else {
+        lassoManager.points = [
+          canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
+        ];
+        lassoManager.isSelecting = true;
+        redrawStrokes();
+        return;
+      }
+    }
 
     if (!canvasManager.lockTool) {
       switch (e.button) {
@@ -97,8 +107,6 @@ export function canvasController(
       }
     }
 
-    if (canvasManager.tool !== "lasso") lassoManager.isSelecting = true;
-
     if (
       e.button === 0 &&
       pointerType !== "touch" &&
@@ -111,7 +119,6 @@ export function canvasController(
     } else if (canvasManager.tool === "lasso") {
       lassoManager.points = [];
       redrawStrokes();
-      lassoManager.isSelecting = true;
     }
   };
 
