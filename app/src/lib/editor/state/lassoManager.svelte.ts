@@ -1,6 +1,6 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { runSelection, type LassoSelection } from "$lib/editor/tools/lasso";
-import type { Point } from "$lib/tauri/bindings";
+import type { Block, Point } from "$lib/tauri/bindings";
 import { tabManager } from "$lib/state/tabManager.svelte";
 import { canvasManager } from "./canvasManager.svelte";
 
@@ -76,8 +76,67 @@ export class LassoManager {
     canvasManager.redrawStrokes();
   }
 
+  duplicateSelection() {
+    if (!this.selection) return;
+
+    const newSelection: LassoSelection = {};
+
+    this.selectedLayers.forEach((lID) => {
+      const layerIndex = contentManager.layers.findIndex((l) => l.id === lID);
+      if (layerIndex === -1) return;
+
+      const currentLayerBlocks = contentManager.layers[layerIndex].blocks;
+
+      let highestIndex = -1;
+
+      const duplicatedSelection = this.selection![lID].map((s) => {
+        const actualIndex = currentLayerBlocks.findIndex(
+          (b) => b.Stroke?.id === s.block.Stroke?.id,
+        );
+        if (actualIndex > highestIndex) highestIndex = actualIndex;
+
+        if (s.block.Stroke) {
+          const newBlock = {
+            Stroke: {
+              ...s.block.Stroke,
+              id: crypto.randomUUID(),
+              points: s.block.Stroke.points.map((p) => ({ ...p })),
+            },
+          } satisfies Block;
+
+          return newBlock;
+        }
+
+        return s.block;
+      });
+
+      if (highestIndex !== -1) {
+        const newBlocks = [
+          ...contentManager.layers[layerIndex].blocks.slice(
+            0,
+            highestIndex + 1,
+          ),
+          ...duplicatedSelection,
+          ...contentManager.layers[layerIndex].blocks.slice(highestIndex + 1),
+        ];
+
+        contentManager.layers[layerIndex].blocks = newBlocks;
+
+        newSelection[lID] = duplicatedSelection.map((b, i) => ({
+          index: highestIndex + 1 + i,
+          block: b,
+        }));
+      }
+
+      this.selection = newSelection;
+      this.dragOffsetX = 0;
+      this.dragOffsetY = 0;
+
+      tabManager.setEdited();
+    });
+  }
+
   scaleSelection() {}
-  duplicateSelection() {}
 
   updateDrag() {
     if (!this.selection) return;
