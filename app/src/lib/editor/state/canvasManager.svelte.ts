@@ -1,6 +1,7 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
 import type { Block, Point } from "$lib/tauri/bindings";
+import { inputToPath } from "../svg";
 import { erase } from "../tools/erase";
 import { lassoManager } from "./lassoManager.svelte";
 
@@ -73,6 +74,19 @@ export class CanvasManager {
     };
   }
 
+  translateToAbsolute(p: Point): Point {
+    let { x, y, pressure } = p;
+
+    x = x + contentManager.panX;
+    y = y + contentManager.panY;
+    x = x * contentManager.zoom;
+    y = y * contentManager.zoom;
+    x = x + this.width / 2;
+    y = y + this.height / 2;
+
+    return { x, y, pressure };
+  }
+
   eraser(x: number, y: number) {
     contentManager.layers.forEach((l, i) => {
       if (l.locked || !l.visible) return l;
@@ -122,6 +136,61 @@ export class CanvasManager {
     tabManager.setEdited();
 
     this.points = [];
+  }
+
+  clearCanvas() {
+    for (const id in canvasManager.layerCtx) {
+      const ctx = canvasManager.layerCtx[id];
+
+      ctx.save();
+      ctx.resetTransform();
+      ctx.clearRect(
+        0,
+        0,
+        canvasManager.width * this.dpr,
+        canvasManager.height * this.dpr,
+      );
+      ctx.restore();
+    }
+  }
+
+  redrawStrokes() {
+    if (canvasManager.drawing) return;
+    this.clearCanvas();
+
+    contentManager.layers.forEach((l) => {
+      const selectedStrokes = lassoManager.selection
+        ? (lassoManager.selection[l.id] ?? [])
+        : [];
+
+      const strokes = l.blocks
+        .filter((b) => b.Stroke !== undefined)
+        .map((b) => b.Stroke)
+        .filter(
+          (s) => !selectedStrokes.some((sel) => sel.block.Stroke.id === s.id),
+        );
+
+      const ctx = canvasManager.layerCtx[l.id];
+
+      ctx.resetTransform();
+      ctx.scale(this.dpr, this.dpr);
+      ctx.translate(canvasManager.width / 2, canvasManager.height / 2);
+      ctx.scale(contentManager.zoom, contentManager.zoom);
+      ctx.translate(contentManager.panX, contentManager.panY);
+
+      for (const { color, points, thickness } of strokes) {
+        this.drawOnCanvas(inputToPath(points, thickness, false), color);
+      }
+    });
+  }
+
+  private drawOnCanvas(path: string | Path2D, c = canvasManager.color) {
+    const ctx = canvasManager.layerCtx[this.activeLayerID];
+    if (!ctx) return;
+    if (typeof path === "string") path = new Path2D(path);
+
+    ctx.fillStyle = c;
+    ctx?.fill(path);
   }
 
   get tool() {

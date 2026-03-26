@@ -8,8 +8,7 @@
   import LassoSelection from "$lib/editor/LassoSelection.svelte";
   import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
   import { canvasController } from "$lib/editor/canvasController.svelte";
-
-  let dpr = $state(typeof window !== "undefined" ? window.devicePixelRatio : 1);
+  import LassoMenu from "$lib/editor/LassoMenu.svelte";
 
   const activeLayerID = $derived(
     contentManager.layers[contentManager.activeLayer].id,
@@ -25,13 +24,8 @@
     `${canvasManager.translateToRelative(0, 0).x} ${canvasManager.translateToRelative(0, 0).y} ${canvasManager.width / contentManager.zoom} ${canvasManager.height / contentManager.zoom}`,
   );
 
-  function updateSelection() {
-    lassoManager.updateSelection();
-    redrawStrokes();
-  }
-
   $effect(() => {
-    redrawStrokes();
+    canvasManager.redrawStrokes();
   });
 
   $effect(() => {
@@ -49,66 +43,11 @@
 
     (async () => {
       await tick();
-      redrawStrokes();
+      canvasManager.redrawStrokes();
     })();
   });
 
   useShortcuts();
-
-  function redrawStrokes() {
-    if (canvasManager.drawing) return;
-    clearCanvas();
-
-    contentManager.layers.forEach((l) => {
-      const selectedStrokes = lassoManager.selection
-        ? (lassoManager.selection[l.id] ?? [])
-        : [];
-
-      const strokes = l.blocks
-        .filter((b) => b.Stroke !== undefined)
-        .map((b) => b.Stroke)
-        .filter(
-          (s) => !selectedStrokes.some((sel) => sel.block.Stroke.id === s.id),
-        );
-
-      const ctx = canvasManager.layerCtx[l.id];
-
-      ctx.resetTransform();
-      ctx.scale(dpr, dpr);
-      ctx.translate(canvasManager.width / 2, canvasManager.height / 2);
-      ctx.scale(contentManager.zoom, contentManager.zoom);
-      ctx.translate(contentManager.panX, contentManager.panY);
-
-      for (const { color, points, thickness } of strokes) {
-        drawOnCanvas(inputToPath(points, thickness, false), color);
-      }
-    });
-  }
-
-  function drawOnCanvas(path: string | Path2D, c = canvasManager.color) {
-    const ctx = canvasManager.layerCtx[activeLayerID];
-    if (!ctx) return;
-    if (typeof path === "string") path = new Path2D(path);
-
-    ctx.fillStyle = c;
-    ctx?.fill(path);
-  }
-
-  function clearCanvas() {
-    for (const id in canvasManager.layerCtx) {
-      const ctx = canvasManager.layerCtx[id];
-
-      ctx.save();
-      ctx.resetTransform();
-      ctx.clearRect(
-        0,
-        0,
-        canvasManager.width * dpr,
-        canvasManager.height * dpr,
-      );
-      ctx.restore();
-    }
-  }
 </script>
 
 <div
@@ -119,7 +58,6 @@
     !lassoManager.isSelecting && canvasManager.tool === "lasso"
   )}
   use:canvasController={{
-    redrawStrokes,
     updateCursor: (visible, x, y) => {
       cursorVisible = visible;
       if (x) cursorX = x;
@@ -141,8 +79,8 @@
       <canvas
         class="absolute w-full h-full top-0"
         style="width: {canvasManager.width}px; height: {canvasManager.height}px;"
-        width={canvasManager.width * dpr}
-        height={canvasManager.height * dpr}
+        width={canvasManager.width * canvasManager.dpr}
+        height={canvasManager.height * canvasManager.dpr}
         class:opacity-0={!layer.visible}
         use:canvasManager.assignContext={layer.id}
       ></canvas>

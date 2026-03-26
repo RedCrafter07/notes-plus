@@ -5,10 +5,8 @@ import { contentManager } from "$lib/state/contentManager.svelte";
 export function canvasController(
   element: HTMLElement,
   {
-    redrawStrokes,
     updateCursor,
   }: {
-    redrawStrokes: () => void;
     updateCursor: (visible: boolean, x?: number, y?: number) => void;
   },
 ) {
@@ -37,11 +35,15 @@ export function canvasController(
   const onPointerLeave = () => {
     updateCursor(false);
     currentButton = -1;
+
     if (canvasManager.tool === "lasso") {
-      if (!lassoManager.isSelecting) lassoManager.isSelecting = true;
       if (lassoManager.isSelecting) {
         lassoManager.updateSelection();
-        redrawStrokes();
+        canvasManager.redrawStrokes();
+
+        if (!lassoManager.selection) {
+          lassoManager.isSelecting = true;
+          lassoManager.points = [];
       } else {
         const noSelection = !lassoManager.selectedLayers.some(
           (l) => lassoManager.selection![l].length > 0,
@@ -50,6 +52,8 @@ export function canvasController(
         if (noSelection) lassoManager.points = [];
       }
     }
+    }
+
     if (canvasManager.drawing) {
       canvasManager.drawing = false;
       canvasManager.finishStroke();
@@ -80,7 +84,7 @@ export function canvasController(
           return;
         } else {
           lassoManager.reset();
-          redrawStrokes();
+          canvasManager.redrawStrokes();
           return;
         }
       } else {
@@ -88,7 +92,7 @@ export function canvasController(
           canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
         ];
         lassoManager.isSelecting = true;
-        redrawStrokes();
+        canvasManager.redrawStrokes();
         return;
       }
     }
@@ -117,8 +121,7 @@ export function canvasController(
     } else if (canvasManager.tool === "eraser") {
       canvasManager.eraser(e.offsetX, e.offsetY);
     } else if (canvasManager.tool === "lasso") {
-      lassoManager.points = [];
-      redrawStrokes();
+      canvasManager.redrawStrokes();
     }
   };
 
@@ -129,7 +132,7 @@ export function canvasController(
         lassoManager.updateDrag();
       } else if (lassoManager.isSelecting) {
         lassoManager.updateSelection();
-        redrawStrokes();
+        canvasManager.redrawStrokes();
         if (!lassoManager.selection) {
           lassoManager.isSelecting = true;
           lassoManager.points = [];
@@ -193,7 +196,7 @@ export function canvasController(
       contentManager.panX -= x;
       contentManager.panY -= y;
     }
-    redrawStrokes();
+    canvasManager.redrawStrokes();
   };
 
   const onTouchStart = (e: TouchEvent) => {
@@ -221,7 +224,7 @@ export function canvasController(
       contentManager.panY += deltaY / contentManager.zoom;
       touchX = e.touches[0].clientX;
       touchY = e.touches[0].clientY;
-      redrawStrokes();
+      canvasManager.redrawStrokes();
     } else if (e.touches.length === 2) {
       let currentDistance = getPinchDistance(
         e.touches[0].clientX,
@@ -232,7 +235,7 @@ export function canvasController(
       if (currentDistance <= 0) currentDistance = 1;
       contentManager.zoom *= currentDistance / initialPinchDistance;
       initialPinchDistance = currentDistance;
-      redrawStrokes();
+      canvasManager.redrawStrokes();
     }
   };
 
