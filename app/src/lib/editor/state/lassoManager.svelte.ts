@@ -2,6 +2,7 @@ import { contentManager } from "$lib/state/contentManager.svelte";
 import { runSelection, type LassoSelection } from "$lib/editor/tools/lasso";
 import type { Point } from "$lib/tauri/bindings";
 import { tabManager } from "$lib/state/tabManager.svelte";
+import { canvasManager } from "./canvasManager.svelte";
 
 export class LassoManager {
   isSelecting = $state(true);
@@ -54,7 +55,29 @@ export class LassoManager {
 
   updateSelection() {
     this.selection = runSelection(this.points);
+    canvasManager.redrawStrokes();
   }
+
+  deleteSelection() {
+    this.selectedLayers.forEach((l) => {
+      const i = contentManager.layers.findIndex((layer) => layer.id === l);
+
+      contentManager.layers[i].blocks = contentManager.layers[i].blocks.filter(
+        (b) =>
+          this.selection && b.Stroke !== undefined
+            ? !this.selection[l]
+                .map((s) => s.block.Stroke.id)
+                .includes(b.Stroke.id)
+            : true,
+      );
+    });
+
+    lassoManager.reset();
+    canvasManager.redrawStrokes();
+  }
+
+  scaleSelection() {}
+  duplicateSelection() {}
 
   updateDrag() {
     if (!this.selection) return;

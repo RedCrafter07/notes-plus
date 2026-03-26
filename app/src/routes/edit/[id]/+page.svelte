@@ -92,6 +92,7 @@
     <LassoSelection />
   </svg>
   <ToolCursor visible={cursorVisible} x={cursorX} y={cursorY} />
+  <LassoMenu />
 </div>
 <button
   class="absolute right-4 top-4 p-2 rounded-xl bg-destructive text-destructive-content"

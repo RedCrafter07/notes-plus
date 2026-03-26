@@ -18,6 +18,13 @@ export function canvasController(
   let cursorX = 0;
   let cursorY = 0;
 
+  const isUIEvent = (e: Event) => {
+    return (
+      e.target instanceof Element &&
+      e.target.closest('[data-ui="true"]') !== null
+    );
+  };
+
   function getPinchDistance(x1: number, y1: number, x2: number, y2: number) {
     return Math.hypot(x1 - x2, y1 - y2);
   }
@@ -44,14 +51,14 @@ export function canvasController(
         if (!lassoManager.selection) {
           lassoManager.isSelecting = true;
           lassoManager.points = [];
-      } else {
-        const noSelection = !lassoManager.selectedLayers.some(
-          (l) => lassoManager.selection![l].length > 0,
-        );
-        lassoManager.isSelecting = noSelection;
-        if (noSelection) lassoManager.points = [];
+        } else {
+          const noSelection = !lassoManager.selectedLayers.some(
+            (l) => lassoManager.selection![l].length > 0,
+          );
+          lassoManager.isSelecting = noSelection;
+          if (noSelection) lassoManager.points = [];
+        }
       }
-    }
     }
 
     if (canvasManager.drawing) {
@@ -61,6 +68,7 @@ export function canvasController(
   };
 
   const onPointerDown = (e: PointerEvent) => {
+    if (isUIEvent(e)) return;
     pointerType = e.pointerType;
     currentButton = e.button;
 
@@ -200,6 +208,7 @@ export function canvasController(
   };
 
   const onTouchStart = (e: TouchEvent) => {
+    if (isUIEvent(e)) return;
     if (pointerType !== "touch") return;
     if (e.touches.length === 1) {
       e.preventDefault();
