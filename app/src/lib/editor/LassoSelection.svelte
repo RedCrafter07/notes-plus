@@ -20,6 +20,7 @@
       {/each}
     {/each}
     <rect
+      transition:fade={{ duration: 100 }}
       x={lassoManager.boundingBox?.x}
       y={lassoManager.boundingBox?.y}
       width={lassoManager.boundingBox?.width}
