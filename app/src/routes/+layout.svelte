@@ -13,6 +13,7 @@
   import Tabs from "$lib/components/Tabs.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
   import { newNote } from "$lib/util/notes";
+  import Popups from "$lib/components/Popups.svelte";
 
   const { children } = $props();
 
@@ -77,6 +78,7 @@
     <Tabs />
     <div class="flex-1 relative">
       {@render children()}
+      <Popups />
     </div>
   </div>
 </div>
