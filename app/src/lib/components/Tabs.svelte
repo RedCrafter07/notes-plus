@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
   import { IconHome, IconX } from "@tabler/icons-svelte";
 
@@ -17,6 +18,7 @@
   });
 
   function updateTab(index: number) {
+    lassoManager.reset();
     tabManager.activeTab = index;
   }
 </script>
