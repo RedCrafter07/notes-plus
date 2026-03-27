@@ -3,6 +3,7 @@ import { runSelection, type LassoSelection } from "$lib/editor/tools/lasso";
 import type { Block, Point } from "$lib/tauri/bindings";
 import { tabManager } from "$lib/state/tabManager.svelte";
 import { canvasManager } from "./canvasManager.svelte";
+import { popupManager } from "$lib/state/popupManager.svelte";
 
 export class LassoManager {
   isSelecting = $state(true);
@@ -74,6 +75,11 @@ export class LassoManager {
 
     lassoManager.reset();
     canvasManager.redrawStrokes();
+
+    popupManager.add({
+      message: "Elements deleted.",
+      type: "success",
+    });
   }
 
   duplicateSelection() {
@@ -133,6 +139,11 @@ export class LassoManager {
       this.dragOffsetY = 0;
 
       tabManager.setEdited();
+
+      popupManager.add({
+        message: "Elements duplicated",
+        type: "success",
+      });
     });
   }
 
