@@ -21,8 +21,7 @@ a simple, intuitive yet powerful note-taking software.
 
 ## Features
 
-- 📄 Limited and infinite canvas
-- 🎨 Multiple page styles (to be implemented)
+- 📄 An infinite canvas
 - ✏️ Pressure-sensitive stylus input
 - 📂 Custom file format
 
@@ -32,21 +31,16 @@ If you want to try out RedNotes Plus (which is currently in its minimal viable p
 
 ## Planned features/TODO
 
-- Canvas panning restrictions
+- Limited canvas
 - Page style
-- General bugfixes
-- Infinite canvas fixes
 - Custom themes
 - Attachment support
 - PNG/JPG/PDF exports
-- Pinch to zoom
-- Differentiate between mouse/touch and stylus
 - Recently opened notes
 - Rich text support
-- Proper, precise eraser
-- UI for tool settings (changing colors, width, etc.)
+- More tools and better toolbar
+- More stroke customization options
 - Allow changing toolbar positions
-- Rust rewrite of the SVG generation
 
 ## Credits
 
