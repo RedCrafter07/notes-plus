@@ -45,8 +45,6 @@
           (lassoManager.boundingBox.width * contentManager.zoom - width) / 2
       : 0,
   );
-
-  $inspect(position);
 </script>
 
 {#if !lassoManager.isSelecting && !lassoManager.isDraggingSelection && canvasManager.tool === "lasso"}
