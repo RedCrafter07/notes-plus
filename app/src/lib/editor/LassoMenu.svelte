@@ -14,10 +14,15 @@
           x: lassoManager.boundingBox.x,
           y: lassoManager.boundingBox.y,
           pressure: 0,
-        }).y < 0
+        }).y -
+          height <
+        0
         ? "bottom"
         : "top"
       : "top",
+  );
+  let additionalOffset = $derived(
+    position == "bottom" ? (lassoManager.boundingBox?.height ?? 0) + height : 0,
   );
   let topOffset = $derived(
     lassoManager.boundingBox
@@ -25,7 +30,9 @@
           x: lassoManager.boundingBox.x,
           y: lassoManager.boundingBox.y,
           pressure: 0,
-        }).y - height
+        }).y -
+          height +
+          additionalOffset
       : 0,
   );
   let leftOffset = $derived(
@@ -38,6 +45,8 @@
           (lassoManager.boundingBox.width * contentManager.zoom - width) / 2
       : 0,
   );
+
+  $inspect(position);
 </script>
 
 {#if !lassoManager.isSelecting && !lassoManager.isDraggingSelection && canvasManager.tool === "lasso"}
