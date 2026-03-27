@@ -14,14 +14,20 @@ class PopupManager {
       ...popup,
       id: crypto.randomUUID(),
     });
+
+    this.timeout();
+  }
+
+  private timeout() {
     this.#timeout = setTimeout(() => {
-      this.#queue.shift();
-    }, 5000);
+      this.remove();
+    }, 3000);
   }
 
   remove(index: number = 0) {
     clearTimeout(this.#timeout);
     this.#queue.splice(index, 1);
+    if (this.currentPopup) this.timeout();
   }
 
   get currentPopup() {
