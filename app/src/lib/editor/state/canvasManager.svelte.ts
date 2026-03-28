@@ -7,7 +7,7 @@ import { lassoManager } from "./lassoManager.svelte";
 
 export type Tool = "eraser" | "pen" | "lasso";
 
-export class CanvasManager {
+class CanvasManager {
   #tool = $state<Tool>("pen");
   lockTool = $state(false);
   color = $state("#000000");
