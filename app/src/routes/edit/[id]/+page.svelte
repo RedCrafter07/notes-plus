@@ -9,10 +9,7 @@
   import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
   import { canvasController } from "$lib/editor/canvasController.svelte";
   import LassoMenu from "$lib/editor/LassoMenu.svelte";
-
-  const activeLayerID = $derived(
-    contentManager.layers[contentManager.activeLayer].id,
-  );
+  import Toolbar from "$lib/editor/Toolbar.svelte";
 
   let cursorX = $state(0);
   let cursorY = $state(0);
@@ -94,32 +91,5 @@
   <ToolCursor visible={cursorVisible} x={cursorX} y={cursorY} />
   <LassoMenu />
 </div>
-<button
-  class="absolute right-4 top-4 p-2 rounded-xl bg-destructive text-destructive-content"
-  onclick={() => {
-    if (canvasManager.color === "#000000") canvasManager.color = "#ff3434";
-    else canvasManager.color = "#000000";
-  }}
->
-  Toggle color
-</button>
 
-<button
-  class="absolute right-4 top-16 p-2 rounded-xl bg-destructive text-destructive-content"
-  onclick={() => {
-    canvasManager.tool = canvasManager.tool === "pen" ? "eraser" : "pen";
-    canvasManager.lockTool = true;
-  }}
->
-  Toggle pen/eraser
-</button>
-
-<button
-  class="absolute right-4 top-28 p-2 rounded-xl bg-info text-info-content"
-  onclick={() => {
-    canvasManager.tool = canvasManager.tool === "lasso" ? "pen" : "lasso";
-    canvasManager.lockTool = true;
-  }}
->
-  Toggle lasso
-</button>
+<Toolbar />
