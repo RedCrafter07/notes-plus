@@ -5,8 +5,6 @@
   import { fly } from "svelte/transition";
 
   let currentPopup = $derived(popupManager.currentPopup);
-
-  $inspect(currentPopup);
 </script>
 
 <div class="pointer-events-none top-4 left-4 absolute">
