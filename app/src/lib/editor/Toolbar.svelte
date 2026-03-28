@@ -47,7 +47,7 @@
     {#if canvasManager.tool === "pen"}
       <div
         style="grid-area: 1 / 1;"
-        class="p-4 w-10 rounded-l-xl bg-base-3 flex flex-col gap-2 my-auto items-center justify-center pointer-events-auto z-0"
+        class="p-4 w-10 rounded-l-xl bg-base-3 flex flex-col gap-4 my-auto items-center justify-center pointer-events-auto z-0"
         transition:fly={{ duration: 150, easing: cubicInOut, x: "100%" }}
       >
         {@render penToolbar()}
@@ -55,7 +55,7 @@
     {/if}
   </div>
   <div
-    class="p-1 w-12 rounded-xl bg-base-1 flex flex-col gap-2 my-auto pointer-events-auto items-center justify-center z-10"
+    class="p-1 w-12 rounded-xl bg-base-1 flex flex-col gap-1 my-auto pointer-events-auto items-center justify-center z-10"
   >
     <button
       class="aspect-square p-2 relative"
@@ -70,7 +70,7 @@
       <IconPencil />
     </button>
     <button
-      class="aspect-square p-2"
+      class="aspect-square p-2 flex items-center justify-center"
       onclick={() => {
         if (canvasManager.tool === "eraser") canvasManager.lockTool = true;
         else {
