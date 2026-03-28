@@ -105,7 +105,7 @@ export function canvasController(
       }
     }
 
-    if (!canvasManager.lockTool) {
+    if (!canvasManager.lockTool && e.pointerType === "pen") {
       switch (e.button) {
         case 0:
           canvasManager.tool = "pen";
