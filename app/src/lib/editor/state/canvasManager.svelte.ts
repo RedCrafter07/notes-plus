@@ -10,8 +10,9 @@ export type Tool = "eraser" | "pen" | "lasso";
 class CanvasManager {
   #tool = $state<Tool>("pen");
   lockTool = $state(false);
+  zoomLock = $state(true);
   color = $state("#000000");
-  thickness = $state(8);
+  #thickness = $state(8);
   eraserRadius = $state(24);
 
   drawing = $state(false);
@@ -45,7 +46,7 @@ class CanvasManager {
     const dy = p.y - lastPoint.y;
     const distSq = dx * dx + dy * dy;
 
-    if (distSq > 4) {
+    if (distSq > 0) {
       this.points.push(p);
     }
   }
@@ -202,6 +203,16 @@ class CanvasManager {
       lassoManager.reset();
     }
     this.#tool = tool;
+  }
+
+  get thickness() {
+    return !this.zoomLock
+      ? this.#thickness / contentManager.zoom
+      : this.#thickness;
+  }
+
+  set thickness(t: number) {
+    this.#thickness = t;
   }
 }
 
