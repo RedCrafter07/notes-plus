@@ -6,12 +6,30 @@
     IconZoomCancel,
     IconZoomCheck,
   } from "@tabler/icons-svelte";
-  import { canvasManager } from "./state/canvasManager.svelte";
+  import { canvasManager, type Tool } from "./state/canvasManager.svelte";
   import ColorPicker from "$lib/components/ColorPicker.svelte";
   import { fly } from "svelte/transition";
   import { cubicInOut } from "svelte/easing";
 
   let color = $state(canvasManager.color);
+
+  const tools: {
+    id: Tool;
+    icon: typeof IconEraser;
+  }[] = [
+    {
+      id: "pen",
+      icon: IconPencil,
+    },
+    {
+      id: "eraser",
+      icon: IconEraser,
+    },
+    {
+      id: "lasso",
+      icon: IconLasso,
+    },
+  ];
 
   $effect(() => {
     canvasManager.color = color;
@@ -57,41 +75,25 @@
   <div
     class="p-1 w-12 rounded-xl bg-base-1 flex flex-col gap-1 my-auto pointer-events-auto items-center justify-center z-10"
   >
-    <button
-      class="aspect-square p-2 relative"
-      onclick={() => {
-        if (canvasManager.tool === "pen") canvasManager.lockTool = true;
-        else {
-          canvasManager.lockTool = false;
-          canvasManager.tool = "pen";
-        }
-      }}
-    >
-      <IconPencil />
-    </button>
-    <button
-      class="aspect-square p-2 flex items-center justify-center"
-      onclick={() => {
-        if (canvasManager.tool === "eraser") canvasManager.lockTool = true;
-        else {
-          canvasManager.lockTool = false;
-          canvasManager.tool = "eraser";
-        }
-      }}
-    >
-      <IconEraser />
-    </button>
-    <button
-      class="aspect-square p-2"
-      onclick={() => {
-        if (canvasManager.tool === "lasso") canvasManager.lockTool = true;
-        else {
-          canvasManager.lockTool = false;
-          canvasManager.tool = "lasso";
-        }
-      }}
-    >
-      <IconLasso />
-    </button>
+    {#each tools as tool}
+      {@const Icon = tool.icon}
+      <button
+        class={[
+          "aspect-square p-2 rounded-xl transition-all",
+          {
+            "bg-overlay/25": canvasManager.tool === tool.id,
+          },
+        ]}
+        onclick={() => {
+          if (canvasManager.tool === tool.id) canvasManager.lockTool = true;
+          else {
+            canvasManager.lockTool = false;
+            canvasManager.tool = tool.id;
+          }
+        }}
+      >
+        <Icon />
+      </button>
+    {/each}
   </div>
 </div>
