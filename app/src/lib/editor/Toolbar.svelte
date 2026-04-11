@@ -73,20 +73,23 @@
     {/if}
   </div>
   <div
-    class="p-1 w-12 rounded-xl bg-base-1 flex flex-col gap-1 my-auto pointer-events-auto items-center justify-center z-10"
+    class="p-2 w-14 rounded-xl bg-base-1 flex flex-col gap-1 my-auto pointer-events-auto items-center justify-center z-10"
   >
     {#each tools as tool}
       {@const Icon = tool.icon}
       <button
         class={[
-          "aspect-square p-2 rounded-xl transition-all",
+          "aspect-square p-2 rounded-xl transition-all border-transparent border-2 mx-2",
           {
             "bg-overlay/25": canvasManager.tool === tool.id,
+            "border-warning bg-warning/25 text-warning":
+              canvasManager.tool === tool.id && canvasManager.lockTool,
           },
         ]}
         onclick={() => {
-          if (canvasManager.tool === tool.id) canvasManager.lockTool = true;
-          else {
+          if (canvasManager.tool === tool.id) {
+            canvasManager.lockTool = !canvasManager.lockTool;
+          } else {
             canvasManager.lockTool = false;
             canvasManager.tool = tool.id;
           }
