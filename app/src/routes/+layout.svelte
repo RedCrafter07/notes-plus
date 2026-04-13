@@ -72,11 +72,11 @@
   }
 </script>
 
-<div class="min-h-screen bg-base-3 text-content-1">
+<div class="h-screen bg-base-3 text-content-1">
   <Modals />
-  <div class="flex flex-col">
+  <div class="flex flex-col h-full">
     <Tabs />
-    <div class="flex-1 relative">
+    <div class="flex-1 relative h-full">
       {@render children()}
       <Popups />
     </div>

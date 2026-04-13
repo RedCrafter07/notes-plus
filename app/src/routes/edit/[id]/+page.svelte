@@ -48,7 +48,7 @@
 </script>
 
 <div
-  class="bg-white w-full h-screen relative touch-none hide-cursor overflow-hidden"
+  class="bg-white w-full h-full relative touch-none hide-cursor overflow-hidden"
   bind:clientWidth={canvasManager.width}
   bind:clientHeight={canvasManager.height}
   class:hide-cursor={!(
