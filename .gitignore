@@ -2,3 +2,4 @@ target/
 **/target/
 bindings/
 **/bindings/
+mise.local.toml
