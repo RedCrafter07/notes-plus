@@ -10,6 +10,7 @@
   import { canvasController } from "$lib/editor/canvasController.svelte";
   import LassoMenu from "$lib/editor/LassoMenu.svelte";
   import Toolbar from "$lib/editor/Toolbar.svelte";
+  import ZoomIndicator from "$lib/editor/ZoomIndicator.svelte";
 
   let cursorX = $state(0);
   let cursorY = $state(0);
@@ -93,3 +94,4 @@
 </div>
 
 <Toolbar />
+<ZoomIndicator />
