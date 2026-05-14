@@ -72,6 +72,27 @@ export function canvasController(
     pointerType = e.pointerType;
     currentButton = e.button;
 
+    if (
+      !canvasManager.lockTool &&
+      e.pointerType === "pen" &&
+      !lassoManager.selection
+    ) {
+      switch (e.button) {
+        case 0:
+          canvasManager.tool = "pen";
+          break;
+        case 1:
+        case 2:
+          canvasManager.tool = "lasso";
+          lassoManager.isSelecting = true;
+          canvasManager.redrawStrokes();
+          break;
+        case 5:
+          canvasManager.tool = "eraser";
+          break;
+      }
+    }
+
     if (canvasManager.tool === "lasso") {
       if (!lassoManager.isSelecting) {
         const cursorRelative = canvasManager.translateToRelative(
@@ -102,20 +123,6 @@ export function canvasController(
         lassoManager.isSelecting = true;
         canvasManager.redrawStrokes();
         return;
-      }
-    }
-
-    if (!canvasManager.lockTool && e.pointerType === "pen") {
-      switch (e.button) {
-        case 0:
-          canvasManager.tool = "pen";
-          break;
-        case 1:
-          canvasManager.tool = "lasso";
-          break;
-        case 5:
-          canvasManager.tool = "eraser";
-          break;
       }
     }
 
@@ -183,6 +190,7 @@ export function canvasController(
       case 5:
         canvasManager.eraser(e.offsetX, e.offsetY);
         break;
+      case 2:
       case 1:
         if (canvasManager.tool === "lasso") {
           lassoManager.points.push(
