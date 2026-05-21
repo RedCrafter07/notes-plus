@@ -138,16 +138,16 @@ impl Default for Layer {
 }
 
 impl NoteData {
-    pub fn to_file(&self, path: &SystemPath) -> Result<(), crate::io::NoteFileError> {
-        use crate::io::note_to_file;
+    pub fn to_bytes(&self) -> Result<Vec<u8>, crate::io::data::NoteFileError> {
+        use crate::io::data::note_to_file;
 
-        note_to_file(self, path)
+        note_to_file(self)
     }
 
-    pub fn from_file(path: &SystemPath) -> Result<Self, crate::io::NoteFileError> {
-        use crate::io::file_to_note;
+    pub fn from_bytes(data: &[u8]) -> Result<NoteData, crate::io::data::NoteFileError> {
+        use crate::io::data::file_to_note;
 
-        file_to_note(path)
+        file_to_note(data)
     }
 }
 

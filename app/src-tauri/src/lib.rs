@@ -49,16 +49,17 @@ pub fn run() {
                     if path.exists() {
                         use common::structs::note::NoteData;
 
-                        let note_data = NoteData::from_file(path);
+                        let buffer = std::fs::read(path);
+                        if let Ok(buffer) = buffer {
+                            let note_data = NoteData::from_bytes(&buffer);
 
-                        if let Ok(note_data) = note_data {
-                            use tauri_specta::Event;
+                            if let Ok(note) = note_data {
+                                use tauri_specta::Event;
 
-                            use crate::events::Open;
+                                use crate::events::Open;
 
-                            Open(note_data)
-                                .emit(app)
-                                .expect("Failed to emit Open event");
+                                Open(note).emit(app).expect("Failed to emit Open event");
+                            }
                         }
                     }
                 }

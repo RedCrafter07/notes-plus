@@ -24,10 +24,16 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
             .iter()
             .filter_map(|path| {
                 let path = path.as_path().unwrap();
-                let note_data = NoteData::from_file(path);
+                let buffer = std::fs::read(path);
 
-                if let Ok(note_data) = note_data {
-                    return Some(note_data);
+                if let Ok(buffer) = buffer {
+                    let note_data = NoteData::from_bytes(&buffer);
+
+                    if let Ok(note_data) = note_data {
+                        return Some(note_data);
+                    } else {
+                        return None;
+                    }
                 } else {
                     return None;
                 }
@@ -53,7 +59,9 @@ pub fn save_note(note_data: NoteData) -> bool {
         return false;
     }
 
-    let result = note_data.to_file(Path::new(&note_data.path.as_ref().unwrap()));
+    let path = Path::new(note_data.path.as_ref().unwrap());
+    let bytes = note_data.to_bytes().unwrap();
+    let result = std::fs::write(path, bytes);
 
     if result.is_err() {
         return false;
@@ -74,7 +82,9 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<St
 
     if let Some(path) = path {
         let path = path.as_path().unwrap();
-        note_data.to_file(path).unwrap();
+        let bytes = note_data.to_bytes().unwrap();
+
+        std::fs::write(path, bytes).unwrap();
 
         return Some(path.to_string_lossy().into());
     }
