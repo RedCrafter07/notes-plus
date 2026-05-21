@@ -30,7 +30,7 @@ impl From<rmp_serde::encode::Error> for NoteFileError {
     }
 }
 
-pub(crate) fn note_to_file(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
+pub(crate) fn note_to_bytes(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
     let mut buffer: Vec<u8> = Vec::new();
 
     let mut data = data.clone();
@@ -64,7 +64,7 @@ pub(crate) fn note_to_file(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
     Ok(buffer)
 }
 
-pub(crate) fn file_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
+pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
     let mut decoder = GzDecoder::new(data);
 
     let mut header = [0u8; 8];

@@ -139,15 +139,15 @@ impl Default for Layer {
 
 impl NoteData {
     pub fn to_bytes(&self) -> Result<Vec<u8>, crate::io::data::NoteFileError> {
-        use crate::io::data::note_to_file;
+        use crate::io::data::note_to_bytes;
 
-        note_to_file(self)
+        note_to_bytes(self)
     }
 
     pub fn from_bytes(data: &[u8]) -> Result<NoteData, crate::io::data::NoteFileError> {
-        use crate::io::data::file_to_note;
+        use crate::io::data::bytes_to_note;
 
-        file_to_note(data)
+        bytes_to_note(data)
     }
 }
 
