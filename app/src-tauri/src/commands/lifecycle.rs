@@ -14,25 +14,8 @@ pub fn ready(app: tauri::AppHandle) {
 
     #[cfg(desktop)]
     {
-        let args = std::env::args().collect::<Vec<String>>();
-        if args.len() > 1 {
-            let path = std::path::Path::new(&args[1]);
-            if path.exists() {
-                use common::structs::note::NoteData;
+        use crate::util::handle_args;
 
-                let buffer = std::fs::read(path);
-                if let Ok(buffer) = buffer {
-                    let note_data = NoteData::from_bytes(&buffer);
-
-                    if let Ok(note) = note_data {
-                        use tauri_specta::Event;
-
-                        use crate::events::Open;
-
-                        Open(note).emit(&app).expect("Failed to emit Open event");
-                    }
-                }
-            }
-        }
+        handle_args(&app, None);
     }
 }

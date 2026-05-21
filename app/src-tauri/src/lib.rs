@@ -2,6 +2,7 @@
 
 mod commands;
 mod events;
+mod util;
 
 use commands::*;
 use serde_json::json;
@@ -42,27 +43,10 @@ pub fn run() {
     {
         tauri_builder =
             tauri_builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+                use crate::util::handle_args;
                 use tauri::Manager;
 
-                if args.len() > 1 {
-                    let path = std::path::Path::new(&args[1]);
-                    if path.exists() {
-                        use common::structs::note::NoteData;
-
-                        let buffer = std::fs::read(path);
-                        if let Ok(buffer) = buffer {
-                            let note_data = NoteData::from_bytes(&buffer);
-
-                            if let Ok(note) = note_data {
-                                use tauri_specta::Event;
-
-                                use crate::events::Open;
-
-                                Open(note).emit(app).expect("Failed to emit Open event");
-                            }
-                        }
-                    }
-                }
+                handle_args(&app, Some(args));
 
                 let _ = app
                     .get_webview_window("main")
