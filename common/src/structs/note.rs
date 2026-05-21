@@ -1,4 +1,4 @@
-use std::{path::Path as SystemPath, time::SystemTime};
+use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 use specta::Type;

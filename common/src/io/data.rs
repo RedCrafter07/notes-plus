@@ -1,8 +1,4 @@
-use std::{
-    fs::File,
-    io::{Read, Write},
-    path::Path,
-};
+use std::io::{Read, Write};
 
 use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 
