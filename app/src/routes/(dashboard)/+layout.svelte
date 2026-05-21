@@ -14,7 +14,7 @@
   let { children } = $props();
 </script>
 
-<div class="flex flex-row w-full min-h-screen bg-base-1">
+<div class="flex flex-row w-full h-full bg-base-1">
   <div class="bg-base-2 flex flex-col gap-8 p-4">
     <div>
       <h3 class="font-display text-2xl font-black">RedNotes Plus</h3>
