@@ -12,7 +12,7 @@ pub(crate) fn handle_args(app: &AppHandle, args: Option<Vec<String>>) {
         if path.exists() {
             use common::structs::note::NoteData;
 
-            let buffer = std::fs::read(path);
+            let buffer = common::io::archive::open_data(path);
             if let Ok(buffer) = buffer {
                 let note_data = NoteData::from_bytes(&buffer);
 

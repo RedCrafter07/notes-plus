@@ -24,7 +24,7 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
             .iter()
             .filter_map(|path| {
                 let path = path.as_path().unwrap();
-                let buffer = std::fs::read(path);
+                let buffer = common::io::archive::open_data(path);
 
                 if let Ok(buffer) = buffer {
                     let note_data = NoteData::from_bytes(&buffer);
@@ -61,7 +61,7 @@ pub fn save_note(note_data: NoteData) -> bool {
 
     let path = Path::new(note_data.path.as_ref().unwrap());
     let bytes = note_data.to_bytes().unwrap();
-    let result = std::fs::write(path, bytes);
+    let result = common::io::archive::create_with_data(&bytes, path);
 
     if result.is_err() {
         return false;
@@ -84,7 +84,7 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<St
         let path = path.as_path().unwrap();
         let bytes = note_data.to_bytes().unwrap();
 
-        std::fs::write(path, bytes).unwrap();
+        common::io::archive::create_with_data(&bytes, path).unwrap();
 
         return Some(path.to_string_lossy().into());
     }
