@@ -108,6 +108,10 @@ class ContentManager {
   get currentPage() {
     return this.#pages[this.#activePage];
   }
+
+  get pages() {
+    return this.#pages;
+  }
 }
 
 export const contentManager = new ContentManager();
