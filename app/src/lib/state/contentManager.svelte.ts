@@ -105,6 +105,10 @@ class ContentManager {
     return this.#activePage;
   }
 
+  set activePage(page: number) {
+    if (page >= 0 && page < this.#pages.length) this.#activePage = page;
+  }
+
   get currentPage() {
     return this.#pages[this.#activePage];
   }
