@@ -11,6 +11,7 @@
   import LassoMenu from "$lib/editor/LassoMenu.svelte";
   import Toolbar from "$lib/editor/Toolbar.svelte";
   import ZoomIndicator from "$lib/editor/ZoomIndicator.svelte";
+  import BackgroundPatterns from "$lib/editor/BackgroundPatterns.svelte";
 
   let cursorX = $state(0);
   let cursorY = $state(0);
@@ -49,7 +50,8 @@
 </script>
 
 <div
-  class="bg-white w-full h-full relative touch-none hide-cursor overflow-hidden"
+  class="w-full h-full relative touch-none hide-cursor overflow-hidden"
+  style="background-color: {contentManager.currentPage.background_color};"
   bind:clientWidth={canvasManager.width}
   bind:clientHeight={canvasManager.height}
   class:hide-cursor={!(
@@ -64,6 +66,11 @@
   }}
   role="document"
 >
+  <BackgroundPatterns
+    pattern={contentManager.currentPage.pattern}
+    scale={contentManager.currentPage.pattern_scale}
+    color={contentManager.currentPage.pattern_color}
+  />
   <div
     class={[
       "absolute w-full h-full top-0 transition-all",
