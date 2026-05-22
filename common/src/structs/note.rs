@@ -4,6 +4,13 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub enum BackgroundPattern {
+    Dots,
+    Lines,
+    Squares,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Layer {
     pub id: String,
     pub blocks: Vec<Block>,
@@ -17,6 +24,10 @@ pub struct Page {
     pub layers: Vec<Layer>,
     pub width: f32,
     pub height: f32,
+    pub pattern: Option<BackgroundPattern>,
+    pub pattern_scale: u16,
+    pub background_color: String,
+    pub pattern_color: String,
     pub name: String,
 }
 
@@ -95,12 +106,24 @@ impl Note {
 }
 
 impl Page {
-    pub fn new(name: String, width: f32, height: f32) -> Self {
+    pub fn new(
+        name: String,
+        width: f32,
+        height: f32,
+        pattern: Option<BackgroundPattern>,
+        pattern_scale: u16,
+        pattern_color: String,
+        background_color: String,
+    ) -> Self {
         Self {
             layers: Vec::new(),
             name,
             width,
             height,
+            pattern,
+            pattern_scale,
+            pattern_color,
+            background_color,
         }
     }
 }
@@ -112,6 +135,10 @@ impl Default for Page {
             name: "Page 1".to_string(),
             width: -1.0,
             height: -1.0, // -1 is infinite
+            pattern: None,
+            pattern_scale: 16,
+            pattern_color: String::from("#dddddd"),
+            background_color: String::from("#ffffff"),
         }
     }
 }
