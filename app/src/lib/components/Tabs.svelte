@@ -2,8 +2,15 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
+  import { editorComponents } from "$lib/state/editorComponents.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
-  import { IconHome, IconX } from "@tabler/icons-svelte";
+  import {
+    IconHome,
+    IconNotebook,
+    IconNotebookOff,
+    IconSettings,
+    IconX,
+  } from "@tabler/icons-svelte";
 
   let tabs = $state<Record<string, HTMLDivElement>>({});
 
@@ -101,4 +108,21 @@
       </div>
     {/each}
   </div>
+  <button
+    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 text-content-2 hover:text-content-1"
+    onclick={() => {
+      editorComponents.toggleRightBar();
+    }}
+  >
+    {#if editorComponents.rightBarOpen}
+      <IconNotebookOff />
+    {:else}
+      <IconNotebook />
+    {/if}
+  </button>
+  <button
+    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 text-content-2 hover:text-content-1"
+  >
+    <IconSettings />
+  </button>
 </div>
