@@ -7,19 +7,22 @@
     color,
     scale,
     pattern,
+    zoom,
   }: {
     color: string;
     scale: number;
     pattern: BackgroundPattern | null;
+    zoom?: boolean;
   } = $props();
 
-  const zoomedScale = $derived(scale * contentManager.zoom);
+  const zoomedScale = $derived(zoom ? scale * contentManager.zoom : scale);
   const offsetX = $derived(
-    (-contentManager.panX * contentManager.zoom) % zoomedScale,
+    zoom ? (-contentManager.panX * contentManager.zoom) % zoomedScale : 0,
   );
   const offsetY = $derived(
-    (-contentManager.panY * contentManager.zoom) % zoomedScale,
+    zoom ? (-contentManager.panY * contentManager.zoom) % zoomedScale : 0,
   );
+  const actualZoom = $derived(zoom ? contentManager.zoom : 1);
 </script>
 
 <svg width="100%" height="100%">
@@ -28,15 +31,15 @@
       id="bg-pattern-{pattern}"
       x={offsetX}
       y={offsetY}
-      width={zoomedScale}
-      height={zoomedScale}
+      width={zoom ? zoomedScale : scale}
+      height={zoom ? zoomedScale : scale}
       patternUnits="userSpaceOnUse"
     >
       {#if pattern === "Dots"}
         <circle
           cx={zoomedScale / 2}
           cy={zoomedScale / 2}
-          r={1.5 * contentManager.zoom}
+          r={1.5 * actualZoom}
           fill={color}
         />
       {:else if pattern === "Lines"}
@@ -56,7 +59,7 @@
           height={zoomedScale}
           fill="none"
           stroke={color}
-          stroke-width={1 * contentManager.zoom}
+          stroke-width={1 * actualZoom}
         />
       {/if}
     </pattern>

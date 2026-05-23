@@ -70,6 +70,7 @@
     pattern={contentManager.currentPage.pattern}
     scale={contentManager.currentPage.pattern_scale}
     color={contentManager.currentPage.pattern_color}
+    zoom
   />
   <div
     class={[
