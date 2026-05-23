@@ -75,11 +75,6 @@ export class LassoManager {
 
     lassoManager.reset();
     canvasManager.redrawStrokes();
-
-    popupManager.add({
-      message: "Elements deleted.",
-      type: "success",
-    });
   }
 
   duplicateSelection() {
