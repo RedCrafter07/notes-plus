@@ -58,18 +58,28 @@
       else pattern = type;
     }}
     class={[
-      "aspect-square rounded-xl overflow-hidden border-4 transition-all active:scale-95",
-      active ? "border-primary" : "border-transparent",
+      "aspect-square rounded-xl overflow-hidden transition-all active:scale-95 relative",
     ]}
-    style="background-color: {bgColor};"
   >
-    {#if type !== "Blank"}
-      <BackgroundPatterns
-        pattern={type}
-        color={patternColor}
-        scale={patternScale}
-      />
-    {/if}
+    <div
+      class="absolute top-0 w-full h-full"
+      style="background-color: {bgColor};"
+    >
+      {#if type !== "Blank"}
+        <BackgroundPatterns
+          pattern={type}
+          color={patternColor}
+          scale={patternScale}
+        />
+      {/if}
+    </div>
+    <div
+      class={[
+        "absolute w-full h-full border-4 top-0 rounded-xl transition-all",
+
+        active ? "border-primary" : "border-transparent",
+      ]}
+    ></div>
   </button>
 {/snippet}
 
