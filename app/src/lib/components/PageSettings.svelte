@@ -3,7 +3,7 @@
   import { contentManager } from "$lib/state/contentManager.svelte";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import type { BackgroundPattern } from "$lib/tauri/bindings";
-  import { IconDeviceFloppy } from "@tabler/icons-svelte";
+  import { IconCheck, IconClipboard } from "@tabler/icons-svelte";
   import Input from "./Input.svelte";
   import Overlay from "./Overlay.svelte";
   import ColorInput from "./ColorInput.svelte";
@@ -39,14 +39,20 @@
     }
   });
 
-  function save() {
-    contentManager.pages[pageIndex].name = pageName;
-    contentManager.pages[pageIndex].pattern_color = patternColor;
-    contentManager.pages[pageIndex].pattern_scale = patternScale;
-    contentManager.pages[pageIndex].background_color = bgColor;
-    contentManager.pages[pageIndex].pattern = pattern;
+  function save(page: number = pageIndex) {
+    contentManager.pages[page].name = pageName;
+    contentManager.pages[page].pattern_color = patternColor;
+    contentManager.pages[page].pattern_scale = patternScale;
+    contentManager.pages[page].background_color = bgColor;
+    contentManager.pages[page].pattern = pattern;
 
     overlayManager.close();
+  }
+
+  function saveAll() {
+    contentManager.pages.forEach((_, i) => {
+      save(i);
+    });
   }
 </script>
 
@@ -106,13 +112,20 @@
       />
     </div>
 
-    <div class="sticky bottom-0">
+    <div class="sticky bottom-0 flex flex-row gap-4">
       <button
-        class="p-2 rounded-xl border-2 border-success text-success hover:bg-success bg-base-1 hover:text-success-content transition-all flex flex-row gap-2 items-center justify-center font-bold tracking-wider active:scale-95 w-full"
-        onclick={save}
+        class="p-2 rounded-xl border-2 border-success text-success hover:bg-success bg-base-1 hover:text-success-content transition-all flex flex-row gap-2 items-center justify-center font-bold tracking-wider active:scale-95 w-full flex-1"
+        onclick={() => save()}
       >
-        <IconDeviceFloppy />
-        <p>Save</p>
+        <IconCheck />
+        <p>Apply</p>
+      </button>
+      <button
+        class="p-2 rounded-xl border-2 border-warning text-warning hover:bg-warning bg-base-1 hover:text-warning-content transition-all flex flex-row gap-2 items-center justify-center font-bold tracking-wider active:scale-95"
+        onclick={() => saveAll()}
+      >
+        <IconClipboard />
+        <p>Apply to all</p>
       </button>
     </div>
   </Overlay>
