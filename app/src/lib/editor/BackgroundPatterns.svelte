@@ -25,7 +25,7 @@
 <svg width="100%" height="100%">
   <defs>
     <pattern
-      id="bg-pattern"
+      id="bg-pattern-{pattern}"
       x={offsetX}
       y={offsetY}
       width={zoomedScale}
@@ -69,7 +69,7 @@
       y={-canvasManager.height / 2}
       width={canvasManager.width}
       height={canvasManager.height}
-      fill="url(#bg-pattern)"
+      fill="url(#bg-pattern-{pattern})"
     />
   </g>
 </svg>
