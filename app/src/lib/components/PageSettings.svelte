@@ -58,7 +58,7 @@
       else pattern = type;
     }}
     class={[
-      "aspect-square rounded-xl overflow-hidden border-2 transition-all",
+      "aspect-square rounded-xl overflow-hidden border-2 transition-all active:scale-95",
       active ? "border-primary" : "border-transparent",
     ]}
     style="background-color: {bgColor};"

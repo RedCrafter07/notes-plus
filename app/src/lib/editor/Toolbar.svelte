@@ -79,7 +79,7 @@
       {@const Icon = tool.icon}
       <button
         class={[
-          "aspect-square p-2 rounded-xl transition-all border-transparent border-2 mx-2",
+          "aspect-square p-2 rounded-xl transition-all border-transparent border-2 mx-2 active:scale-90",
           {
             "bg-overlay/25": canvasManager.tool === tool.id,
             "border-warning bg-warning/25 text-warning":

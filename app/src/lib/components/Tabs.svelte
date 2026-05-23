@@ -42,7 +42,7 @@
   <button
     id="tab-bar"
     class={[
-      "aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0",
+      "aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 active:scale-90",
       {
         "bg-overlay/5 hover:bg-overlay/20": tabManager.activeTab !== -1,
         "bg-overlay/10 hover:bg-overlay/20": tabManager.activeTab === -1,
@@ -70,7 +70,7 @@
       {@const active = tabManager.activeTab === i}
       <div
         class={[
-          "h-full flex-1 transition-all rounded-xl p-2 flex flex-row gap-2 min-w-max z-0",
+          "h-full flex-1 transition-all rounded-xl p-2 flex flex-row gap-2 min-w-max z-0 group",
           {
             "bg-overlay/5 hover:bg-overlay/20 text-content-2 hover:text-content-1":
               !active,
@@ -109,7 +109,7 @@
     {/each}
   </div>
   <button
-    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 text-content-2 hover:text-content-1"
+    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 active:scale-90"
     onclick={() => {
       editorComponents.toggleRightBar();
     }}
@@ -121,7 +121,7 @@
     {/if}
   </button>
   <button
-    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 text-content-2 hover:text-content-1"
+    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 active:scale-90"
   >
     <IconSettings />
   </button>
