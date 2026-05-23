@@ -15,8 +15,10 @@
     },
   ]}
 >
-  <div class="w-full p-2 rounded-xl bg-base-2 text-center">
-    <div class="w-full h-max relative flex flex-row tracking-wide">
+  <div class="w-full p-2 rounded-xl bg-base-2">
+    <div
+      class="w-full h-max relative flex flex-row tracking-wide text-center font-semibold"
+    >
       <div
         class={[
           "rounded-xl bg-overlay/10 absolute h-full w-1/2 transition-all duration-100",
