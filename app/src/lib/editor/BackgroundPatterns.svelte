@@ -36,9 +36,12 @@
       patternUnits="userSpaceOnUse"
     >
       {#if pattern === "Dots"}
+        <circle cx={0} cy={0} r={1.5 * actualZoom} fill={color} />
+        <circle cx={zoomedScale} cy={0} r={1.5 * actualZoom} fill={color} />
+        <circle cx={0} cy={zoomedScale} r={1.5 * actualZoom} fill={color} />
         <circle
-          cx={zoomedScale / 2}
-          cy={zoomedScale / 2}
+          cx={zoomedScale}
+          cy={zoomedScale}
           r={1.5 * actualZoom}
           fill={color}
         />
