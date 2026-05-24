@@ -70,11 +70,11 @@
       {@const active = tabManager.activeTab === i}
       <div
         class={[
-          "h-full flex-1 transition-all rounded-xl p-2 flex flex-row gap-2 min-w-max z-0 group",
+          "h-full flex-1 transition-all rounded-xl p-2 flex flex-row gap-2 min-w-max z-0 group border-2 items-center font-semibold group",
           {
-            "bg-overlay/5 hover:bg-overlay/20 text-content-2 hover:text-content-1":
+            "bg-overlay/5 hover:bg-overlay/20 text-content-2 hover:text-content-1 border-transparent":
               !active,
-            "bg-overlay/10 hover:bg-overlay/20 text-content-2 hover:text-content-1":
+            "bg-overlay/10 hover:bg-overlay/20 text-content-2 hover:text-content-1 border-content-1/25":
               active,
           },
         ]}
