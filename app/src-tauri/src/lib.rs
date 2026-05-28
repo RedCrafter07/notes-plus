@@ -2,6 +2,7 @@
 
 mod commands;
 mod events;
+mod structs;
 mod util;
 
 use commands::*;
@@ -35,9 +36,16 @@ pub fn run() {
             new_note,
             save_note,
             save_note_dialog,
+            get_settings,
+            collapse_sidebar
         ])
-        .events(collect_events![events::JotDown, events::Open])
-        .typ::<common::structs::note::NoteData>();
+        .events(collect_events![
+            events::JotDown,
+            events::Open,
+            events::SettingsUpdate
+        ])
+        .typ::<common::structs::note::NoteData>()
+        .typ::<crate::structs::Settings>();
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     {
