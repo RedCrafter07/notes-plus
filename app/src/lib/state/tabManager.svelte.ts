@@ -59,6 +59,13 @@ class TabManager {
   get tabs() {
     return this.#tabs;
   }
+
+  get current() {
+    return this.#tabs[this.#activeTab];
+  }
+  set current(data: NoteData) {
+    this.#tabs[this.#activeTab] = { ...data, unsaved: true };
+  }
 }
 
 export const tabManager = new TabManager();
