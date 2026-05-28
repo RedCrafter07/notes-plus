@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { settingsStore } from "$lib/state/settingsStore.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
   import { commands } from "$lib/tauri/bindings";
   import { newNote } from "$lib/util/notes";
@@ -10,16 +11,31 @@
     IconPlus,
     IconSettings,
   } from "@tabler/icons-svelte";
+  import { fade } from "svelte/transition";
+  import logo from "$lib/components/notes_static.svg?raw";
 
   let { children } = $props();
 </script>
 
 <div class="flex flex-row w-full h-full bg-base-1">
   <div class="bg-base-2 flex flex-col gap-8 p-4">
-    <div>
-      <h3 class="font-display text-2xl font-black">RedNotes Plus</h3>
+    <div class="h-10">
+      {#key settingsStore.store.sidebar_collapsed}
+        <div
+          class={[
+            "font-display text-2xl font-black",
+            { "h-6 aspect-square": settingsStore.store.sidebar_collapsed },
+          ]}
+        >
+          {#if settingsStore.store.sidebar_collapsed}
+            {@html logo}
+          {:else}
+            RedNotes Plus
+          {/if}
+        </div>
+      {/key}
     </div>
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4 h-full">
       <button
         class="flex flex-row gap-2 items-center"
         onclick={() => {
@@ -27,7 +43,9 @@
         }}
       >
         <IconHome />
-        <p>Home</p>
+        {#if !settingsStore.store.sidebar_collapsed}
+          <p>Home</p>
+        {/if}
       </button>
       <button
         class="flex flex-row gap-2 items-center"
@@ -36,7 +54,9 @@
         }}
       >
         <IconPlus />
-        <p>New Note</p>
+        {#if !settingsStore.store.sidebar_collapsed}
+          <p>New Notebook</p>
+        {/if}
       </button>
       <button
         class="flex flex-row gap-2 items-center"
@@ -50,19 +70,30 @@
         }}
       >
         <IconFolder />
-        <p>Open files</p>
+        {#if !settingsStore.store.sidebar_collapsed}
+          <p>Open files</p>
+        {/if}
       </button>
       <button
-        class="flex flex-row gap-2 items-center"
+        class="flex flex-row gap-2 items-center mt-auto"
         onclick={() => {
           goto(resolve("/settings"));
         }}
       >
         <IconSettings />
-        <p>Settings</p>
+        {#if !settingsStore.store.sidebar_collapsed}
+          <p>Settings</p>
+        {/if}
       </button>
     </div>
   </div>
+  <!-- svelte-ignore a11y_consider_explicit_label -->
+  <button
+    class="h-full w-1 hover:bg-overlay/50 transition-all"
+    onclick={async () => {
+      await commands.collapseSidebar(!settingsStore.store.sidebar_collapsed);
+    }}
+  ></button>
   <div class="flex-1 p-4">
     {@render children()}
   </div>

@@ -14,6 +14,7 @@
   import { tabManager } from "$lib/state/tabManager.svelte";
   import { newNote } from "$lib/util/notes";
   import Popups from "$lib/components/Popups.svelte";
+  import { settingsStore } from "$lib/state/settingsStore.svelte";
 
   const { children } = $props();
 
@@ -22,8 +23,13 @@
       openNote(e.payload);
     });
 
+    events.settingsUpdate.listen((e) => {
+      settingsStore.store = e.payload;
+    });
+
     await timeout(50);
     await commands.ready();
+    settingsStore.store = await commands.getSettings();
   });
 
   $effect(() => {
