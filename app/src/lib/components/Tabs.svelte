@@ -3,6 +3,7 @@
   import { resolve } from "$app/paths";
   import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
   import { editorComponents } from "$lib/state/editorComponents.svelte";
+  import { overlayManager } from "$lib/state/overlayManager.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
   import {
     IconHome,
@@ -122,6 +123,9 @@
   </button>
   <button
     class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 active:scale-90"
+    onclick={() => {
+      overlayManager.setOpen("notebook-settings");
+    }}
   >
     <IconSettings />
   </button>
