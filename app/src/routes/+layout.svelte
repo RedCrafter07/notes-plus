@@ -15,6 +15,7 @@
   import { newNote } from "$lib/util/notes";
   import Popups from "$lib/components/Popups.svelte";
   import { settingsStore } from "$lib/state/settingsStore.svelte";
+  import { defaultsStore } from "$lib/state/defaultsStore.svelte";
 
   const { children } = $props();
 
@@ -30,6 +31,7 @@
     await timeout(50);
     await commands.ready();
     settingsStore.store = await commands.getSettings();
+    defaultsStore.store = await commands.getDefaults();
   });
 
   $effect(() => {
