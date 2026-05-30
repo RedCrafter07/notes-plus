@@ -86,12 +86,7 @@
             <button
               class="p-2 bg-base-2 rounded-xl flex items-center justify-center border-2 border-transparent hover:border-content-1/50 transition-all active:scale-95"
               onclick={() => {
-                const total = contentManager.pages.length;
-                contentManager.pages.push({
-                  ...defaultsStore.store.page,
-                  name: `Page ${total + 1}`,
-                });
-                contentManager.activePage = total;
+                contentManager.addNewPage();
               }}
             >
               <IconPlus />

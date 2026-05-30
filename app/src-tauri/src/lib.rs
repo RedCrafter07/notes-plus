@@ -38,7 +38,8 @@ pub fn run() {
             save_note,
             save_note_dialog,
             get_settings,
-            collapse_sidebar
+            collapse_sidebar,
+            use_last_page_settings,
         ])
         .events(collect_events![
             events::JotDown,

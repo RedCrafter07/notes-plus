@@ -1,4 +1,6 @@
 import type { Note, NoteData, Page, State } from "$lib/tauri/bindings";
+import { defaultsStore } from "./defaultsStore.svelte";
+import { settingsStore } from "./settingsStore.svelte";
 
 class ContentManager {
   #id: string = $state(crypto.randomUUID());
@@ -61,6 +63,18 @@ class ContentManager {
       path: this.#path,
       state,
     };
+  }
+
+  public addNewPage() {
+    const total = this.pages.length;
+    const settingsSource = settingsStore.store.use_last_page_settings
+      ? this.currentPage
+      : defaultsStore.store.page;
+    this.pages.push({
+      ...settingsSource,
+      name: `Page ${total + 1}`,
+    });
+    this.activePage = total;
   }
 
   get size(): { width: number; height: number } | "Infinite" {
