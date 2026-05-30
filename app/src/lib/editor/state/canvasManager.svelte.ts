@@ -12,7 +12,7 @@ class CanvasManager {
   lockTool = $state(false);
   zoomLock = $state(true);
   color = $state("#000000");
-  #thickness = $state(8);
+  #thickness = $state(6);
   eraserRadius = $state(24);
 
   drawing = $state(false);

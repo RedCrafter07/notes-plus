@@ -136,7 +136,7 @@ impl Default for Page {
             width: -1.0,
             height: -1.0, // -1 is infinite
             pattern: None,
-            pattern_scale: 16,
+            pattern_scale: 24,
             pattern_color: String::from("#dddddd"),
             background_color: String::from("#ffffff"),
         }

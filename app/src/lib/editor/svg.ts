@@ -30,6 +30,8 @@ export function inputToPath(
       size: t,
       thinning: 0,
       last: !drawing,
+      smoothing: 0.25,
+      streamline: 0.25
     }),
   );
 }
