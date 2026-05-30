@@ -1,5 +1,7 @@
+import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
 import type { Note, NoteData, Page, State } from "$lib/tauri/bindings";
 import { defaultsStore } from "./defaultsStore.svelte";
+import { overlayManager } from "./overlayManager.svelte";
 import { settingsStore } from "./settingsStore.svelte";
 
 class ContentManager {
@@ -65,16 +67,32 @@ class ContentManager {
     };
   }
 
-  public addNewPage() {
-    const total = this.pages.length;
-    const settingsSource = settingsStore.store.use_last_page_settings
-      ? this.currentPage
-      : defaultsStore.store.page;
-    this.pages.push({
+  public addNewPage(forceDefault: boolean = false, total = this.pages.length) {
+    const settingsSource =
+      settingsStore.store.use_last_page_settings && !forceDefault
+        ? this.currentPage
+        : defaultsStore.store.page;
+
+    const newPage = {
       ...settingsSource,
+      layers: [$state.snapshot(defaultsStore.store.layer)], // when using defaultsStore.store.layer directly, the new layer gets bound to the default value, which is not what is expected here
       name: `Page ${total + 1}`,
-    });
+    };
+
+    console.log(newPage);
+
+    this.pages.push(newPage);
     this.activePage = total;
+  }
+
+  public deletePage(i: number) {
+    if (this.#pages.length === 1) {
+      this.addNewPage(false, 0);
+    } else this.activePage = i - 1 <= 0 ? 0 : i - 1;
+
+    this.pages.splice(i, 1);
+    canvasManager.redrawStrokes();
+    overlayManager.close();
   }
 
   get size(): { width: number; height: number } | "Infinite" {

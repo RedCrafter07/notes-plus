@@ -3,7 +3,7 @@
   import { contentManager } from "$lib/state/contentManager.svelte";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import type { BackgroundPattern } from "$lib/tauri/bindings";
-  import { IconCheck, IconClipboard } from "@tabler/icons-svelte";
+  import { IconCheck, IconClipboard, IconTrash } from "@tabler/icons-svelte";
   import Input from "./Input.svelte";
   import Overlay from "./Overlay.svelte";
   import ColorInput from "./ColorInput.svelte";
@@ -92,7 +92,17 @@
 {#if contentManager.pages.length > 0}
   <Overlay {visible} {closeCb} title="Page Settings">
     <div class="flex flex-col">
-      <Input id="page-name" placeholder="Page 1" bind:value={pageName} />
+      <div class="flex flex-row gap-2">
+        <Input id="page-name" placeholder="Page 1" bind:value={pageName} />
+        <button
+          class="border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-content active:scale-95 transition-all aspect-square p-2 rounded-xl"
+          onclick={() => {
+            contentManager.deletePage(pageIndex);
+          }}
+        >
+          <IconTrash />
+        </button>
+      </div>
     </div>
     <div class="grid grid-cols-4 w-full gap-4 items-center">
       {@render backgroundType("Squares")}
