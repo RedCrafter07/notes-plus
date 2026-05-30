@@ -1,8 +1,9 @@
 <script lang="ts">
   import { contentManager } from "$lib/state/contentManager.svelte";
+  import { defaultsStore } from "$lib/state/defaultsStore.svelte";
   import { editorComponents } from "$lib/state/editorComponents.svelte";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
-  import { IconSettings } from "@tabler/icons-svelte";
+  import { IconPlus, IconSettings } from "@tabler/icons-svelte";
   import { fade } from "svelte/transition";
 </script>
 
@@ -50,7 +51,7 @@
         class="absolute top-0 h-full w-full text-center"
       >
         {#if editorComponents.rightBarOption === "pages"}
-          <div class="grid grid-cols-2 w-full">
+          <div class="grid grid-cols-2 w-full gap-4">
             {#each contentManager.pages as page, i (`page-${i}`)}
               <!-- svelte-ignore a11y_click_events_have_key_events -->
               <div
@@ -82,6 +83,19 @@
                 </div>
               </div>
             {/each}
+            <button
+              class="p-2 bg-base-2 rounded-xl flex items-center justify-center border-2 border-transparent hover:border-content-1/50 transition-all active:scale-95"
+              onclick={() => {
+                const total = contentManager.pages.length;
+                contentManager.pages.push({
+                  ...defaultsStore.store.page,
+                  name: `Page ${total + 1}`,
+                });
+                contentManager.activePage = total;
+              }}
+            >
+              <IconPlus />
+            </button>
           </div>
         {:else}
           <h3 class="text-xl">Todo</h3>
