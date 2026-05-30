@@ -40,7 +40,7 @@ class TabManager {
   }
 
   set activeTab(tabIndex: number) {
-    if (tabIndex < this.#tabs.length && tabIndex >= 0) {
+    if (tabIndex === -1 || (tabIndex < this.#tabs.length && tabIndex >= 0)) {
       this.#tabs[this.#activeTab] = {
         ...contentManager.export(),
         unsaved: this.activeNote?.unsaved ?? false,
@@ -48,7 +48,7 @@ class TabManager {
 
       this.#activeTab = tabIndex;
 
-      contentManager.import(this.activeNote!);
+      if (tabIndex !== -1) contentManager.import(this.activeNote!);
     }
   }
 
