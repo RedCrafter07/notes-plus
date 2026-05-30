@@ -51,7 +51,7 @@
         class="absolute top-0 h-full w-full text-center"
       >
         {#if editorComponents.rightBarOption === "pages"}
-          <div class="grid grid-cols-2 w-full gap-4">
+          <div class="grid grid-cols-2 w-full gap-2">
             {#each contentManager.pages as page, i (`page-${i}`)}
               <!-- svelte-ignore a11y_click_events_have_key_events -->
               <div
