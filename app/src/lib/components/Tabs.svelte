@@ -45,8 +45,8 @@
     class={[
       "aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 active:scale-90",
       {
-        "bg-overlay/5 hover:bg-overlay/20": tabManager.activeTab !== -1,
-        "bg-overlay/10 hover:bg-overlay/20": tabManager.activeTab === -1,
+        "bg-overlay/5 hover:bg-overlay/30": tabManager.activeTab !== -1,
+        "bg-overlay/20 hover:bg-overlay/30": tabManager.activeTab === -1,
       },
     ]}
     onclick={() => {
@@ -73,9 +73,9 @@
         class={[
           "h-full flex-1 transition-all rounded-xl p-2 flex flex-row gap-2 min-w-max z-0 group border-2 items-center font-semibold group",
           {
-            "bg-overlay/5 hover:bg-overlay/20 text-content-2 hover:text-content-1 border-transparent":
+            "bg-overlay/5 hover:bg-overlay/30 text-content-2 hover:text-content-1 border-transparent":
               !active,
-            "bg-overlay/10 hover:bg-overlay/20 text-content-2 hover:text-content-1 border-content-1/25":
+            "bg-overlay/20 hover:bg-overlay/30 text-content-2 hover:text-content-1 border-content-1/25":
               active,
           },
         ]}
