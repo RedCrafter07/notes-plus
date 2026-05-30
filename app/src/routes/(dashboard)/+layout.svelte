@@ -11,7 +11,6 @@
     IconPlus,
     IconSettings,
   } from "@tabler/icons-svelte";
-  import { fade } from "svelte/transition";
   import logo from "$lib/components/notes_static.svg?raw";
 
   let { children } = $props();
@@ -89,6 +88,7 @@
   </div>
   <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
+    tabindex="-1"
     class="h-full w-1 hover:bg-overlay/50 transition-all"
     onclick={async () => {
       await commands.collapseSidebar(!settingsStore.store.sidebar_collapsed);
