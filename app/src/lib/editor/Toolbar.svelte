@@ -1,15 +1,7 @@
 <script lang="ts">
-  import {
-    IconEraser,
-    IconLasso,
-    IconPencil,
-    IconZoomCancel,
-    IconZoomCheck,
-  } from "@tabler/icons-svelte";
+  import { IconEraser, IconLasso, IconPencil } from "@tabler/icons-svelte";
   import { canvasManager, type Tool } from "./state/canvasManager.svelte";
-  import ColorPicker from "$lib/components/ColorPicker.svelte";
-  import { fly } from "svelte/transition";
-  import { cubicInOut } from "svelte/easing";
+  import { toRadian } from "$lib/util/geometry";
 
   let color = $state(canvasManager.color);
 
@@ -34,69 +26,79 @@
   $effect(() => {
     canvasManager.color = color;
   });
+
+  const R = 80;
+
+  function iconPos(i: number, n: number) {
+    const angle = toRadian(270 - ((i + 0.5) / n) * 180); // halfway between start and end of the angle
+    const x = R + R * Math.cos(angle) * 0.62;
+    const y = R + R * Math.sin(angle) * 0.62;
+    return { x, y };
+  }
+
+  function slicePath(i: number, n: number) {
+    // since y is down in svg opposed to up in math, the degrees are flipped (180°). We also need to add 90° because the orientation would otherwise be horizontal.
+    const startDeg = toRadian(270 - (i / n) * 180);
+    const endDeg = toRadian(270 - ((i + 1) / n) * 180); // ends where the next one starts
+
+    // R is the center and also the radius (since the height of the menu is 2R)
+    const x1 = R + R * Math.cos(startDeg);
+    const y1 = R + R * Math.sin(startDeg);
+    const x2 = R + R * Math.cos(endDeg);
+    const y2 = R + R * Math.sin(endDeg);
+
+    return `M ${R} ${R} L ${x1} ${y1} A ${R} ${R} 0 0 0 ${x2} ${y2} Z`;
+  }
 </script>
 
-{#snippet penToolbar()}
-  <!-- color -->
-  <ColorPicker bind:value={color} />
-  <!-- <button onclick={() => {
-    
-  }} tabindex="-1" title="Current Thickness">
-    <div
-      class="aspect-square rounded-full bg-content-1"
-      style="width: {canvasManager.thickness}px;"
-    ></div>
-  </button> -->
-  <button
-    onclick={() => {
-      canvasManager.zoomLock = !canvasManager.zoomLock;
-    }}
-  >
-    {#if canvasManager.zoomLock}
-      <IconZoomCheck />
-    {:else}
-      <IconZoomCancel />
-    {/if}
-  </button>
-{/snippet}
+<svg
+  class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none z-10"
+  width={R}
+  height={R * 2}
+>
+  {#each tools as tool, i}
+    {@const Icon = tool.icon}
+    {@const pos = iconPos(i, tools.length)}
+    {@const active = canvasManager.tool === tool.id}
 
-<div class="top-0 right-4 flex h-full pointer-events-none absolute flex-row">
-  <div class="grid grid-cols-1 grid-rows-1 items-start justify-items-start">
-    {#if canvasManager.tool === "pen"}
-      <div
-        style="grid-area: 1 / 1;"
-        class="p-4 w-10 rounded-l-xl bg-base-3 flex flex-col gap-4 my-auto items-center justify-center pointer-events-auto z-0"
-        transition:fly={{ duration: 150, easing: cubicInOut, x: "100%" }}
-      >
-        {@render penToolbar()}
-      </div>
-    {/if}
-  </div>
-  <div
-    class="p-2 w-14 rounded-xl bg-base-1 flex flex-col gap-1 my-auto pointer-events-auto items-center justify-center z-10"
-  >
-    {#each tools as tool}
-      {@const Icon = tool.icon}
-      <button
+    <g
+      role="button"
+      tabindex="0"
+      aria-label="{tool.id} tool"
+      aria-pressed={active}
+      class="cursor-pointer pointer-events-auto"
+      onclick={() => {
+        canvasManager.tool = tool.id;
+      }}
+      onkeydown={(e) => {
+        e.preventDefault();
+      }}
+    >
+      <path
+        d={slicePath(i, tools.length)}
         class={[
-          "aspect-square p-2 rounded-xl transition-all border-transparent border-2 mx-2 active:scale-90",
-          {
-            "bg-overlay/25": canvasManager.tool === tool.id,
-            "border-warning bg-warning/25 text-warning":
-              canvasManager.tool === tool.id && canvasManager.lockTool,
-          },
+          "transition-colors",
+          active
+            ? "fill-content-2 hover:fill-content-3"
+            : "fill-base-1 hover:fill-base-2",
         ]}
-        onclick={() => {
-          if (canvasManager.tool === tool.id) {
-            canvasManager.lockTool = !canvasManager.lockTool;
-          } else {
-            canvasManager.lockTool = false;
-            canvasManager.tool = tool.id;
-          }
-        }}
+      />
+      <foreignObject
+        x={pos.x - 15}
+        y={pos.y - 15}
+        width="30"
+        height="30"
+        class="pointer-events-none overflow-visible"
       >
-        <Icon />
-      </button>
-    {/each}
-  </div>
-</div>
+        <div
+          class={[
+            active ? "text-base-1" : "",
+            "w-full h-full flex items-center justify-center transition-colors",
+          ]}
+        >
+          <Icon />
+        </div>
+      </foreignObject>
+    </g>
+  {/each}
+</svg>
