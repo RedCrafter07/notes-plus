@@ -112,7 +112,7 @@
       />
     </div>
 
-    <div class="sticky bottom-0 flex flex-row gap-4">
+    <div class="sticky bottom-0 flex flex-row gap-4 rounded-xl bg-base-1">
       <button
         class="p-2 rounded-xl border-2 border-success text-success hover:bg-success bg-base-1 hover:text-success-content transition-all flex flex-row gap-2 items-center justify-center font-bold tracking-wider active:scale-95 w-full flex-1"
         onclick={() => save()}
