@@ -28,6 +28,7 @@ pub fn run() {
             ready,
             quit,
             get_recent,
+            get_defaults,
             add_jot_note,
             remove_jot_note,
             edit_jot_note,
@@ -45,6 +46,7 @@ pub fn run() {
             events::SettingsUpdate
         ])
         .typ::<common::structs::note::NoteData>()
+        .typ::<common::structs::defaults::Defaults>()
         .typ::<crate::structs::Settings>();
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

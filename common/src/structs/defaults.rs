@@ -1,0 +1,24 @@
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
+use crate::structs::note::Page;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct Defaults {
+    page: Page,
+}
+
+impl Default for Defaults {
+    fn default() -> Self {
+        Defaults::new()
+    }
+}
+
+// TODO: Implement a function for deriving the defaults from user configuration
+impl Defaults {
+    pub fn new() -> Self {
+        Defaults {
+            page: Page::default(),
+        }
+    }
+}
