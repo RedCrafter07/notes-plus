@@ -1,6 +1,7 @@
 <script lang="ts">
   import { IconEraser, IconLasso, IconPencil } from "@tabler/icons-svelte";
   import { canvasManager, type Tool } from "./state/canvasManager.svelte";
+  import PenToolbar from "./PenToolbar.svelte";
   import { toRadian } from "$lib/util/geometry";
 
   let color = $state(canvasManager.color);
@@ -51,6 +52,7 @@
   }
 </script>
 
+<PenToolbar radius={R} />
 <svg
   class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none z-10"
   width={R}
