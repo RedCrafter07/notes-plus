@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { FocusEventHandler } from "svelte/elements";
-  import ColorPicker from "./ColorPicker.svelte";
+  import ColorPicker from "./ColorSwatch.svelte";
   import Input from "./Input.svelte";
 
   let {
