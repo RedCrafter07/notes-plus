@@ -17,7 +17,7 @@ button,
 button *,
 *[role="button"],
 *[role="button"] * {
-  @apply cursor-pointer;
+  @apply cursor-pointer focus:outline-none;
 }
 
 #tab-bar::-webkit-scrollbar {
