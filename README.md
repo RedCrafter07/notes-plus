@@ -31,16 +31,16 @@ If you want to try out RedNotes Plus (which is currently in its minimal viable p
 
 ## Planned features/TODO
 
-- Limited canvas
-- Page style
-- Custom themes
-- Attachment support
-- PNG/JPG/PDF exports
-- Recently opened notes
-- Rich text support
-- More tools and better toolbar
-- More stroke customization options
-- Allow changing toolbar positions
+- [ ] Limited canvas
+- [x] Page style
+- [ ] Custom themes
+- [ ] Attachment support
+- [ ] PNG/JPG/PDF exports
+- [ ] Recently opened notes
+- [ ] Rich text support
+- [ ] More tools and better toolbar
+- [ ] More stroke customization options
+- [ ] Allow changing toolbar position
 
 ## Credits
 
