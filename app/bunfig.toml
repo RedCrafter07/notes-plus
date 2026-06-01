@@ -1,2 +1,7 @@
 [run]
 bun = true
+
+# From https://bun.com/docs/runtime/bunfig#install-minimumreleaseage
+[install]
+# Only install package versions published at least 3 days ago
+minimumReleaseAge = 259200
