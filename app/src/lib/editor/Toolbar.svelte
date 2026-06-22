@@ -58,6 +58,7 @@
   width={R}
   height={R * 2}
 >
+  <path d={slicePath(0, 1)} class="fill-base-1" />
   {#each tools as tool, i}
     {@const Icon = tool.icon}
     {@const pos = iconPos(i, tools.length)}
@@ -86,10 +87,10 @@
         ]}
       />
       <foreignObject
-        x={pos.x - 15}
-        y={pos.y - 15}
-        width="30"
-        height="30"
+        x={pos.x - 12.5}
+        y={pos.y - 12.5}
+        width="25"
+        height="25"
         class="pointer-events-none overflow-visible"
       >
         <div
