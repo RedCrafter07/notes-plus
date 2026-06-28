@@ -3,7 +3,7 @@ use std::path::Path;
 use common::structs::note::NoteData;
 use tauri_plugin_dialog::DialogExt;
 
-use crate::events::OpenData;
+use crate::structs::OpenData;
 
 #[tauri::command]
 #[specta::specta]

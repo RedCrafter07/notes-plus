@@ -19,7 +19,8 @@ pub(crate) fn handle_args(app: &AppHandle, args: Option<Vec<String>>) {
                 if let Ok(note) = note_data {
                     use tauri_specta::Event;
 
-                    use crate::events::{Open, OpenData};
+                    use crate::events::Open;
+                    use crate::structs::OpenData;
 
                     Open(OpenData {
                         note_data: note,
