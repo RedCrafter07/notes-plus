@@ -565,12 +565,14 @@ dependencies = [
 name = "common"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "flate2",
  "rmp-serde",
  "serde",
  "sevenz-rust2",
  "specta",
+ "thiserror 2.0.18",
  "uuid",
 ]
 
