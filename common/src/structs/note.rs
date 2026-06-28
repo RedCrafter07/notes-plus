@@ -49,12 +49,13 @@ pub struct State {
     pub current_layer: u32,
 }
 
-#[derive(specta::Type, Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct NoteData {
     pub content: Note,
-    pub path: Option<String>,
     pub id: String, // temporary identifier for tab manager
     pub state: State,
+    #[serde(default)]
+    pub folder: Option<String>,
 }
 
 impl Default for State {
@@ -182,7 +183,7 @@ impl Default for NoteData {
     fn default() -> Self {
         Self {
             content: Note::new(chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()),
-            path: None,
+            folder: None,
             id: uuid::Uuid::new_v4().to_string(),
             state: State::default(),
         }
