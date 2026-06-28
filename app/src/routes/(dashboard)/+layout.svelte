@@ -62,8 +62,8 @@
         onclick={async () => {
           const data = await commands.openNotesDialog();
 
-          data.forEach((d, i, a) => {
-            tabManager.add(d, i === a.length - 1);
+          data.forEach(({ note_data: d, path }, i, a) => {
+            tabManager.add(d, i === a.length - 1, path);
             if (i === a.length - 1) goto(resolve("/edit/[id]", { id: d.id }));
           });
         }}

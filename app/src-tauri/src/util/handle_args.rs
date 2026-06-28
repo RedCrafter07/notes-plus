@@ -19,9 +19,14 @@ pub(crate) fn handle_args(app: &AppHandle, args: Option<Vec<String>>) {
                 if let Ok(note) = note_data {
                     use tauri_specta::Event;
 
-                    use crate::events::Open;
+                    use crate::events::{Open, OpenData};
 
-                    Open(note).emit(app).expect("Failed to emit Open event");
+                    Open(OpenData {
+                        note_data: note,
+                        path: args[1].to_string(),
+                    })
+                    .emit(app)
+                    .expect("Failed to emit Open event");
                 }
             }
         }

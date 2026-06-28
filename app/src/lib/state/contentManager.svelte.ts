@@ -8,7 +8,6 @@ class ContentManager {
   #id: string = $state(crypto.randomUUID());
   tags: string[] = $state([]);
   title: string = $state("New Notebook");
-  #path: string | null = $state(null);
   #createdAt: number = Math.floor(Date.now() / 1000);
   #editedAt: number = Math.floor(Date.now() / 1000);
   #pages: Page[] = $state([]);
@@ -21,13 +20,12 @@ class ContentManager {
   panY = $state(0);
 
   public import(data: NoteData) {
-    const { content: note, id, path, state } = data;
+    const { content: note, id, state } = data;
     this.title = note.title;
     this.#createdAt = note.created_at;
     this.#editedAt = note.edited_at;
     this.tags = note.tags;
     if (id) this.#id = id;
-    if (path) this.#path = path;
 
     this.zoom = state.zoom;
     this.panX = state.pan_x;
@@ -62,7 +60,6 @@ class ContentManager {
     return {
       content,
       id: this.#id,
-      path: this.#path,
       state,
     };
   }
@@ -119,14 +116,6 @@ class ContentManager {
 
   set id(id: string) {
     this.#id = id;
-  }
-
-  get path() {
-    return this.#path;
-  }
-
-  set path(path: string | null) {
-    this.#path = path;
   }
 
   get activeLayer() {

@@ -3,6 +3,8 @@ use std::path::Path;
 use common::structs::note::NoteData;
 use tauri_plugin_dialog::DialogExt;
 
+use crate::events::OpenData;
+
 #[tauri::command]
 #[specta::specta]
 pub fn snapshot_note() {
@@ -11,7 +13,7 @@ pub fn snapshot_note() {
 
 #[tauri::command]
 #[specta::specta]
-pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
+pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<OpenData> {
     let notes = app
         .dialog()
         .file()
@@ -20,7 +22,7 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
         .blocking_pick_files();
 
     if let Some(notes) = notes {
-        let notes: Vec<NoteData> = notes
+        let notes: Vec<OpenData> = notes
             .iter()
             .filter_map(|path| {
                 let path = path.as_path().unwrap();
@@ -30,7 +32,10 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<NoteData> {
                     let note_data = NoteData::from_bytes(&buffer);
 
                     if let Ok(note_data) = note_data {
-                        return Some(note_data);
+                        return Some(OpenData {
+                            note_data,
+                            path: path.to_str().unwrap().to_string(),
+                        });
                     } else {
                         return None;
                     }
@@ -54,12 +59,8 @@ pub fn new_note() -> NoteData {
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_note(note_data: NoteData) -> bool {
-    if note_data.path.is_none() {
-        return false;
-    }
-
-    let path = Path::new(note_data.path.as_ref().unwrap());
+pub fn save_note(note_data: NoteData, path: String) -> bool {
+    let path = Path::new(&path);
     let bytes = note_data.to_bytes().unwrap();
     let result = common::io::archive::create_with_data(&bytes, path);
 

@@ -7,8 +7,11 @@ export function useShortcuts() {
     const event = async (e: KeyboardEvent) => {
       if (!e.ctrlKey) return;
 
-      if (e.key === "s" && !e.shiftKey && contentManager.path !== null) {
-        const saveSuccess = await commands.saveNote(contentManager.export());
+      if (e.key === "s" && !e.shiftKey && tabManager.tab.path !== undefined) {
+        const saveSuccess = await commands.saveNote(
+          contentManager.export(),
+          tabManager.tab.path,
+        );
         if (saveSuccess) {
           if (tabManager.activeNote) tabManager.activeNote.unsaved = false;
         } else {
@@ -18,10 +21,10 @@ export function useShortcuts() {
       if (
         e.key === "S" ||
         (e.key === "s" && e.shiftKey) ||
-        (e.key === "s" && !e.shiftKey && contentManager.path === null)
+        (e.key === "s" && !e.shiftKey && tabManager.tab.path === undefined)
       ) {
         if (!tabManager.activeNote) return;
-        const id = contentManager.path
+        const id = tabManager.tab.path
           ? crypto.randomUUID()
           : contentManager.id;
 
@@ -30,7 +33,8 @@ export function useShortcuts() {
         const path = await commands.saveNoteDialog(contentManager.export());
 
         if (path) {
-          contentManager.path = path;
+          tabManager.currentPath = path;
+          console.log(tabManager.tab.path);
           if (tabManager.activeNote) tabManager.activeNote.unsaved = false;
         }
       }

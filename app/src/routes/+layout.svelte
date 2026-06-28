@@ -4,7 +4,12 @@
   import "@fontsource-variable/funnel-sans";
   import "../app.css";
   import "../mocha.css";
-  import { commands, events, type NoteData } from "$lib/tauri/bindings";
+  import {
+    commands,
+    events,
+    type NoteData,
+    type OpenData,
+  } from "$lib/tauri/bindings";
   import { timeout } from "$lib/util/timeout";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import Modals from "$lib/components/Modals.svelte";
@@ -51,8 +56,8 @@
         e.preventDefault();
         const data = await commands.openNotesDialog();
 
-        data.forEach((d, i, a) => {
-          tabManager.add(d, i === a.length - 1);
+        data.forEach(({ note_data: d, path }, i, a) => {
+          tabManager.add(d, i === a.length - 1, path);
           if (i === a.length - 1) goto(resolve("/edit/[id]", { id: d.id }));
         });
       } else if (e.key === "n") {
@@ -75,8 +80,8 @@
     };
   });
 
-  function openNote(data: NoteData) {
-    tabManager.add(data, true);
+  function openNote(data: OpenData) {
+    tabManager.add(data.note_data, true, data.path);
   }
 </script>
 

@@ -8,8 +8,14 @@ use crate::structs::Settings;
 #[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 pub struct JotDown(pub Vec<String>);
 
+#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+pub struct OpenData {
+    pub note_data: NoteData,
+    pub path: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
-pub struct Open(pub NoteData);
+pub struct Open(pub OpenData);
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 pub struct SettingsUpdate(pub Settings);

@@ -4,14 +4,18 @@ import type { NoteData } from "$lib/tauri/bindings";
 import { contentManager } from "./contentManager.svelte";
 import { overlayManager } from "./overlayManager.svelte";
 
+type Tab = NoteData & { unsaved: boolean; path?: string };
+
 class TabManager {
-  #tabs = $state<(NoteData & { unsaved: boolean })[]>([]);
+  #tabs = $state<Tab[]>([]);
   #activeTab = $state(-1);
 
-  add(noteData: NoteData, setActive: boolean = false) {
+  add(noteData: NoteData, setActive: boolean = false, path?: string) {
+    console.log(noteData);
     const l = this.#tabs.push({
       ...noteData,
       unsaved: false,
+      path,
     });
 
     if (setActive) {
@@ -60,11 +64,19 @@ class TabManager {
     return this.#tabs;
   }
 
+  get tab(): Tab {
+    return this.#tabs[this.#activeTab];
+  }
+
   get current() {
     return this.#tabs[this.#activeTab];
   }
   set current(data: NoteData) {
     this.#tabs[this.#activeTab] = { ...data, unsaved: true };
+  }
+
+  set currentPath(path: string) {
+    this.#tabs[this.#activeTab].path = path;
   }
 }
 
