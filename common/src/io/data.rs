@@ -33,9 +33,6 @@ impl From<rmp_serde::encode::Error> for NoteFileError {
 pub(crate) fn note_to_bytes(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
     let mut buffer: Vec<u8> = Vec::new();
 
-    let mut data = data.clone();
-    data.path = None;
-
     let mut encoder = GzEncoder::new(&mut buffer, Compression::default());
 
     encoder.write_all(b"REDNOTES")?;
@@ -105,7 +102,7 @@ pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
 
     Ok(NoteData {
         content: note,
-        path: None,
+        folder: None,
         id,
         state: state,
     })
