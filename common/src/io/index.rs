@@ -31,6 +31,8 @@ pub struct File {
     pub title: String,
     pub folder: Option<String>,
     pub path: String,
+    pub created_at: u32,
+    pub edited_at: u32,
 }
 
 pub fn build_index(path: &Path) -> Result<Vec<File>, IndexError> {
@@ -76,6 +78,8 @@ pub fn index_file(path: &PathBuf) -> Result<File, IndexError> {
         path: path_str,
         title: data.content.title,
         folder: data.content.folder,
+        created_at: data.content.created_at,
+        edited_at: data.content.edited_at,
     })
 }
 
