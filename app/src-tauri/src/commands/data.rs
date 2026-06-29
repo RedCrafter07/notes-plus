@@ -1,6 +1,6 @@
 use std::fs::create_dir_all;
 
-use common::io::index::run_index;
+use common::io::index::build_index;
 use common::structs::defaults::Defaults;
 use common::structs::note::NoteData;
 use tauri::Manager;
@@ -35,7 +35,7 @@ pub fn create_index(app: tauri::AppHandle) -> Vec<common::io::index::File> {
         create_dir_all(&path).expect("Could not create directory!");
     }
 
-    let index = run_index(&path).expect("Could not create index!");
+    let index = build_index(&path).expect("Could not create index!");
 
     index
 }
