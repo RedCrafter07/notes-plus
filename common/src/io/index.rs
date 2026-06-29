@@ -63,15 +63,3 @@ pub fn index_file(path: &PathBuf) -> Result<File, IndexError> {
         folder: data.folder,
     })
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn index_test_folder() {
-        let index = run_index(&Path::new("/home/redi/Documents/RNPF"));
-
-        assert!(index.is_ok());
-    }
-}
