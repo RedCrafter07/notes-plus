@@ -4,12 +4,7 @@
   import "@fontsource-variable/funnel-sans";
   import "../app.css";
   import "../mocha.css";
-  import {
-    commands,
-    events,
-    type NoteData,
-    type OpenData,
-  } from "$lib/tauri/bindings";
+  import { commands, events, type OpenData } from "$lib/tauri/bindings";
   import { timeout } from "$lib/util/timeout";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import Modals from "$lib/components/Modals.svelte";
