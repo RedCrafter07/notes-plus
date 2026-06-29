@@ -40,7 +40,7 @@ pub fn run() {
             get_settings,
             collapse_sidebar,
             use_last_page_settings,
-            create_index,
+            get_notebooks,
         ])
         .events(collect_events![
             events::JotDown,
