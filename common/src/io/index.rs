@@ -26,9 +26,9 @@ pub enum IndexError {
 
 #[derive(specta::Type, Clone, Debug, Deserialize, Serialize)]
 pub struct File {
-    title: String,
-    folder: Option<String>,
-    path: String,
+    pub title: String,
+    pub folder: Option<String>,
+    pub path: String,
 }
 
 pub fn build_index(path: &Path) -> Result<Vec<File>, IndexError> {
