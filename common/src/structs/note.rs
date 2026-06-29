@@ -38,6 +38,8 @@ pub struct Note {
     pub pages: Vec<Page>,
     pub created_at: u32,
     pub edited_at: u32,
+    #[serde(default)]
+    pub folder: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -54,8 +56,6 @@ pub struct NoteData {
     pub content: Note,
     pub id: String, // temporary identifier for tab manager
     pub state: State,
-    #[serde(default)]
-    pub folder: Option<String>,
 }
 
 impl Default for State {
@@ -94,6 +94,7 @@ impl Note {
     pub fn new(title: String) -> Self {
         Self {
             title,
+            folder: None,
             tags: Vec::new(),
             pages: vec![Page::default()],
             created_at: SystemTime::now().elapsed().unwrap().as_millis() as u32,
@@ -183,7 +184,6 @@ impl Default for NoteData {
     fn default() -> Self {
         Self {
             content: Note::new(chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()),
-            folder: None,
             id: uuid::Uuid::new_v4().to_string(),
             state: State::default(),
         }

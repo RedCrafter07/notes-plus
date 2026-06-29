@@ -67,6 +67,6 @@ pub fn index_file(path: &PathBuf) -> Result<File, IndexError> {
     Ok(File {
         path: path_str,
         title: data.content.title,
-        folder: data.folder,
+        folder: data.content.folder,
     })
 }

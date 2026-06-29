@@ -102,7 +102,6 @@ pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
 
     Ok(NoteData {
         content: note,
-        folder: None,
         id,
         state: state,
     })
