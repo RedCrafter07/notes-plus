@@ -1,33 +1,20 @@
 use std::io::{Read, Write};
 
 use flate2::{Compression, read::GzDecoder, write::GzEncoder};
+use thiserror::Error;
 
 use crate::structs::note::{Note, NoteData, State};
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum NoteFileError {
-    Serialization(rmp_serde::encode::Error),
-    Deserialization(rmp_serde::decode::Error),
-    FileOpen(std::io::Error),
+    #[error(transparent)]
+    Serialization(#[from] rmp_serde::encode::Error),
+    #[error(transparent)]
+    Deserialization(#[from] rmp_serde::decode::Error),
+    #[error(transparent)]
+    FileOpen(#[from] std::io::Error),
+    #[error("Invalid file")]
     InvalidFile,
-}
-
-impl From<rmp_serde::decode::Error> for NoteFileError {
-    fn from(v: rmp_serde::decode::Error) -> Self {
-        Self::Deserialization(v)
-    }
-}
-
-impl From<std::io::Error> for NoteFileError {
-    fn from(v: std::io::Error) -> Self {
-        Self::FileOpen(v)
-    }
-}
-
-impl From<rmp_serde::encode::Error> for NoteFileError {
-    fn from(v: rmp_serde::encode::Error) -> Self {
-        Self::Serialization(v)
-    }
 }
 
 pub(crate) fn note_to_bytes(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
