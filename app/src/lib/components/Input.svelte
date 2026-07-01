@@ -9,6 +9,7 @@
     value = $bindable(),
     id,
     placeholder,
+    onFocus,
     onBlur,
     children,
     tabIndex,
@@ -19,6 +20,7 @@
     label?: string;
     description?: string;
     placeholder?: string;
+    onFocus?: FocusEventHandler<HTMLInputElement>;
     onBlur?: FocusEventHandler<HTMLInputElement>;
     children?: Snippet<[]>;
     tabIndex?: number;
@@ -42,6 +44,7 @@
     class="w-full flex-1 focus:outline-none select-text"
     bind:value
     onblur={onBlur}
+    onfocus={onFocus}
     autocomplete="off"
     {id}
     {placeholder}
