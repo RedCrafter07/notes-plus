@@ -71,10 +71,10 @@ export function getAllFolders(content: EntryType[], prefix: string = "") {
   return folders;
 }
 
-function isFile(entry: EntryType): entry is { File: File } {
+export function isFile(entry: EntryType): entry is { File: File } {
   return "File" in entry;
 }
 
-function isFolder(entry: EntryType): entry is { Folder: FolderEntry } {
+export function isFolder(entry: EntryType): entry is { Folder: FolderEntry } {
   return "Folder" in entry;
 }
