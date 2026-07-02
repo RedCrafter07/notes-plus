@@ -1,6 +1,9 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { FocusEventHandler } from "svelte/elements";
+  import type {
+    FocusEventHandler,
+    KeyboardEventHandler,
+  } from "svelte/elements";
 
   let {
     label,
@@ -11,6 +14,7 @@
     placeholder,
     onFocus,
     onBlur,
+    onKeyDown,
     children,
     tabIndex,
   }: {
@@ -22,6 +26,7 @@
     placeholder?: string;
     onFocus?: FocusEventHandler<HTMLInputElement>;
     onBlur?: FocusEventHandler<HTMLInputElement>;
+    onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
     children?: Snippet<[]>;
     tabIndex?: number;
   } = $props();
@@ -45,6 +50,7 @@
     bind:value
     onblur={onBlur}
     onfocus={onFocus}
+    onkeydown={onKeyDown}
     autocomplete="off"
     {id}
     {placeholder}
