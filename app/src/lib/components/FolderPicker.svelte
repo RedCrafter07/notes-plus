@@ -34,7 +34,9 @@
     selectedIndex = -1;
   });
 
-  function handleKeybinds(e: KeyboardEvent) {
+  function handleKeybinds(
+    e: KeyboardEvent & { currentTarget: HTMLInputElement },
+  ) {
     switch (e.key) {
       case "ArrowUp":
         {
@@ -60,6 +62,8 @@
         break;
       case "Enter":
         {
+          e.preventDefault();
+          e.currentTarget.blur();
         }
         break;
     }
