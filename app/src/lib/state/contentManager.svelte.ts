@@ -11,6 +11,7 @@ class ContentManager {
   #createdAt: number = Math.floor(Date.now() / 1000);
   #editedAt: number = Math.floor(Date.now() / 1000);
   #pages: Page[] = $state([]);
+  folder = $state<string | null>(null);
 
   #activePage = $state(0); // first page
   #activeLayer = $state(0); // 0 is the bottom layer
@@ -34,6 +35,8 @@ class ContentManager {
     this.#activePage = state.current_page;
 
     this.#pages = note.pages;
+
+    if (note.folder) this.folder = note.folder;
   }
 
   public updateEditDate() {
@@ -47,6 +50,7 @@ class ContentManager {
       edited_at: Math.floor(Date.now() / 1000),
       tags: this.tags,
       title: this.title,
+      folder: this.folder,
     };
 
     const state: State = {
