@@ -5,6 +5,7 @@
   import { IconDownload } from "@tabler/icons-svelte";
   import Input from "./Input.svelte";
   import Overlay from "./Overlay.svelte";
+  import FolderPicker from "./FolderPicker.svelte";
 
   let visible = $derived(overlayManager.open === "notebook-settings");
 
@@ -44,6 +45,11 @@
       placeholder="Creativity"
     />
   </div>
+
+  <FolderPicker
+    id="folder-picker-notebook"
+    bind:value={contentManager.folder}
+  />
 
   <button
     class="border-2 flex flex-row gap-2 items-center w-full border-content-3 text-content-3 p-2 rounded-xl font-bold tracking-wider justify-center"
