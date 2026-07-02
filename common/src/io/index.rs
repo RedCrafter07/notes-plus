@@ -80,13 +80,7 @@ pub fn index_file(path: &PathBuf) -> Result<File, IndexError> {
 }
 
 pub fn normalize_folder(folder: String) -> String {
-    let mut folder = folder;
-    if folder.starts_with("/") {
-        folder.remove(0);
-    }
-    if folder.ends_with("/") {
-        folder.pop();
-    }
+    let mut folder = folder.trim_matches('/').to_string();
 
     while folder.contains("//") {
         folder = folder.replace("//", "/");
