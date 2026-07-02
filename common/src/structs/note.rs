@@ -3,6 +3,8 @@ use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use crate::io::index::normalize_folder;
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub enum BackgroundPattern {
     Dots,
@@ -104,6 +106,12 @@ impl Note {
 
     pub fn update_edited_at(&mut self) {
         self.edited_at = SystemTime::now().elapsed().unwrap().as_millis() as u32;
+    }
+
+    pub fn normalize_folder(&mut self) {
+        if let Some(folder) = &self.folder {
+            self.folder = Some(normalize_folder(folder.clone()));
+        }
     }
 }
 

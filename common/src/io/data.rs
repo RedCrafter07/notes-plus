@@ -76,7 +76,9 @@ pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
     let mut note_data = vec![0u8; data_length as usize];
     decoder.read_exact(&mut note_data)?;
 
-    let note: Note = rmp_serde::from_slice(&note_data)?;
+    let mut note: Note = rmp_serde::from_slice(&note_data)?;
+    note.normalize_folder();
+    let note = note;
 
     let mut state_length = [0u8; 4];
     decoder.read_exact(&mut state_length)?;

@@ -22,6 +22,12 @@
   let selectedIndex = $state(-1);
 
   $effect(() => {
+    if (!focused) {
+      if (inputContent.at(-1) === "/") inputContent = inputContent.slice(0, -1);
+      if (inputContent.at(0) === "/") inputContent = inputContent.slice(1, 0);
+
+      inputContent = inputContent.replace(/(\/){2,}/g, "/");
+    }
     if (value !== undefined) {
       if (inputContent.length > 1) value = inputContent;
       else value = null;
@@ -38,6 +44,12 @@
     e: KeyboardEvent & { currentTarget: HTMLInputElement },
   ) {
     switch (e.key) {
+      case "/":
+        if (e.currentTarget.selectionStart === 0) {
+          e.preventDefault();
+        } else {
+        }
+        break;
       case "ArrowUp":
         {
           e.preventDefault();

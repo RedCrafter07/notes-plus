@@ -78,3 +78,19 @@ pub fn index_file(path: &PathBuf) -> Result<File, IndexError> {
         folder: data.content.folder,
     })
 }
+
+pub fn normalize_folder(folder: String) -> String {
+    let mut folder = folder;
+    if folder.starts_with("/") {
+        folder.remove(0);
+    }
+    if folder.ends_with("/") {
+        folder.pop();
+    }
+
+    while folder.contains("//") {
+        folder = folder.replace("//", "/");
+    }
+
+    folder
+}
