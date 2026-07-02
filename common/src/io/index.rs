@@ -88,3 +88,18 @@ pub fn normalize_folder(folder: String) -> String {
 
     folder
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_normalize_folder() {
+        exec_normalize_test("/folder//subfolder///".into(), "folder/subfolder");
+        exec_normalize_test("//Work".into(), "Work");
+        exec_normalize_test("Work///Sub".into(), "Work/Sub");
+        exec_normalize_test("/Work/".into(), "Work");
+    }
+
+    fn exec_normalize_test(input: String, expected: &str) {
+        assert_eq!(super::normalize_folder(input), expected);
+    }
+}
