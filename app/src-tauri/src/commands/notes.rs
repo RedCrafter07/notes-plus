@@ -62,7 +62,12 @@ pub fn new_note() -> NoteData {
 #[specta::specta]
 pub fn save_note(note_data: NoteData, path: String) -> bool {
     let path = Path::new(&path);
-    let bytes = note_data.to_bytes().unwrap();
+    let bytes = note_data.to_bytes();
+    let bytes = if let Ok(bytes) = bytes {
+        bytes
+    } else {
+        return false;
+    };
     let result = common::io::archive::create_with_data(&bytes, path);
 
     if result.is_err() {
