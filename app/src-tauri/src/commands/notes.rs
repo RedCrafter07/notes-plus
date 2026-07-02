@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use common::structs::note::NoteData;
+use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
 use crate::structs::OpenData;
@@ -63,6 +64,37 @@ pub fn save_note(note_data: NoteData, path: String) -> bool {
     let path = Path::new(&path);
     let bytes = note_data.to_bytes().unwrap();
     let result = common::io::archive::create_with_data(&bytes, path);
+
+    if result.is_err() {
+        return false;
+    }
+
+    true
+}
+
+pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> bool {
+    let path = app
+        .path()
+        .app_data_dir()
+        .expect("Application storage could not be found")
+        .join("notebooks");
+
+    if !path.exists() {
+        return false;
+    }
+
+    let file_name = format!("{}.rnpf", &note_data.id);
+
+    let full_path = path.join(file_name);
+
+    let bytes = note_data.to_bytes();
+    let bytes = if let Ok(bytes) = bytes {
+        bytes
+    } else {
+        return false;
+    };
+
+    let result = common::io::archive::create_with_data(&bytes, &full_path);
 
     if result.is_err() {
         return false;
