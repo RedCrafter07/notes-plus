@@ -1,4 +1,5 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
+import { popupManager } from "$lib/state/popupManager.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
 import { commands } from "$lib/tauri/bindings";
 
@@ -7,6 +8,24 @@ export function useShortcuts() {
     const event = async (e: KeyboardEvent) => {
       if (!e.ctrlKey) return;
 
+      if (e.key === "s" && !e.shiftKey && tabManager.tab.path === undefined) {
+        const success = await commands.saveNoteToStorage(
+          contentManager.export(),
+        );
+
+        if (success) {
+          popupManager.add({
+            message: "Note saved successfully!",
+            type: "success",
+          });
+          if (tabManager.activeNote) tabManager.activeNote.unsaved = false;
+        } else {
+          popupManager.add({
+            message: "An error occurred while saving the note.",
+            type: "destructive",
+          });
+        }
+      }
       if (e.key === "s" && !e.shiftKey && tabManager.tab.path !== undefined) {
         const saveSuccess = await commands.saveNote(
           contentManager.export(),
@@ -18,11 +37,7 @@ export function useShortcuts() {
           // TODO: Display error
         }
       }
-      if (
-        e.key === "S" ||
-        (e.key === "s" && e.shiftKey) ||
-        (e.key === "s" && !e.shiftKey && tabManager.tab.path === undefined)
-      ) {
+      if (e.key === "S" || (e.key === "s" && e.shiftKey)) {
         if (!tabManager.activeNote) return;
         const id = tabManager.tab.path
           ? crypto.randomUUID()
