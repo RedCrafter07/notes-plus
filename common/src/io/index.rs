@@ -18,6 +18,8 @@ pub enum IndexError {
     InvalidFile(NoteFileError),
     #[error("An error occurred while accessing the notebook archive")]
     ArchiveError(#[from] sevenz_rust2::Error),
+    #[error("The file has an invalid extension. Expected .rnpf")]
+    InvalidExtension,
     #[error("An unknonw error occurred")]
     Unknown,
     #[error(transparent)]
@@ -48,6 +50,12 @@ pub fn build_index(path: &Path) -> Result<Vec<File>, IndexError> {
 }
 
 pub fn index_file(path: &PathBuf) -> Result<File, IndexError> {
+    // Ignore non-rnpf files
+    if let Some(ext) = path.extension() {
+        if ext != "rnpf" {
+            return Err(IndexError::InvalidExtension);
+        }
+    }
     // Get data from file by opening the data file in the archive
     let data = NoteData::from_bytes(&open_data(&path)?);
 
