@@ -24,7 +24,7 @@
   $effect(() => {
     if (!focused) {
       if (inputContent.at(-1) === "/") inputContent = inputContent.slice(0, -1);
-      if (inputContent.at(0) === "/") inputContent = inputContent.slice(1, 0);
+      if (inputContent.at(0) === "/") inputContent = inputContent.slice(1);
 
       inputContent = inputContent.replace(/(\/){2,}/g, "/");
     }
