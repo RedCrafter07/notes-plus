@@ -97,9 +97,9 @@ mod tests {
         exec_normalize_test("//Work".into(), "Work");
         exec_normalize_test("Work///Sub".into(), "Work/Sub");
         exec_normalize_test("/Work/".into(), "Work");
-    }
 
-    fn exec_normalize_test(input: String, expected: &str) {
-        assert_eq!(super::normalize_folder(input), expected);
+        fn exec_normalize_test(input: String, expected: &str) {
+            assert_eq!(super::normalize_folder(input), expected);
+        }
     }
 }
