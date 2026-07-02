@@ -77,6 +77,8 @@ pub fn save_note(note_data: NoteData, path: String) -> bool {
     true
 }
 
+#[tauri::command]
+#[specta::specta]
 pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> bool {
     let path = app
         .path()

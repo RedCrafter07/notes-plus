@@ -36,6 +36,7 @@ pub fn run() {
             open_notes_dialog,
             new_note,
             save_note,
+            save_note_to_storage,
             save_note_dialog,
             get_settings,
             collapse_sidebar,
