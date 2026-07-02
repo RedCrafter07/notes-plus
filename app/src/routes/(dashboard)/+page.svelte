@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { fsStore } from "$lib/state/fsStore.svelte";
   import { commands, events, type NoteData } from "$lib/tauri/bindings";
+  import { FileSystemNavigator, isFolder } from "$lib/util/fileSystem.svelte";
   import { IconClock, IconPencil } from "@tabler/icons-svelte";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -31,6 +33,9 @@
 
       jotNotes = await commands.listJotNotes();
       recentNotes = await commands.getRecent();
+      const notebooks = await commands.getNotebooks();
+      if (notebooks && isFolder(notebooks))
+        fsStore.store = new FileSystemNavigator(notebooks);
     })();
 
     return () => {
