@@ -22,11 +22,13 @@ pub fn get_defaults() -> Defaults {
 #[specta::specta]
 // Indexes the notes in the main notes directory
 pub fn get_notebooks(app: tauri::AppHandle) -> Option<EntryType> {
-    let path = app
-        .path()
-        .app_data_dir()
-        .expect("Application storage could not be found")
-        .join("notebooks");
+    let path = match app.path().app_data_dir() {
+        Ok(p) => p.join("notebooks"),
+        Err(e) => {
+            eprintln!("Application storage could not be found: {e}");
+            return None;
+        }
+    };
 
     if path.exists() && !path.is_dir() {
         eprintln!(
@@ -36,11 +38,18 @@ pub fn get_notebooks(app: tauri::AppHandle) -> Option<EntryType> {
         return None;
     }
 
-    if !path.exists() {
-        create_dir_all(&path).expect("Could not create directory!");
+    if !path.exists()
+        && let Err(e) = create_dir_all(&path)
+    {
+        eprintln!("Could not create notebooks directory: {e}");
+        return None;
     }
 
-    let index = build_index(&path).expect("Could not create index!");
-
-    Some(EntryType::from_index(index))
+    match build_index(&path) {
+        Ok(index) => Some(EntryType::from_index(index)),
+        Err(e) => {
+            eprintln!("Could not index notebooks: {e}");
+            None
+        }
+    }
 }

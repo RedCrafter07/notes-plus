@@ -53,10 +53,11 @@ pub fn build_index(path: &Path) -> Result<Vec<File>, IndexError> {
 
 pub fn index_file(path: &PathBuf) -> Result<File, IndexError> {
     // Ignore non-rnpf files
-    if let Some(ext) = path.extension()
-        && ext != "rnpf" {
-            return Err(IndexError::InvalidExtension);
-        }
+    match path.extension() {
+        Some(ext) if ext == "rnpf" => {}
+        _ => return Err(IndexError::InvalidExtension),
+    }
+
     // Get data from file by opening the data file in the archive
     let data = NoteData::from_bytes(&open_data(path)?);
 
