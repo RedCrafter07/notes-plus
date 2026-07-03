@@ -36,17 +36,28 @@ pub fn open_notes(paths: Vec<String>) -> Vec<OpenData> {
 fn open_paths(paths: &[PathBuf]) -> Vec<OpenData> {
     paths
         .iter()
-        .filter_map(|p| {
-            let buf = archive::open_data(p).ok()?;
-            let data = NoteData::from_bytes(&buf).ok()?;
-            let path_str = p.to_str()?.to_string();
-
-            Some(OpenData {
-                path: path_str,
-                note_data: data,
-            })
+        .filter_map(|p| match open_single(p) {
+            Ok(data) => Some(data),
+            Err(e) => {
+                eprintln!("Failed to open note {}: {e}", p.display());
+                None
+            }
         })
         .collect()
+}
+
+fn open_single(path: &Path) -> anyhow::Result<OpenData> {
+    let buf = archive::open_data(path)?;
+    let data = NoteData::from_bytes(&buf)?;
+    let path_str = path
+        .to_str()
+        .ok_or_else(|| anyhow::anyhow!("path is not valid UTF-8"))?
+        .to_string();
+
+    Ok(OpenData {
+        path: path_str,
+        note_data: data,
+    })
 }
 
 #[tauri::command]
@@ -73,7 +84,10 @@ fn sanitize_note_id(id: &str) -> Option<&str> {
         return None;
     }
 
-    if id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+    if id
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
         Some(id)
     } else {
         None
@@ -83,10 +97,7 @@ fn sanitize_note_id(id: &str) -> Option<&str> {
 #[tauri::command]
 #[specta::specta]
 pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Option<String> {
-    let path = app
-        .path()
-        .app_data_dir().ok()?
-        .join("notebooks");
+    let path = app.path().app_data_dir().ok()?.join("notebooks");
 
     if !path.exists() {
         std::fs::create_dir_all(&path).ok()?;

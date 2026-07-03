@@ -31,6 +31,8 @@ common = { path = "../../common" }
 tauri-plugin-notification = "2"
 tauri-plugin-store = "2"
 uuid = { version = "1.22.0", features = ["v4"] }
+anyhow = "1.0.103"
+thiserror = "2.0.18"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
