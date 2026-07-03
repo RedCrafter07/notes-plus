@@ -8,11 +8,9 @@
   import { timeout } from "$lib/util/timeout";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import Modals from "$lib/components/Modals.svelte";
-  import { goto } from "$app/navigation";
-  import { resolve } from "$app/paths";
   import Tabs from "$lib/components/Tabs.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
-  import { newNote } from "$lib/util/notes";
+  import { newNote, openNotes } from "$lib/util/notes.svelte";
   import Popups from "$lib/components/Popups.svelte";
   import { settingsStore } from "$lib/state/settingsStore.svelte";
   import { defaultsStore } from "$lib/state/defaultsStore.svelte";
@@ -51,10 +49,7 @@
         e.preventDefault();
         const data = await commands.openNotesDialog();
 
-        data.forEach(({ note_data: d, path }, i, a) => {
-          tabManager.add(d, i === a.length - 1, path);
-          if (i === a.length - 1) goto(resolve("/edit/[id]", { id: d.id }));
-        });
+        openNotes(data);
       } else if (e.key === "n") {
         await newNote();
       }

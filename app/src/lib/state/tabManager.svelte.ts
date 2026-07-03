@@ -11,7 +11,6 @@ class TabManager {
   #activeTab = $state(-1);
 
   add(noteData: NoteData, setActive: boolean = false, path?: string) {
-    console.log(noteData);
     const l = this.#tabs.push({
       ...noteData,
       unsaved: false,

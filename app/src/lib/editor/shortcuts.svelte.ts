@@ -9,16 +9,17 @@ export function useShortcuts() {
       if (!e.ctrlKey) return;
 
       if (e.key === "s" && !e.shiftKey && tabManager.tab.path === undefined) {
-        const success = await commands.saveNoteToStorage(
-          contentManager.export(),
-        );
+        const path = await commands.saveNoteToStorage(contentManager.export());
 
-        if (success) {
+        if (path) {
           popupManager.add({
             message: "Note saved successfully!",
             type: "success",
           });
-          if (tabManager.activeNote) tabManager.activeNote.unsaved = false;
+          if (tabManager.activeNote) {
+            tabManager.activeNote.unsaved = false;
+            tabManager.currentPath = path;
+          }
         } else {
           popupManager.add({
             message: "An error occurred while saving the note.",

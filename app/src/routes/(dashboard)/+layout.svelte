@@ -4,7 +4,7 @@
   import { settingsStore } from "$lib/state/settingsStore.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
   import { commands } from "$lib/tauri/bindings";
-  import { newNote } from "$lib/util/notes";
+  import { newNote } from "$lib/util/notes.svelte";
   import {
     IconFolder,
     IconHome,
