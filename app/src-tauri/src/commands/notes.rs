@@ -1,6 +1,6 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use common::structs::note::NoteData;
+use common::{io::archive, structs::note::NoteData};
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
@@ -63,9 +63,7 @@ pub fn new_note() -> NoteData {
 pub fn save_note(note_data: NoteData, path: String) -> bool {
     let path = Path::new(&path);
     let bytes = note_data.to_bytes();
-    let bytes = if let Ok(bytes) = bytes {
-        bytes
-    } else {
+    let Ok(bytes) = bytes else {
         return false;
     };
     let result = common::io::archive::create_with_data(&bytes, path);
@@ -79,7 +77,7 @@ pub fn save_note(note_data: NoteData, path: String) -> bool {
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> bool {
+pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Option<String> {
     let path = app
         .path()
         .app_data_dir()
@@ -87,7 +85,7 @@ pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> bool 
         .join("notebooks");
 
     if !path.exists() {
-        return false;
+        std::fs::create_dir_all(&path).ok()?;
     }
 
     let file_name = format!("{}.rnpf", &note_data.id);
@@ -95,19 +93,17 @@ pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> bool 
     let full_path = path.join(file_name);
 
     let bytes = note_data.to_bytes();
-    let bytes = if let Ok(bytes) = bytes {
-        bytes
-    } else {
-        return false;
+    let Ok(bytes) = bytes else {
+        return None;
     };
 
     let result = common::io::archive::create_with_data(&bytes, &full_path);
 
     if result.is_err() {
-        return false;
+        return None;
     }
 
-    true
+    Some(full_path.to_str()?.to_string())
 }
 
 #[tauri::command]
@@ -118,16 +114,12 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<St
         .file()
         .add_filter("RedNotes Plus File", &["rnpf"])
         .set_picker_mode(tauri_plugin_dialog::PickerMode::Document)
-        .blocking_save_file();
+        .blocking_save_file()?;
 
-    if let Some(path) = path {
-        let path = path.as_path().unwrap();
-        let bytes = note_data.to_bytes().unwrap();
+    let path = path.as_path()?;
+    let bytes = note_data.to_bytes().ok()?;
 
-        common::io::archive::create_with_data(&bytes, path).unwrap();
+    common::io::archive::create_with_data(&bytes, path).ok()?;
 
-        return Some(path.to_string_lossy().into());
-    }
-
-    None
+    Some(path.to_string_lossy().into())
 }
