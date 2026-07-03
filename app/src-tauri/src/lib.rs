@@ -34,6 +34,7 @@ pub fn run() {
             edit_jot_note,
             list_jot_notes,
             open_notes_dialog,
+            open_notes,
             new_note,
             save_note,
             save_note_to_storage,

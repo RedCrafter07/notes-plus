@@ -20,36 +20,39 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<OpenData> {
         .file()
         .add_filter("RedNotes Plus File", &["rnpf"])
         .set_picker_mode(tauri_plugin_dialog::PickerMode::Document)
-        .blocking_pick_files();
+        .blocking_pick_files()
+        .unwrap_or_default();
 
-    if let Some(notes) = notes {
-        let notes: Vec<OpenData> = notes
-            .iter()
-            .filter_map(|path| {
-                let path = path.as_path().unwrap();
-                let buffer = common::io::archive::open_data(path);
+    let notes: Vec<PathBuf> = notes
+        .iter()
+        .filter_map(|f| f.as_path().map(PathBuf::from))
+        .collect();
 
-                if let Ok(buffer) = buffer {
-                    let note_data = NoteData::from_bytes(&buffer);
+    open_paths(&notes)
+}
 
-                    if let Ok(note_data) = note_data {
-                        return Some(OpenData {
-                            note_data,
-                            path: path.to_str().unwrap().to_string(),
-                        });
-                    } else {
-                        return None;
-                    }
-                } else {
-                    return None;
-                }
+#[tauri::command]
+#[specta::specta]
+pub fn open_notes(paths: Vec<String>) -> Vec<OpenData> {
+    let path_data: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+
+    open_paths(&path_data)
+}
+
+fn open_paths(paths: &[PathBuf]) -> Vec<OpenData> {
+    paths
+        .iter()
+        .filter_map(|p| {
+            let buf = archive::open_data(p).ok()?;
+            let data = NoteData::from_bytes(&buf).ok()?;
+            let path_str = p.to_str()?.to_string();
+
+            Some(OpenData {
+                path: path_str,
+                note_data: data,
             })
-            .collect();
-
-        return notes;
-    }
-
-    Vec::new()
+        })
+        .collect()
 }
 
 #[tauri::command]
@@ -97,11 +100,7 @@ pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Optio
         return None;
     };
 
-    let result = common::io::archive::create_with_data(&bytes, &full_path);
-
-    if result.is_err() {
-        return None;
-    }
+    common::io::archive::create_with_data(&bytes, &full_path).ok()?;
 
     Some(full_path.to_str()?.to_string())
 }
