@@ -69,13 +69,9 @@ pub fn save_note(note_data: NoteData, path: String) -> bool {
     let Ok(bytes) = bytes else {
         return false;
     };
-    let result = common::io::archive::create_with_data(&bytes, path);
+    let result = archive::create_with_data(&bytes, path);
 
-    if result.is_err() {
-        return false;
-    }
-
-    true
+    result.is_err()
 }
 
 #[tauri::command]
@@ -92,15 +88,11 @@ pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Optio
     }
 
     let file_name = format!("{}.rnpf", &note_data.id);
-
     let full_path = path.join(file_name);
 
-    let bytes = note_data.to_bytes();
-    let Ok(bytes) = bytes else {
-        return None;
-    };
+    let bytes = note_data.to_bytes().ok()?;
 
-    common::io::archive::create_with_data(&bytes, &full_path).ok()?;
+    archive::create_with_data(&bytes, &full_path).ok()?;
 
     Some(full_path.to_str()?.to_string())
 }
@@ -118,7 +110,7 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<St
     let path = path.as_path()?;
     let bytes = note_data.to_bytes().ok()?;
 
-    common::io::archive::create_with_data(&bytes, path).ok()?;
+    archive::create_with_data(&bytes, path).ok()?;
 
     Some(path.to_string_lossy().into())
 }
