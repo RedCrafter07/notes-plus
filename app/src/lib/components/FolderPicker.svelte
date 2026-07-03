@@ -9,10 +9,12 @@
     id,
     value = $bindable(),
     type,
+    submitCb,
   }: {
     id: string;
     value?: string | null;
     type: "select" | "browse";
+    submitCb?: () => void;
   } = $props();
 
   let inputHeight = $state(0);
@@ -27,6 +29,12 @@
   // No selection: -1
   // Represents the index of folderResults
   let selectedIndex = $state(-1);
+
+  $effect(() => {
+    if (!focused) {
+      inputContent = value ?? "";
+    }
+  });
 
   $effect(() => {
     if (!focused) {
@@ -57,6 +65,11 @@
         } else {
         }
         break;
+      case "Escape":
+        {
+          e.currentTarget.blur();
+        }
+        break;
       case "ArrowUp":
         {
           e.preventDefault();
@@ -82,7 +95,9 @@
       case "Enter":
         {
           e.preventDefault();
+          focused = false;
           e.currentTarget.blur();
+          submitCb?.();
         }
         break;
     }

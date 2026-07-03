@@ -23,6 +23,14 @@ export class FileSystemNavigator {
     return this.#stack.map((f) => f.name).join("/");
   }
 
+  enterPath(path: string) {
+    this.goToRoot();
+    const folders = path.split("/");
+    folders.forEach((f) => {
+      this.enterFolder(f);
+    });
+  }
+
   enterFolder(name: string) {
     const folder = this.current.content
       .filter(isFolder)

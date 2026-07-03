@@ -1,8 +1,9 @@
 <script lang="ts">
+  import FileBrowser from "$lib/components/FileBrowser.svelte";
   import { fsStore } from "$lib/state/fsStore.svelte";
   import { commands, events, type NoteData } from "$lib/tauri/bindings";
   import { FileSystemNavigator, isFolder } from "$lib/util/fileSystem.svelte";
-  import { IconClock, IconPencil } from "@tabler/icons-svelte";
+  import { IconClock, IconFolder, IconPencil } from "@tabler/icons-svelte";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -94,5 +95,11 @@
         No recent files found. Why don't you create one?
       </p>
     {/each}
+  </div>
+  <div class="flex flex-col gap-4 p-4 rounded-xl bg-base-2">
+    <h3 class="text-xl flex flex-row gap-2 items-center font-semibold">
+      <IconFolder /> Browse files
+    </h3>
+    <FileBrowser />
   </div>
 </div>
