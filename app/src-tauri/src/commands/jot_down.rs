@@ -40,7 +40,7 @@ pub fn add_jot_note(app: tauri::AppHandle, content: String) {
 
 #[tauri::command]
 #[specta::specta]
-pub fn remove_jot_note(app: tauri::AppHandle, index: u8) -> bool {
+pub fn remove_jot_note(app: tauri::AppHandle, index: u32) -> bool {
     let mut jot_notes = load_jot_notes(&app);
 
     if (index as usize) < jot_notes.len() {
