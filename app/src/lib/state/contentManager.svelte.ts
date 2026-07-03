@@ -36,7 +36,7 @@ class ContentManager {
 
     this.#pages = note.pages;
 
-    if (note.folder) this.folder = note.folder;
+    if (note.folder !== undefined) this.folder = note.folder;
   }
 
   public updateEditDate() {
