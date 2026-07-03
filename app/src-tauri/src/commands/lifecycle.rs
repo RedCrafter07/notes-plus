@@ -16,6 +16,6 @@ pub fn ready(app: tauri::AppHandle) {
     {
         use crate::util::handle_args;
 
-        handle_args(&app, None);
+        handle_args(&app, None, None);
     }
 }

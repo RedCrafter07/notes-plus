@@ -66,11 +66,13 @@ pub fn run() {
     #[cfg(desktop)]
     {
         tauri_builder =
-            tauri_builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            tauri_builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+                use std::path::PathBuf;
+
                 use crate::util::handle_args;
                 use tauri::Manager;
 
-                handle_args(app, Some(args));
+                handle_args(app, Some(args), Some(PathBuf::from(cwd)));
 
                 let _ = app
                     .get_webview_window("main")
