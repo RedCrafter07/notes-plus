@@ -9,10 +9,13 @@ export type FolderEntry = {
 export class FileSystemNavigator {
   #root: FolderEntry;
   #stack: FolderEntry[] = $state([]);
+  #allFolders: string[];
 
   constructor(root: EntryType) {
     if (!isFolder(root)) throw new Error("Root must be a folder");
     this.#root = root.Folder;
+
+    this.#allFolders = getAllFolders(this.#root.content);
   }
 
   get current() {
@@ -56,7 +59,7 @@ export class FileSystemNavigator {
   }
 
   get allFolders() {
-    return getAllFolders(this.#root.content);
+    return this.#allFolders;
   }
 
   get isRoot() {

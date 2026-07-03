@@ -5,7 +5,7 @@
   import { commands } from "$lib/tauri/bindings";
   import { openNotes } from "$lib/util/notes.svelte";
 
-  const allFolders = $state(fsStore.store.allFolders);
+  const { allFolders } = fsStore.store;
   const fs = $derived(fsStore.store);
   let selection = $state("");
 
