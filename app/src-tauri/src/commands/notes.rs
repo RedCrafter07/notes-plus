@@ -8,12 +8,6 @@ use crate::structs::OpenData;
 
 #[tauri::command]
 #[specta::specta]
-pub fn snapshot_note() {
-    // TODO: Implement snapshot note functionality
-}
-
-#[tauri::command]
-#[specta::specta]
 pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<OpenData> {
     let notes = app
         .dialog()
