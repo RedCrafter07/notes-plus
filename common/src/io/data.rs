@@ -29,7 +29,7 @@ pub(crate) fn note_to_bytes(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
     let id_length = u32::to_le_bytes(id_bytes.len() as u32);
 
     encoder.write_all(&id_length)?;
-    encoder.write_all(&id_bytes)?;
+    encoder.write_all(id_bytes)?;
 
     let note_bytes = rmp_serde::to_vec(&data.content)?;
     let data_length = u32::to_le_bytes(note_bytes.len() as u32);
@@ -92,6 +92,6 @@ pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
     Ok(NoteData {
         content: note,
         id,
-        state: state,
+        state,
     })
 }

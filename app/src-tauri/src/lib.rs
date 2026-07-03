@@ -70,7 +70,7 @@ pub fn run() {
                 use crate::util::handle_args;
                 use tauri::Manager;
 
-                handle_args(&app, Some(args));
+                handle_args(app, Some(args));
 
                 let _ = app
                     .get_webview_window("main")

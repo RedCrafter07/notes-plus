@@ -4,7 +4,7 @@ use std::path::Path;
 // TODO: Add functionality and attachment support
 // pub fn add_attachment() {}
 pub fn create_with_data(note_data: &[u8], path: &Path) -> Result<(), sevenz_rust2::Error> {
-    let mut archive_writer = ArchiveWriter::create(&path)?;
+    let mut archive_writer = ArchiveWriter::create(path)?;
 
     archive_writer.push_archive_entry(ArchiveEntry::new_file("data"), Some(note_data))?;
 
