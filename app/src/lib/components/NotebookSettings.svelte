@@ -49,6 +49,7 @@
   <FolderPicker
     id="folder-picker-notebook"
     bind:value={contentManager.folder}
+    type="select"
   />
 
   <button

@@ -3,10 +3,17 @@
   import Input from "./Input.svelte";
   import { fsStore } from "$lib/state/fsStore.svelte";
   import { fuzzySearch } from "$lib/util/fuzzySearch";
-  import { IconFolder, IconPlus } from "@tabler/icons-svelte";
+  import { IconFolder, IconPlus, IconQuestionMark } from "@tabler/icons-svelte";
 
-  let { id, value = $bindable() }: { id: string; value?: string | null } =
-    $props();
+  let {
+    id,
+    value = $bindable(),
+    type,
+  }: {
+    id: string;
+    value?: string | null;
+    type: "select" | "browse";
+  } = $props();
 
   let inputHeight = $state(0);
   let popupOffset = $derived(inputHeight + 16);
@@ -126,12 +133,21 @@
           </p>
         </div>
       {:else}
-        <div
-          class="rounded-xl border-2 p-2 transition-all flex flex-row gap-4 bg-base-2 border-content-1/10 text-content-3"
-        >
-          <IconPlus />
-          <p>Create folder {inputContent}</p>
-        </div>
+        {#if type === "select"}
+          <div
+            class="rounded-xl border-2 p-2 transition-all flex flex-row gap-4 bg-base-2 border-content-1/10 text-content-3"
+          >
+            <IconPlus />
+            <p>Create folder {inputContent}</p>
+          </div>
+        {:else}
+          <div
+            class="rounded-xl border-2 p-2 transition-all flex flex-row gap-4 bg-base-2 border-content-1/10 text-content-3"
+          >
+            <IconQuestionMark />
+            <p>No folder found at {inputContent}</p>
+          </div>
+        {/if}
       {/each}
     </div>
   {/if}
