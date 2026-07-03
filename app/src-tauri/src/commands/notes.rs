@@ -74,20 +74,32 @@ pub fn save_note(note_data: NoteData, path: String) -> bool {
     result.is_err()
 }
 
+fn sanitize_note_id(id: &str) -> Option<&str> {
+    if id.is_empty() || id.len() > 128 {
+        return None;
+    }
+
+    if id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+        Some(id)
+    } else {
+        None
+    }
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Option<String> {
     let path = app
         .path()
-        .app_data_dir()
-        .expect("Application storage could not be found")
+        .app_data_dir().ok()?
         .join("notebooks");
 
     if !path.exists() {
         std::fs::create_dir_all(&path).ok()?;
     }
 
-    let file_name = format!("{}.rnpf", &note_data.id);
+    let safe_id = sanitize_note_id(&note_data.id)?;
+    let file_name = format!("{}.rnpf", safe_id);
     let full_path = path.join(file_name);
 
     let bytes = note_data.to_bytes().ok()?;
