@@ -42,10 +42,12 @@
 >
   <button
     class={[
-      "aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 active:scale-90",
+      "aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 active:scale-90 border-2",
       {
-        "bg-overlay/5 hover:bg-overlay/30": tabManager.activeTab !== -1,
-        "bg-overlay/20 hover:bg-overlay/30": tabManager.activeTab === -1,
+        "bg-overlay/5 hover:bg-overlay/30 border-content-1/10":
+          tabManager.activeTab !== -1,
+        "bg-overlay/20 hover:bg-overlay/30 border-content-1/25":
+          tabManager.activeTab === -1,
       },
     ]}
     onclick={() => {
@@ -72,7 +74,7 @@
         class={[
           "h-full flex-1 transition-all rounded-xl p-2 flex flex-row gap-2 min-w-max z-0 group border-2 items-center font-semibold group",
           {
-            "bg-overlay/5 hover:bg-overlay/30 text-content-2 hover:text-content-1 border-transparent":
+            "bg-overlay/5 hover:bg-overlay/30 text-content-2 hover:text-content-1 border-content-1/10":
               !active,
             "bg-overlay/20 hover:bg-overlay/30 text-content-2 hover:text-content-1 border-content-1/25":
               active,
@@ -109,7 +111,7 @@
     {/each}
   </div>
   <button
-    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 active:scale-90"
+    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/30 active:scale-90 border-2 border-content-1/10"
     onclick={() => {
       editorComponents.toggleRightBar();
     }}
@@ -121,7 +123,7 @@
     {/if}
   </button>
   <button
-    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/20 active:scale-90"
+    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/30 active:scale-90 border-2 border-content-1/10"
     onclick={() => {
       overlayManager.setOpen("notebook-settings");
     }}
