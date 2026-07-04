@@ -3,12 +3,10 @@
 mod commands;
 mod events;
 mod structs;
-mod util;
+pub mod util;
 
-use commands::*;
 use serde_json::json;
 use tauri_plugin_store::StoreExt;
-use tauri_specta::{Builder, collect_commands, collect_events};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,44 +20,10 @@ pub fn run() {
         }
     }
 
-    let builder = Builder::<tauri::Wry>::new()
-        // Then register them (separated by a comma)
-        .commands(collect_commands![
-            ready,
-            quit,
-            get_recent,
-            get_defaults,
-            add_jot_note,
-            remove_jot_note,
-            edit_jot_note,
-            list_jot_notes,
-            open_notes_dialog,
-            open_notes,
-            new_note,
-            save_note,
-            save_note_to_storage,
-            save_note_dialog,
-            get_settings,
-            set_colors,
-            collapse_sidebar,
-            use_last_page_settings,
-            get_notebooks,
-        ])
-        .events(collect_events![
-            events::JotDown,
-            events::Open,
-            events::SettingsUpdate
-        ])
-        .typ::<common::structs::note::NoteData>()
-        .typ::<common::structs::defaults::Defaults>()
-        .typ::<crate::structs::Settings>();
-
+    let builder = util::get_builder();
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     {
-        use specta_typescript::Typescript;
-        builder
-            .export(Typescript::default(), "../src/lib/tauri/bindings.ts")
-            .expect("Failed to export typescript bindings");
+        util::export_bindings();
     }
 
     let mut tauri_builder = tauri::Builder::default();
