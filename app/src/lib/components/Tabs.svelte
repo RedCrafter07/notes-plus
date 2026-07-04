@@ -41,7 +41,6 @@
   ]}
 >
   <button
-    id="tab-bar"
     class={[
       "aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 active:scale-90",
       {

@@ -45,7 +45,7 @@ class TabManager {
   set activeTab(tabIndex: number) {
     if (tabIndex === -1 || (tabIndex < this.#tabs.length && tabIndex >= 0)) {
       this.#tabs[this.#activeTab] = {
-        ...contentManager.export(),
+        ...contentManager.export(this.activeNote?.unsaved),
         unsaved: this.activeNote?.unsaved ?? false,
       };
 

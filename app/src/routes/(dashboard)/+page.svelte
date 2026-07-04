@@ -12,13 +12,14 @@
   let jotNoteInputs = $state<HTMLInputElement[]>([]);
 
   $effect(() => {
-    events.jotDown.listen((e) => {
-      jotNotes = e.payload;
-    });
-
+    let jotDownUnlisten: UnlistenFn;
     let unlisten: UnlistenFn;
 
     (async () => {
+      jotDownUnlisten = await events.jotDown.listen((e) => {
+        jotNotes = e.payload;
+      });
+
       unlisten = await getCurrentWindow().onCloseRequested(async (e) => {
         e.preventDefault();
         jotNoteInputs.forEach((v) => v.blur());
@@ -41,6 +42,7 @@
 
     return () => {
       unlisten?.();
+      jotDownUnlisten?.();
     };
   });
 </script>

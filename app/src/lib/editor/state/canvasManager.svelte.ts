@@ -22,7 +22,7 @@ class CanvasManager {
   height = $state(0);
   layerCtx = $state<Record<string, CanvasRenderingContext2D>>({});
 
-  dpr = $state(typeof window !== undefined ? window.devicePixelRatio : 1);
+  dpr = $state(typeof window !== "undefined" ? window.devicePixelRatio : 1);
 
   activeLayerID = $derived(
     contentManager.layers[contentManager.activeLayer]?.id,
@@ -120,10 +120,15 @@ class CanvasManager {
         blocks,
       };
     });
+
+    tabManager.setEdited();
   }
 
   finishStroke() {
     if (this.points.length === 0) return;
+    // Do not push to layer when it is locked or invisible.
+    if (contentManager.layers[contentManager.activeLayer].locked) return;
+    if (!contentManager.layers[contentManager.activeLayer].visible) return;
 
     contentManager.layers[contentManager.activeLayer].blocks.push({
       Stroke: {
@@ -180,13 +185,17 @@ class CanvasManager {
       ctx.translate(contentManager.panX, contentManager.panY);
 
       for (const { color, points, thickness } of strokes) {
-        this.drawOnCanvas(inputToPath(points, thickness, false), color);
+        this.drawOnCanvas(inputToPath(points, thickness, false), l.id, color);
       }
     });
   }
 
-  private drawOnCanvas(path: string | Path2D, c = canvasManager.color) {
-    const ctx = canvasManager.layerCtx[this.activeLayerID];
+  private drawOnCanvas(
+    path: string | Path2D,
+    layerID: number,
+    c = canvasManager.color,
+  ) {
+    const ctx = canvasManager.layerCtx[layerID];
     if (!ctx) return;
     if (typeof path === "string") path = new Path2D(path);
 

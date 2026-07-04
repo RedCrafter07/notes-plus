@@ -43,11 +43,11 @@ class ContentManager {
     this.#editedAt = Math.floor(Date.now() / 1000);
   }
 
-  public export(): NoteData {
+  public export(updateEdit = false): NoteData {
     const content: Note = {
       pages: this.#pages,
       created_at: this.#createdAt,
-      edited_at: Math.floor(Date.now() / 1000),
+      edited_at: updateEdit ? Math.floor(Date.now() / 1000) : this.#editedAt,
       tags: this.tags,
       title: this.title,
       folder: this.folder,

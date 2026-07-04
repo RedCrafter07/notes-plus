@@ -75,6 +75,7 @@ export class LassoManager {
 
     lassoManager.reset();
     canvasManager.redrawStrokes();
+    tabManager.setEdited();
   }
 
   duplicateSelection() {
@@ -134,11 +135,11 @@ export class LassoManager {
       this.dragOffsetY = 0;
 
       tabManager.setEdited();
+    });
 
-      popupManager.add({
-        message: "Elements duplicated",
-        type: "success",
-      });
+    popupManager.add({
+      message: "Elements duplicated",
+      type: "success",
     });
   }
 
