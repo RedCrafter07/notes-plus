@@ -59,7 +59,7 @@
                   contentManager.activePage = i;
                 }}
                 class={[
-                  "p-2 rounded-xl border-2 bg-base-2 w-full cursor-pointer",
+                  "p-2 rounded-xl border-2 bg-base-2 w-full cursor-pointer hover:bg-overlay/30 transition-all active:scale-95",
                   contentManager.activePage === i
                     ? "border-accent"
                     : "border-transparent",
@@ -84,7 +84,7 @@
               </div>
             {/each}
             <button
-              class="p-2 bg-base-2 rounded-xl flex items-center justify-center border-2 border-transparent hover:border-content-1/50 transition-all active:scale-95"
+              class="p-2 bg-base-2 rounded-xl flex items-center justify-center border-2 border-content-1/15 hover:bg-overlay/30 transition-all active:scale-95"
               onclick={() => {
                 contentManager.addNewPage();
               }}
