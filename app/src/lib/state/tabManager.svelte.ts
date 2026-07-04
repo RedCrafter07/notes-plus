@@ -35,7 +35,7 @@ class TabManager {
     }
 
     if (index === this.#activeTab) {
-      const newIndex = Math.min(index, this.#tabs.length - 1);
+      const newIndex = Math.min(index, this.#tabs.length - 2); // -2 since one tab gets removed
       this.#activeTab = newIndex;
       contentManager.import(this.#tabs[newIndex]);
     } else if (index < this.#activeTab) {
