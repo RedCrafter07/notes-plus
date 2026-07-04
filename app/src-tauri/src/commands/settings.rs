@@ -49,6 +49,14 @@ pub fn use_last_page_settings(app: tauri::AppHandle, use_default: bool) {
 
 #[tauri::command]
 #[specta::specta]
+pub fn set_colors(app: tauri::AppHandle, colors: Vec<String>) {
+    let mut settings = load_settings(&app);
+    settings.colors = colors;
+    save_settings(&app, settings);
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn get_settings(app: tauri::AppHandle) -> Settings {
     load_settings(&app)
 }

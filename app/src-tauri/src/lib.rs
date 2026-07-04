@@ -40,6 +40,7 @@ pub fn run() {
             save_note_to_storage,
             save_note_dialog,
             get_settings,
+            set_colors,
             collapse_sidebar,
             use_last_page_settings,
             get_notebooks,

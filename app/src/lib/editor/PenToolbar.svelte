@@ -5,6 +5,8 @@
   import { toRadian } from "$lib/util/geometry";
   import { IconPlus } from "@tabler/icons-svelte";
   import { settingsStore } from "$lib/state/settingsStore.svelte";
+  import { invoke } from "@tauri-apps/api/core";
+  import ColorEditPopup from "$lib/components/ColorEditPopup.svelte";
 
   let { radius }: { radius: number } = $props();
   const visible = $derived(canvasManager.tool === "pen");
@@ -22,7 +24,43 @@
     expansion.target = visible ? 1 : 0;
   });
 
-  const colors = settingsStore.store.colors;
+  const colors = $derived(settingsStore.store.colors ?? []);
+
+  // Index of the swatch currently open in the edit popup, or null when closed.
+  let editingIndex = $state<number | null>(null);
+
+  // Keep the active drawing color following the swatch while it is edited.
+  $effect(() => {
+    if (editingIndex !== null) canvasManager.color = colors[editingIndex];
+  });
+
+  function persistColors() {
+    // Best-effort persistence: no-ops gracefully on builds without the command.
+    invoke("set_colors", {
+      colors: $state.snapshot(settingsStore.store.colors),
+    }).catch(() => {});
+  }
+
+  function openEditor(index: number) {
+    editingIndex = index;
+  }
+
+  function addColor() {
+    settingsStore.store.colors.push(canvasManager.color || "#000000");
+    openEditor(settingsStore.store.colors.length - 1);
+  }
+
+  function closeEditor() {
+    editingIndex = null;
+    persistColors();
+  }
+
+  function deleteColor() {
+    if (editingIndex === null) return;
+    settingsStore.store.colors.splice(editingIndex, 1);
+    editingIndex = null;
+    persistColors();
+  }
 
   function iconPos(i: number, n: number) {
     const angle = toRadian(270 - ((i + 0.5) / n) * 180); // halfway between start and end of the angle
@@ -76,8 +114,13 @@
   }
 </script>
 
+<!--
+  The svg itself is pointer-events-none so its (invisible) bounding box does
+  not intercept drawing over the canvas; only the interactive swatches and the
+  add button opt back in with pointer-events-auto.
+-->
 <svg
-  class="absolute top-1/2 right-0 -translate-y-1/2"
+  class="absolute top-1/2 right-0 -translate-y-1/2 pointer-events-none"
   width={R3}
   height={R3 * 2}
 >
@@ -89,15 +132,16 @@
   {#each colors as color, i}
     {@const active = color === canvasManager.color}
     {@const path = toOutlinePath(i)}
-    <!-- TODO: Add logic for changing colors when double-clicked -->
     <g
       role="button"
       tabindex="0"
       aria-label={color}
       aria-pressed={active}
+      class="pointer-events-auto cursor-pointer"
       onclick={() => {
         canvasManager.color = color;
       }}
+      ondblclick={() => openEditor(i)}
       onkeydown={(e) => {
         e.preventDefault();
       }}
@@ -105,11 +149,12 @@
       <path d={path} fill={color} />
     </g>
   {/each}
-  <!-- TODO: Add color selection logic -->
   <g
     role="button"
     tabindex="0"
     aria-label="Add color"
+    class="pointer-events-auto cursor-pointer"
+    onclick={addColor}
     onkeydown={(e) => {
       e.preventDefault();
     }}
@@ -131,3 +176,13 @@
     </foreignObject>
   </g>
 </svg>
+
+{#if editingIndex !== null}
+  {@const idx = editingIndex}
+  <ColorEditPopup
+    bind:value={settingsStore.store.colors[idx]}
+    canDelete={colors.length > 1}
+    onClose={closeEditor}
+    onDelete={deleteColor}
+  />
+{/if}
