@@ -15,7 +15,7 @@ class PopupManager {
       id: crypto.randomUUID(),
     });
 
-    this.timeout();
+    if (this.#queue.length === 1) this.timeout();
   }
 
   private timeout() {

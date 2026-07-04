@@ -5,12 +5,11 @@
   import { commands } from "$lib/tauri/bindings";
   import { openNotes } from "$lib/util/notes.svelte";
 
-  const { allFolders } = fsStore.store;
   const fs = $derived(fsStore.store);
   let selection = $state("");
 
   function pathExists(input: string): boolean {
-    return allFolders.includes(input);
+    return fs.allFolders.includes(input);
   }
 
   async function openFile(path: string) {

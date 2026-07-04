@@ -20,7 +20,7 @@ pub enum NoteFileError {
 pub(crate) fn note_to_bytes(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
     let mut buffer: Vec<u8> = Vec::new();
 
-    let mut encoder = GzEncoder::new(&mut buffer, Compression::default());
+    let mut encoder = GzEncoder::new(&mut buffer, Compression::none()); // <- disable compression to prevent double-compression because of archive
 
     encoder.write_all(b"REDNOTES")?;
     encoder.write_all(&[0x01, 0x00])?;

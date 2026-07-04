@@ -116,7 +116,7 @@
     </div>
     <div class="flex flex-col gap-1">
       <ColorInput
-        id="bg-color"
+        id="pattern-color"
         bind:value={patternColor}
         label="Pattern color"
       />

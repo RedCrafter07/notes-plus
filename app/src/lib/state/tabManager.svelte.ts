@@ -11,6 +11,11 @@ class TabManager {
   #activeTab = $state(-1);
 
   add(noteData: NoteData, setActive: boolean = false, path?: string) {
+    const tabByID = this.#tabs.findIndex((t) => t.id === noteData.id);
+    if (tabByID !== -1 && setActive) {
+      this.#activeTab = tabByID;
+      goto(resolve("/edit/[id]", { id: noteData.id }));
+    }
     const l = this.#tabs.push({
       ...noteData,
       unsaved: false,
@@ -24,11 +29,19 @@ class TabManager {
   }
 
   remove(index: number, force = false) {
-    if (this.activeNote?.unsaved && !force) {
+    if (this.#tabs[index]?.unsaved && !force) {
       overlayManager.setOpen(`unsaved-${index}`);
       return;
     }
-    this.#activeTab--;
+
+    if (index === this.#activeTab) {
+      const newIndex = Math.min(index, this.#tabs.length - 1);
+      this.#activeTab = newIndex;
+      contentManager.import(this.#tabs[newIndex]);
+    } else if (index < this.#activeTab) {
+      this.#activeTab--;
+    }
+
     if (this.#activeTab === -1) goto(resolve("/"));
     this.#tabs.splice(index, 1);
   }
@@ -56,7 +69,10 @@ class TabManager {
   }
 
   setEdited() {
-    this.#tabs[this.#activeTab].unsaved = true;
+    const tab = this.#tabs[this.#activeTab];
+    if (!tab) return;
+    tab.unsaved = true;
+    contentManager.updateEditDate();
   }
 
   get tabs() {

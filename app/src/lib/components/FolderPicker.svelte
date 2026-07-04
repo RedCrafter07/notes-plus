@@ -44,7 +44,7 @@
       inputContent = inputContent.replace(/(\/){2,}/g, "/");
     }
     if (value !== undefined) {
-      if (inputContent.length > 1) value = inputContent;
+      if (inputContent.length > 0) value = inputContent;
       else value = null;
     }
     focused;
