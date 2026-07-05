@@ -1,6 +1,8 @@
 <script lang="ts">
   import FileBrowser from "$lib/components/FileBrowser.svelte";
   import { fsStore } from "$lib/state/fsStore.svelte";
+  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import { tabManager } from "$lib/state/tabManager.svelte";
   import { commands, events, type NoteData } from "$lib/tauri/bindings";
   import { FileSystemNavigator, isFolder } from "$lib/util/fileSystem.svelte";
   import { IconClock, IconFolder, IconPencil } from "@tabler/icons-svelte";
@@ -29,12 +31,11 @@
           jotNoteInputs[0]?.value.trim().length === 0
         )
           await commands.removeJotNote(0);
-
-        await commands.quit();
       });
 
       jotNotes = await commands.listJotNotes();
       recentNotes = await commands.getRecent();
+
       const notebooks = await commands.getNotebooks();
       if (notebooks && isFolder(notebooks))
         fsStore.store = new FileSystemNavigator(notebooks);

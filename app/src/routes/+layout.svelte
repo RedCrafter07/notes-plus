@@ -14,6 +14,8 @@
   import Popups from "$lib/components/Popups.svelte";
   import { settingsStore } from "$lib/state/settingsStore.svelte";
   import { defaultsStore } from "$lib/state/defaultsStore.svelte";
+  import type { UnlistenFn } from "@tauri-apps/api/event";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
 
   const { children } = $props();
 
@@ -41,7 +43,7 @@
 
       if (!e.ctrlKey) return;
       if (e.key === "q") {
-        await commands.quit();
+        await quit();
       } else if (e.key === "j") {
         e.preventDefault();
         overlayManager.setOpen("jotDown");
@@ -62,13 +64,33 @@
     });
     document.addEventListener("keydown", keydownEvent);
 
+    let unlisten: UnlistenFn;
+
+    (async () => {
+      unlisten = await getCurrentWindow().onCloseRequested(async (e) => {
+        e.preventDefault();
+
+        await quit();
+      });
+    })();
+
     return () => {
       document.removeEventListener("keydown", keydownEvent);
       document.removeEventListener("contextmenu", contextMenuEvent, {
         capture: true,
       });
+      unlisten();
     };
   });
+
+  async function quit() {
+    if (tabManager.tabs.some((t) => t.unsaved)) {
+      overlayManager.setOpen("close-unsaved");
+      return;
+    }
+
+    await commands.quit();
+  }
 
   function openNote(data: OpenData) {
     tabManager.add(data.note_data, true, data.path);
