@@ -12,10 +12,13 @@ class TabManager {
 
   add(noteData: NoteData, setActive: boolean = false, path?: string) {
     const tabByID = this.#tabs.findIndex((t) => t.id === noteData.id);
+
     if (tabByID !== -1 && setActive) {
       this.#activeTab = tabByID;
       goto(resolve("/edit/[id]", { id: noteData.id }));
+      return;
     }
+
     const l = this.#tabs.push({
       ...noteData,
       unsaved: false,
