@@ -20,22 +20,41 @@ export function useShortcuts() {
   async function handleSave(e: KeyboardEvent) {
     e.preventDefault();
     if (!e.shiftKey) {
-      const path = await commands.saveNoteToStorage(contentManager.export());
+      if (tabManager.activeNote?.path) {
+        const path = tabManager.activeNote.path;
 
-      if (path) {
-        popupManager.add({
-          message: "Note saved successfully!",
-          type: "success",
-        });
-        if (tabManager.activeNote) {
+        const success = await commands.saveNote(contentManager.export(), path);
+
+        if (success) {
+          popupManager.add({
+            message: "Note saved successfully!",
+            type: "success",
+          });
           tabManager.activeNote.unsaved = false;
-          tabManager.currentPath = path;
+        } else {
+          popupManager.add({
+            message: "An error occurred while saving the note.",
+            type: "destructive",
+          });
         }
       } else {
-        popupManager.add({
-          message: "An error occurred while saving the note.",
-          type: "destructive",
-        });
+        const path = await commands.saveNoteToStorage(contentManager.export());
+
+        if (path) {
+          popupManager.add({
+            message: "Note saved successfully!",
+            type: "success",
+          });
+          if (tabManager.activeNote) {
+            tabManager.activeNote.unsaved = false;
+            tabManager.currentPath = path;
+          }
+        } else {
+          popupManager.add({
+            message: "An error occurred while saving the note.",
+            type: "destructive",
+          });
+        }
       }
     } else {
       if (!tabManager.activeNote) return;
