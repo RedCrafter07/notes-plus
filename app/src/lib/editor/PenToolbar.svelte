@@ -126,7 +126,7 @@
 >
   <path
     d={toOutlinePath(0, 1, R3, radius - 1, R + 1, expansion.current)}
-    class="fill-base-3"
+    class="fill-base-3 pointer-events-auto"
   />
   <path d={activePath} class="fill-primary" />
   {#each colors as color, i}
