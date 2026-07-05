@@ -33,7 +33,7 @@
 </script>
 
 {#if label}
-  <label for={`#${id}`} class="text-xl">{label}</label>
+  <label for={id} class="text-xl">{label}</label>
 {/if}
 
 {#if description}
