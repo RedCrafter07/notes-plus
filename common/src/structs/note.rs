@@ -1,6 +1,7 @@
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
+use serde_with::{DisplayFromStr, serde_as};
 use specta::Type;
 
 use crate::io::index::normalize_folder;
@@ -33,13 +34,16 @@ pub struct Page {
     pub name: String,
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Note {
     pub title: String,
     pub tags: Vec<String>,
     pub pages: Vec<Page>,
-    pub created_at: u32,
-    pub edited_at: u32,
+    #[serde_as(as = "DisplayFromStr")]
+    pub created_at: u64,
+    #[serde_as(as = "DisplayFromStr")]
+    pub edited_at: u64,
     #[serde(default)]
     pub folder: Option<String>,
 }
@@ -99,13 +103,13 @@ impl Note {
             folder: None,
             tags: Vec::new(),
             pages: vec![Page::default()],
-            created_at: SystemTime::now().elapsed().unwrap().as_millis() as u32,
-            edited_at: SystemTime::now().elapsed().unwrap().as_millis() as u32,
+            created_at: duration_now(),
+            edited_at: duration_now(),
         }
     }
 
     pub fn update_edited_at(&mut self) {
-        self.edited_at = SystemTime::now().elapsed().unwrap().as_millis() as u32;
+        self.edited_at = duration_now();
     }
 
     pub fn normalize_folder(&mut self) {
@@ -196,4 +200,12 @@ impl Default for NoteData {
             state: State::default(),
         }
     }
+}
+
+fn duration_now() -> u64 {
+    let Ok(time) = SystemTime::now().duration_since(UNIX_EPOCH) else {
+        return 0;
+    };
+
+    time.as_secs()
 }

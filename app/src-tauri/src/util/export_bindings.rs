@@ -1,3 +1,5 @@
+use specta_typescript::BigIntExportBehavior;
+
 use crate::util::get_builder;
 
 pub fn export_bindings() {
@@ -10,6 +12,9 @@ pub fn export_bindings() {
     };
 
     builder
-        .export(Typescript::default(), path)
+        .export(
+            Typescript::default().bigint(BigIntExportBehavior::String),
+            path,
+        )
         .expect("Failed to export typescript bindings");
 }

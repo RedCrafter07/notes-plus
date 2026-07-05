@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -31,8 +31,8 @@ pub struct File {
     pub title: String,
     pub folder: Option<String>,
     pub path: String,
-    pub created_at: u32,
-    pub edited_at: u32,
+    pub created_at: u64,
+    pub edited_at: u64,
 }
 
 pub fn build_index(path: &Path) -> Result<Vec<File>, IndexError> {
@@ -51,7 +51,7 @@ pub fn build_index(path: &Path) -> Result<Vec<File>, IndexError> {
     Ok(index)
 }
 
-pub fn index_file(path: &PathBuf) -> Result<File, IndexError> {
+pub fn index_file(path: &Path) -> Result<File, IndexError> {
     // Ignore non-rnpf files
     match path.extension() {
         Some(ext) if ext == "rnpf" => {}

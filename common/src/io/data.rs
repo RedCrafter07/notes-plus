@@ -8,9 +8,7 @@ use crate::structs::note::{Note, NoteData, State};
 #[derive(Debug, Error)]
 pub enum NoteFileError {
     #[error(transparent)]
-    Serialization(#[from] rmp_serde::encode::Error),
-    #[error(transparent)]
-    Deserialization(#[from] rmp_serde::decode::Error),
+    JsonError(#[from] serde_json::Error),
     #[error(transparent)]
     FileOpen(#[from] std::io::Error),
     #[error("Invalid file")]
@@ -31,13 +29,13 @@ pub(crate) fn note_to_bytes(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
     encoder.write_all(&id_length)?;
     encoder.write_all(id_bytes)?;
 
-    let note_bytes = rmp_serde::to_vec(&data.content)?;
+    let note_bytes = serde_json::to_vec(&data.content)?;
     let data_length = u32::to_le_bytes(note_bytes.len() as u32);
 
     encoder.write_all(&data_length)?;
     encoder.write_all(&note_bytes)?;
 
-    let state_bytes = rmp_serde::to_vec(&data.state)?;
+    let state_bytes = serde_json::to_vec(&data.state)?;
     let state_length = u32::to_le_bytes(state_bytes.len() as u32);
 
     encoder.write_all(&state_length)?;
@@ -76,7 +74,7 @@ pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
     let mut note_data = vec![0u8; data_length as usize];
     decoder.read_exact(&mut note_data)?;
 
-    let mut note: Note = rmp_serde::from_slice(&note_data)?;
+    let mut note: Note = serde_json::from_slice(&note_data)?;
     note.normalize_folder();
     let note = note;
 
@@ -87,7 +85,7 @@ pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
     let mut state_data = vec![0u8; state_length as usize];
     decoder.read_exact(&mut state_data)?;
 
-    let state: State = rmp_serde::from_slice(&state_data)?;
+    let state: State = serde_json::from_slice(&state_data)?;
 
     Ok(NoteData {
         content: note,

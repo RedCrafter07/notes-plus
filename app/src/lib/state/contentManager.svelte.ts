@@ -8,8 +8,8 @@ class ContentManager {
   #id: string = $state(crypto.randomUUID());
   tags: string[] = $state([]);
   title: string = $state("New Notebook");
-  #createdAt: number = Math.floor(Date.now() / 1000);
-  #editedAt: number = Math.floor(Date.now() / 1000);
+  #createdAt: string = Math.floor(Date.now() / 1000).toString();
+  #editedAt: string = Math.floor(Date.now() / 1000).toString();
   #pages: Page[] = $state([]);
   folder = $state<string | null>(null);
 
@@ -40,7 +40,7 @@ class ContentManager {
   }
 
   public updateEditDate() {
-    this.#editedAt = Math.floor(Date.now() / 1000);
+    this.#editedAt = Math.floor(Date.now() / 1000).toString();
   }
 
   public export(): NoteData {
