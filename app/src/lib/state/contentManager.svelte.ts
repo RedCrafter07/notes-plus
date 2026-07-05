@@ -89,7 +89,14 @@ class ContentManager {
   public deletePage(i: number) {
     if (this.#pages.length === 1) {
       this.addNewPage(false, 0);
-    } else this.activePage = i - 1 <= 0 ? 0 : i - 1;
+    } else {
+      if (i === this.#activePage) {
+        const newIndex = Math.min(i, this.#pages.length - 2);
+        this.activePage = newIndex;
+      } else if (i < this.#activePage) {
+        this.#activePage--;
+      }
+    }
 
     this.pages.splice(i, 1);
     canvasManager.redrawStrokes();
