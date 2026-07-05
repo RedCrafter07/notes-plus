@@ -76,7 +76,7 @@ pub fn save_note(note_data: NoteData, path: String) -> bool {
     };
     let result = archive::create_with_data(&bytes, path);
 
-    result.is_err()
+    result.is_ok()
 }
 
 fn sanitize_note_id(id: &str) -> Option<&str> {
