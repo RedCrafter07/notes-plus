@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 use thiserror::Error;
 
-use crate::structs::note::{Note, NoteData, State};
+use crate::structs::note::{Layer, Note, NoteData, Page, State};
 
 #[derive(Debug, Error)]
 pub enum NoteFileError {
@@ -84,7 +84,8 @@ pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
     decoder.read_exact(&mut state_length)?;
     let state_length = u32::from_le_bytes(state_length);
 
-    let state: State = read_section_serde(&mut decoder, state_length)?;
+    let mut state: State = read_section_serde(&mut decoder, state_length)?;
+    normalize(&mut state, &mut note);
 
     Ok(NoteData {
         content: note,
@@ -113,4 +114,35 @@ where
     let data: T = serde_json::from_slice(&buf)?;
 
     Ok(data)
+}
+
+fn normalize(state: &mut State, note: &mut Note) {
+    if note.pages.is_empty() {
+        state.current_page = 0;
+        note.pages.push(Page::default());
+    }
+
+    if state.current_page as usize >= note.pages.len() {
+        state.current_page = 0;
+    }
+    if state.current_layer as usize >= note.pages[state.current_page as usize].layers.len() {
+        state.current_layer = 0;
+    }
+
+    if !state.pan_x.is_finite() {
+        state.pan_x = 0.0;
+    }
+    if !state.pan_y.is_finite() {
+        state.pan_y = 0.0;
+    }
+    if !state.zoom.is_finite() || state.zoom <= 0.0 {
+        state.zoom = 1.0;
+    }
+
+    // Add layer if no layer is present
+    for page in &mut note.pages {
+        if page.layers.is_empty() {
+            page.layers.push(Layer::default());
+        }
+    }
 }
