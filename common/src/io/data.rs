@@ -13,6 +13,8 @@ pub enum NoteFileError {
     FileOpen(#[from] std::io::Error),
     #[error("Invalid file")]
     InvalidFile,
+    #[error("Unsupported version")]
+    UnsupportedVersion,
 }
 
 pub(crate) fn note_to_bytes(data: &NoteData) -> Result<Vec<u8>, NoteFileError> {
@@ -58,38 +60,57 @@ pub(crate) fn bytes_to_note(data: &[u8]) -> Result<NoteData, NoteFileError> {
 
     let mut version = [0u8; 2];
     decoder.read_exact(&mut version)?;
+    let version = u16::from_le_bytes(version);
+
+    if version != 1 {
+        return Err(NoteFileError::UnsupportedVersion);
+    }
 
     let mut id_length = [0u8; 4];
     decoder.read_exact(&mut id_length)?;
     let id_length = u32::from_le_bytes(id_length);
 
-    let mut id = vec![0u8; id_length as usize];
-    decoder.read_exact(&mut id)?;
+    let id = read_section(&mut decoder, id_length)?;
     let id = String::from_utf8(id).unwrap_or_else(|_| uuid::Uuid::new_v4().to_string());
 
     let mut data_length = [0u8; 4];
     decoder.read_exact(&mut data_length)?;
     let data_length = u32::from_le_bytes(data_length);
 
-    let mut note_data = vec![0u8; data_length as usize];
-    decoder.read_exact(&mut note_data)?;
-
-    let mut note: Note = serde_json::from_slice(&note_data)?;
+    let mut note: Note = read_section_serde(&mut decoder, data_length)?;
     note.normalize_folder();
-    let note = note;
 
     let mut state_length = [0u8; 4];
     decoder.read_exact(&mut state_length)?;
     let state_length = u32::from_le_bytes(state_length);
 
-    let mut state_data = vec![0u8; state_length as usize];
-    decoder.read_exact(&mut state_data)?;
-
-    let state: State = serde_json::from_slice(&state_data)?;
+    let state: State = read_section_serde(&mut decoder, state_length)?;
 
     Ok(NoteData {
         content: note,
         id,
         state,
     })
+}
+
+fn read_section(reader: &mut impl Read, len: u32) -> Result<Vec<u8>, NoteFileError> {
+    let mut buf = Vec::new();
+    reader.take(len.into()).read_to_end(&mut buf)?;
+
+    if buf.len() != len as usize {
+        return Err(NoteFileError::InvalidFile);
+    }
+
+    Ok(buf)
+}
+
+fn read_section_serde<T>(reader: &mut impl Read, len: u32) -> Result<T, NoteFileError>
+where
+    T: serde::de::DeserializeOwned,
+{
+    let buf = read_section(reader, len)?;
+
+    let data: T = serde_json::from_slice(&buf)?;
+
+    Ok(data)
 }
