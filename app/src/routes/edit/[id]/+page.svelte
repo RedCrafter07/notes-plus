@@ -60,8 +60,8 @@
   use:canvasController={{
     updateCursor: (visible, x, y) => {
       cursorVisible = visible;
-      if (x) cursorX = x;
-      if (y) cursorY = y;
+      if (x !== undefined) cursorX = x;
+      if (y !== undefined) cursorY = y;
     },
   }}
   role="document"
