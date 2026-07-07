@@ -1,15 +1,3 @@
-// The formulas have been provided by Claude Haiku 4.6
-export function hsvToHsl(
-  hsv: [number, number, number],
-): [number, number, number] {
-  const [h, s, v] = hsv;
-
-  const l = v * (1 - s / 2);
-  const s1 = (v - l) / Math.min(l, 1 - l);
-
-  return [h, s1, l];
-}
-
 /** Red, green, blue channels, each in the 0-255 range. */
 export type RGB = [number, number, number];
 /** Hue (0-360), saturation (0-1), value (0-1). */
@@ -48,9 +36,7 @@ export function hexToRgb(hex: string): RGB | null {
 
 export function rgbToHex([r, g, b]: RGB): string {
   const channel = (v: number) =>
-    clamp(Math.round(v), 0, 255)
-      .toString(16)
-      .padStart(2, "0");
+    clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0");
 
   return `#${channel(r)}${channel(g)}${channel(b)}`;
 }
