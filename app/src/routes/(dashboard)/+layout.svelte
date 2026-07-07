@@ -94,7 +94,7 @@
       await commands.collapseSidebar(!settingsStore.store.sidebar_collapsed);
     }}
   ></button>
-  <div class="flex-1 p-4">
+  <div class="flex-1 p-4 overflow-y-auto h-full">
     {@render children()}
   </div>
 </div>

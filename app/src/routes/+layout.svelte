@@ -16,6 +16,7 @@
   import { defaultsStore } from "$lib/state/defaultsStore.svelte";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { jotStore } from "$lib/state/jotStore.svelte";
 
   const { children } = $props();
 
@@ -84,6 +85,8 @@
   });
 
   async function quit() {
+    await jotStore.save();
+
     if (tabManager.tabs.some((t) => t.unsaved)) {
       overlayManager.setOpen("close-unsaved");
       return;
@@ -101,7 +104,7 @@
   <Modals />
   <div class="flex flex-col h-full">
     <Tabs />
-    <div class="flex-1 relative h-full">
+    <div class="flex-1 relative h-full overflow-y-auto">
       {@render children()}
       <Popups />
     </div>

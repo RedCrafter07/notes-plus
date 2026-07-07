@@ -3,7 +3,7 @@
   import { IconPencil } from "@tabler/icons-svelte";
   import Input from "./Input.svelte";
   import Overlay from "./Overlay.svelte";
-  import { commands } from "$lib/tauri/bindings";
+  import { jotStore } from "$lib/state/jotStore.svelte";
 
   let visible = $derived(overlayManager.open === "jotDown");
   let note = $state("");
@@ -20,7 +20,8 @@
   };
 
   async function submit(text: string) {
-    await commands.addJotNote(text);
+    jotStore.store.push(text);
+    await jotStore.save();
     note = "";
     overlayManager.close();
   }
@@ -28,9 +29,9 @@
 
 <Overlay title="Jot Down" {closeCb} {visible} minHeight>
   <form
-    onsubmit={(e) => {
+    onsubmit={async (e) => {
       e.preventDefault();
-      submit(note);
+      await submit(note);
     }}
   >
     <Input
