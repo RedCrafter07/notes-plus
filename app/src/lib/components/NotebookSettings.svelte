@@ -11,6 +11,16 @@
 
   let titleSnapshot = $state(contentManager.title);
 
+  // mark note as unsaved when the folder changes
+  let lastFolder = $state<string | null>(null);
+
+  $effect(() => {
+    if (contentManager.folder != lastFolder) {
+      tabManager.setEdited();
+      lastFolder = $state.snapshot(contentManager.folder);
+    }
+  });
+
   $effect(() => {
     contentManager.id;
 
