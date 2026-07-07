@@ -1,14 +1,26 @@
-use sevenz_rust2::{ArchiveEntry, ArchiveReader, ArchiveWriter, Password};
-use std::{ffi::OsString, fs::rename, path::Path};
+use std::{
+    ffi::OsString,
+    fs::{File, rename},
+    io::{Read, Write},
+    path::Path,
+};
+use zip::{CompressionMethod, ZipArchive, ZipWriter, write::SimpleFileOptions};
 
-// TODO: Add functionality and attachment support
-// pub fn add_attachment() {}
+// TODO: Add attachment support
+
 pub fn create_with_data(note_data: &[u8], path: &Path) -> anyhow::Result<()> {
     let tmp_path = tmp_path_for(path);
+    let file = File::options()
+        .write(true)
+        .create_new(true)
+        .open(&tmp_path)?;
 
-    let mut archive_writer = ArchiveWriter::create(&tmp_path)?;
-    archive_writer.push_archive_entry(ArchiveEntry::new_file("data"), Some(note_data))?;
-    archive_writer.finish()?;
+    let options = SimpleFileOptions::default().compression_method(CompressionMethod::Zstd);
+    let mut zip = ZipWriter::new(file);
+
+    zip.start_file("data", options)?;
+    zip.write_all(note_data)?;
+    zip.finish()?;
 
     if let Err(e) = rename(&tmp_path, path) {
         std::fs::remove_file(&tmp_path)?;
@@ -19,10 +31,13 @@ pub fn create_with_data(note_data: &[u8], path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn open_data(path: &Path) -> Result<Vec<u8>, sevenz_rust2::Error> {
-    let mut archive_reader = ArchiveReader::open(path, Password::empty())?;
+pub fn open_data(path: &Path) -> anyhow::Result<Vec<u8>> {
+    let mut zip = ZipArchive::new(File::open(path)?)?;
 
-    let file_content = archive_reader.read_file("data")?;
+    let mut data = zip.by_name("data")?;
+
+    let mut file_content = Vec::new();
+    data.read_to_end(&mut file_content)?;
 
     Ok(file_content)
 }
