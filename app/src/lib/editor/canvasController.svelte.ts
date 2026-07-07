@@ -135,8 +135,6 @@ export function canvasController(
       canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
     } else if (canvasManager.tool === "eraser") {
       canvasManager.eraser(e.offsetX, e.offsetY);
-    } else if (canvasManager.tool === "lasso") {
-      canvasManager.redrawStrokes();
     }
   };
 
