@@ -1,6 +1,9 @@
 import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
 import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
 import { contentManager } from "$lib/state/contentManager.svelte";
+import { settingsStore } from "$lib/state/settingsStore.svelte";
+
+const ZOOM_STEP = 1.1;
 
 export function canvasController(
   element: HTMLElement,
@@ -201,9 +204,10 @@ export function canvasController(
 
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
+
     if (e.ctrlKey) {
-      if (e.deltaY > 0) contentManager.zoom /= Math.abs(e.deltaY / 90);
-      else contentManager.zoom *= Math.abs(e.deltaY / 90);
+      const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+      contentManager.zoom *= factor;
     } else {
       // Allow the axes to be swapped?
       const a = settingsStore.store.shift_swaps_scroll_axes;
@@ -213,6 +217,7 @@ export function canvasController(
       contentManager.panX -= x / contentManager.zoom;
       contentManager.panY -= y / contentManager.zoom;
     }
+
     canvasManager.redrawStrokes();
   };
 

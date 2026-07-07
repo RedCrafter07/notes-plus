@@ -4,6 +4,9 @@ import { defaultsStore } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
 import { settingsStore } from "./settingsStore.svelte";
 
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 32;
+
 class ContentManager {
   #id: string = $state(crypto.randomUUID());
   tags: string[] = $state([]);
@@ -16,7 +19,7 @@ class ContentManager {
   #activePage = $state(0); // first page
   #activeLayer = $state(0); // 0 is the bottom layer
 
-  zoom = $state(1);
+  #zoom = $state(1);
   panX = $state(0);
   panY = $state(0);
 
@@ -147,6 +150,14 @@ class ContentManager {
 
   get pages() {
     return this.#pages;
+  }
+
+  get zoom() {
+    return this.#zoom;
+  }
+
+  set zoom(input: number) {
+    this.#zoom = Math.min(Math.max(input, MIN_ZOOM), MAX_ZOOM);
   }
 }
 
