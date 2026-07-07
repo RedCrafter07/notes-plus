@@ -129,13 +129,13 @@ export class LassoManager {
           block: b,
         }));
       }
-
-      this.selection = newSelection;
-      this.dragOffsetX = 0;
-      this.dragOffsetY = 0;
-
-      tabManager.setEdited();
     });
+
+    this.selection = newSelection;
+    this.dragOffsetX = 0;
+    this.dragOffsetY = 0;
+
+    tabManager.setEdited();
 
     popupManager.add({
       message: "Elements duplicated",
