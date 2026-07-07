@@ -41,8 +41,10 @@ export function erase(
         } else if (cInEraser) {
           // current point is inside eraser; push intersection
           currentChunk.push(intersections[0]);
+        } else {
+          // segment only grazes the boundary; nothing is actually erased, keep c
+          currentChunk.push(c);
         }
-        // both points are in eraser - ignore!
         break;
       case 2:
         //
