@@ -7,4 +7,5 @@ export const settingsStore = new Store<Settings>({
   sidebar_collapsed: false,
   use_last_page_settings: true,
   colors: ["#000000", "#f22e2e", "#55ea41"],
+  shift_swaps_scroll_axes: false,
 });

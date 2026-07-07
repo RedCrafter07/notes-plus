@@ -205,10 +205,13 @@ export function canvasController(
       if (e.deltaY > 0) contentManager.zoom /= Math.abs(e.deltaY / 90);
       else contentManager.zoom *= Math.abs(e.deltaY / 90);
     } else {
-      let x = e.shiftKey ? e.deltaY : e.deltaX;
-      let y = e.shiftKey ? e.deltaX : e.deltaY;
-      contentManager.panX -= x;
-      contentManager.panY -= y;
+      // Allow the axes to be swapped?
+      const a = settingsStore.store.shift_swaps_scroll_axes;
+      const x = e.shiftKey && a ? e.deltaY : e.deltaX;
+      const y = e.shiftKey && a ? e.deltaX : e.deltaY;
+
+      contentManager.panX -= x / contentManager.zoom;
+      contentManager.panY -= y / contentManager.zoom;
     }
     canvasManager.redrawStrokes();
   };
