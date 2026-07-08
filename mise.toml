@@ -9,3 +9,13 @@ run = "cd app && bun tauri dev"
 [tasks.build]
 description = "Build RedNotes Plus"
 run = "cd app && bun tauri build"
+
+[tasks.check]
+description = "Check Rust code using cargo check and cargo clippy"
+depends = ["check-common","check-main"]
+
+[tasks.check-common]
+run = "cd common && cargo check && cargo clippy"
+
+[tasks.check-main]
+run = "cd app && cargo check && cargo clippy"
