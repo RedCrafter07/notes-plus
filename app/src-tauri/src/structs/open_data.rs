@@ -1,4 +1,4 @@
-use common::structs::note::NoteData;
+use common::structs::data::NoteData;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 

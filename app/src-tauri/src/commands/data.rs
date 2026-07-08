@@ -2,8 +2,8 @@ use std::fs::create_dir_all;
 
 use common::io::index::build_index;
 use common::io::organize_index::EntryType;
+use common::structs::data::NoteData;
 use common::structs::defaults::Defaults;
-use common::structs::note::NoteData;
 use tauri::Manager;
 
 #[tauri::command]

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::structs::note::{Layer, Page};
+use crate::structs::data::{Layer, Page};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Defaults {

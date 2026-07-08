@@ -30,7 +30,7 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             set_jot_notes,
         ])
         .events(collect_events![events::Open, events::SettingsUpdate])
-        .typ::<common::structs::note::NoteData>()
+        .typ::<common::structs::data::NoteData>()
         .typ::<common::structs::defaults::Defaults>()
         .typ::<crate::structs::Settings>()
 }

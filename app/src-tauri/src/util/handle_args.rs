@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use common::{io::archive::open_data, structs::note::NoteData};
+use common::io::archive::Rnpf;
 use tauri::AppHandle;
 use tauri_specta::Event;
 
@@ -29,15 +29,15 @@ pub(crate) fn handle_args(app: &AppHandle, args: Option<Vec<String>>, cwd: Optio
         return;
     }
 
-    let buffer = match open_data(&path) {
-        Ok(b) => b,
+    let archive = match Rnpf::new(&path) {
+        Ok(a) => a,
         Err(e) => {
-            eprintln!("Failed to read {}: {e}", path.display());
+            eprintln!("Cannot open {}: {e}", path.display());
             return;
         }
     };
 
-    let Ok(note) = NoteData::from_bytes(&buffer) else {
+    let Ok(note) = archive.build_data() else {
         return;
     };
 

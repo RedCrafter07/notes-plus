@@ -11,12 +11,12 @@ class TabManager {
   #activeTab = $state(-1);
 
   add(noteData: NoteData, setActive: boolean = false, path?: string) {
-    const tabByID = this.#tabs.findIndex((t) => t.id === noteData.id);
+    const tabByID = this.#tabs.findIndex((t) => t.meta.id === noteData.meta.id);
 
     if (tabByID !== -1) {
       if (setActive) {
         this.#activeTab = tabByID;
-        goto(resolve("/edit/[id]", { id: noteData.id }));
+        goto(resolve("/edit/[id]", { id: noteData.meta.id }));
       }
       return;
     }
@@ -29,7 +29,7 @@ class TabManager {
 
     if (setActive) {
       this.activeTab = l - 1;
-      goto(resolve("/edit/[id]", { id: noteData.id }));
+      goto(resolve("/edit/[id]", { id: noteData.meta.id }));
     }
   }
 
@@ -63,7 +63,7 @@ class TabManager {
   set activeTab(tabIndex: number) {
     if (tabIndex === -1 || (tabIndex < this.#tabs.length && tabIndex >= 0)) {
       this.#tabs[this.#activeTab] = {
-        ...contentManager.export(this.activeNote?.unsaved),
+        ...contentManager.export(),
         unsaved: this.activeNote?.unsaved ?? false,
       };
 

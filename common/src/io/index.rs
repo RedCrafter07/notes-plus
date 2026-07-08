@@ -3,10 +3,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{
-    io::{archive::open_data, data::NoteFileError},
-    structs::note::NoteData,
-};
+use crate::io::archive::{Rnpf, RnpfError};
 
 #[derive(Error, Debug)]
 pub enum IndexError {
@@ -14,10 +11,8 @@ pub enum IndexError {
     IoError(#[from] std::io::Error),
     #[error("File or folder could not be found at the specified location")]
     NotFound,
-    #[error("The file format does not match the .rnpf format.")]
-    InvalidFile(NoteFileError),
     #[error("An error occurred while accessing the notebook archive")]
-    ArchiveError(#[from] sevenz_rust2::Error),
+    ArchiveError(#[from] RnpfError),
     #[error("The file has an invalid extension. Expected .rnpf")]
     InvalidExtension,
     #[error("An unknonw error occurred")]
@@ -59,15 +54,9 @@ pub fn index_file(path: &Path) -> Result<File, IndexError> {
     }
 
     // Get data from file by opening the data file in the archive
-    let data = NoteData::from_bytes(&open_data(path)?);
+    let meta = Rnpf::new(path)?.get_meta()?;
 
     // Redefine data as the actual data, or error otherwise
-    let data = if let Ok(data) = data {
-        data
-    } else {
-        // Unwrapping is safe here since we checked if it is ok previously
-        return Err(IndexError::InvalidFile(data.unwrap_err()));
-    };
     let path_str = if let Some(path) = path.to_str() {
         path.to_string()
     } else {
@@ -76,10 +65,10 @@ pub fn index_file(path: &Path) -> Result<File, IndexError> {
 
     Ok(File {
         path: path_str,
-        title: data.content.title,
-        folder: data.content.folder,
-        created_at: data.content.created_at,
-        edited_at: data.content.edited_at,
+        title: meta.title,
+        folder: meta.folder,
+        created_at: meta.created_at,
+        edited_at: meta.edited_at,
     })
 }
 

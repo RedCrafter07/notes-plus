@@ -1,6 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use common::{io::archive, structs::note::NoteData};
+use common::{
+    io::archive::{Rnpf, RnpfError},
+    structs::data::NoteData,
+};
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
@@ -47,8 +50,8 @@ fn open_paths(paths: &[PathBuf]) -> Vec<OpenData> {
 }
 
 fn open_single(path: &Path) -> anyhow::Result<OpenData> {
-    let buf = archive::open_data(path)?;
-    let data = NoteData::from_bytes(&buf)?;
+    let archive = Rnpf::new(path)?;
+    let data = archive.build_data()?;
     let path_str = path
         .to_str()
         .ok_or_else(|| anyhow::anyhow!("path is not valid UTF-8"))?
@@ -70,13 +73,14 @@ pub fn new_note() -> NoteData {
 #[specta::specta]
 pub fn save_note(note_data: NoteData, path: String) -> bool {
     let path = Path::new(&path);
-    let bytes = note_data.to_bytes();
-    let Ok(bytes) = bytes else {
-        return false;
-    };
-    let result = archive::create_with_data(&bytes, path);
 
-    result.is_ok()
+    match save(path, note_data) {
+        Ok(_) => true,
+        Err(e) => {
+            eprintln!("An error occurred while saving a note: {e}");
+            false
+        }
+    }
 }
 
 fn sanitize_note_id(id: &str) -> Option<&str> {
@@ -103,13 +107,11 @@ pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Optio
         std::fs::create_dir_all(&path).ok()?;
     }
 
-    let safe_id = sanitize_note_id(&note_data.id)?;
+    let safe_id = sanitize_note_id(&note_data.meta.id)?;
     let file_name = format!("{}.rnpf", safe_id);
     let full_path = path.join(file_name);
 
-    let bytes = note_data.to_bytes().ok()?;
-
-    archive::create_with_data(&bytes, &full_path).ok()?;
+    save(&full_path, note_data).ok()?;
 
     Some(full_path.to_str()?.to_string())
 }
@@ -125,9 +127,11 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<St
         .blocking_save_file()?;
 
     let path = path.as_path()?;
-    let bytes = note_data.to_bytes().ok()?;
-
-    archive::create_with_data(&bytes, path).ok()?;
+    save(path, note_data).ok()?;
 
     Some(path.to_string_lossy().into())
+}
+
+fn save(path: &Path, note_data: NoteData) -> Result<(), RnpfError> {
+    Rnpf::create_from_data(path, note_data)
 }

@@ -1,5 +1,5 @@
 import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
-import type { Note, NoteData, Page, State } from "$lib/tauri/bindings";
+import type { Meta, Note, NoteData, Page, State } from "$lib/tauri/bindings";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
 import { settingsStore } from "./settingsStore.svelte";
@@ -24,12 +24,12 @@ class ContentManager {
   panY = $state(0);
 
   public import(data: NoteData) {
-    const { content: note, id, state } = data;
-    this.title = note.title;
-    this.#createdAt = note.created_at;
-    this.#editedAt = note.edited_at;
-    this.tags = note.tags;
-    if (id) this.#id = id;
+    const { content: note, meta, state } = data;
+    this.title = meta.title;
+    this.#createdAt = meta.created_at;
+    this.#editedAt = meta.edited_at;
+    this.tags = meta.tags;
+    this.#id = meta.id;
 
     this.zoom = state.zoom;
     this.panX = state.pan_x;
@@ -39,7 +39,7 @@ class ContentManager {
 
     this.#pages = note.pages;
 
-    if (note.folder !== undefined) this.folder = note.folder;
+    if (meta.folder !== undefined) this.folder = meta.folder;
   }
 
   public updateEditDate() {
@@ -49,11 +49,15 @@ class ContentManager {
   public export(): NoteData {
     const content: Note = {
       pages: this.#pages,
+    };
+
+    const meta: Meta = {
       created_at: this.#createdAt,
       edited_at: this.#editedAt,
       tags: this.tags,
       title: this.title,
       folder: this.folder,
+      id: this.#id,
     };
 
     const state: State = {
@@ -66,7 +70,7 @@ class ContentManager {
 
     return {
       content,
-      id: this.#id,
+      meta,
       state,
     };
   }
