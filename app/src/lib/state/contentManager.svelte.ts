@@ -3,6 +3,7 @@ import type { Meta, Note, NoteData, Page, State } from "$lib/tauri/bindings";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
 import { settingsStore } from "./settingsStore.svelte";
+import { tabManager } from "./tabManager.svelte";
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 32;
@@ -14,7 +15,7 @@ class ContentManager {
   #createdAt: string = Math.floor(Date.now() / 1000).toString();
   #editedAt: string = Math.floor(Date.now() / 1000).toString();
   #pages: Page[] = $state([]);
-  folder = $state<string | null>(null);
+  #folder = $state<string | null>(null);
 
   #activePage = $state(0); // first page
   #activeLayer = $state(0); // 0 is the bottom layer
@@ -38,8 +39,7 @@ class ContentManager {
     this.#activePage = state.current_page;
 
     this.#pages = note.pages;
-
-    if (meta.folder !== undefined) this.folder = meta.folder;
+    this.#folder = meta.folder;
   }
 
   public updateEditDate() {
@@ -56,7 +56,7 @@ class ContentManager {
       edited_at: this.#editedAt,
       tags: this.tags,
       title: this.title,
-      folder: this.folder,
+      folder: this.#folder,
       id: this.#id,
     };
 
@@ -162,6 +162,18 @@ class ContentManager {
 
   set zoom(input: number) {
     this.#zoom = Math.min(Math.max(input, MIN_ZOOM), MAX_ZOOM);
+  }
+
+  get folder() {
+    return this.#folder;
+  }
+
+  set folder(folder: string | null) {
+    if (folder === this.#folder) return;
+    this.#folder = folder;
+    if (tabManager.activeNote?.meta.id === this.#id) {
+      tabManager.setEdited();
+    }
   }
 }
 
