@@ -16,6 +16,17 @@
 
     titleSnapshot = contentManager.title;
   });
+
+  function handleTitleBlur() {
+    titleSnapshot = titleSnapshot.trim();
+
+    if (titleSnapshot.length > 0) {
+      contentManager.title = titleSnapshot;
+      tabManager.current = contentManager.export();
+    } else {
+      titleSnapshot = contentManager.title;
+    }
+  }
 </script>
 
 <Overlay
@@ -30,6 +41,7 @@
       label="Notebook Title"
       id="notebook-title"
       bind:value={titleSnapshot}
+      onBlur={handleTitleBlur}
       placeholder="Creativity"
     />
   </div>
