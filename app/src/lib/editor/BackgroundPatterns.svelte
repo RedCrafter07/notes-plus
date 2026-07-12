@@ -17,10 +17,10 @@
 
   const zoomedScale = $derived(zoom ? scale * contentManager.zoom : scale);
   const offsetX = $derived(
-    zoom ? (-contentManager.panX * contentManager.zoom) % zoomedScale : 0,
+    zoom ? (contentManager.panX * contentManager.zoom) % zoomedScale : 0,
   );
   const offsetY = $derived(
-    zoom ? (-contentManager.panY * contentManager.zoom) % zoomedScale : 0,
+    zoom ? (contentManager.panY * contentManager.zoom) % zoomedScale : 0,
   );
   const actualZoom = $derived(zoom ? contentManager.zoom : 1);
 </script>
