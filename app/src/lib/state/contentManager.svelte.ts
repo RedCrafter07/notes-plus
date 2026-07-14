@@ -1,5 +1,5 @@
 import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
-import type { Meta, Note, NoteData, Page, State } from "$lib/tauri/bindings";
+import type { Content, Meta, NoteData, Page, State } from "$lib/tauri/bindings";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
 import { settingsStore } from "./settingsStore.svelte";
@@ -47,7 +47,7 @@ class ContentManager {
   }
 
   public export(): NoteData {
-    const content: Note = {
+    const content: Content = {
       pages: this.#pages,
     };
 

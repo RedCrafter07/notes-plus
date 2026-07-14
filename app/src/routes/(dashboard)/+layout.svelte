@@ -2,9 +2,8 @@
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { settingsStore } from "$lib/state/settingsStore.svelte";
-  import { tabManager } from "$lib/state/tabManager.svelte";
   import { commands } from "$lib/tauri/bindings";
-  import { newNote } from "$lib/util/notes.svelte";
+  import { newNote, openNotes } from "$lib/util/notes.svelte";
   import {
     IconFolder,
     IconHome,
@@ -61,11 +60,7 @@
         class="flex flex-row gap-2 items-center"
         onclick={async () => {
           const data = await commands.openNotesDialog();
-
-          data.forEach(({ note_data: d, path }, i, a) => {
-            tabManager.add(d, i === a.length - 1, path);
-            if (i === a.length - 1) goto(resolve("/edit/[id]", { id: d.id }));
-          });
+          openNotes(data);
         }}
       >
         <IconFolder />

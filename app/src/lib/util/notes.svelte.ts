@@ -12,6 +12,6 @@ export function openNotes(files?: OpenData[]) {
   if (!files) return;
   files.forEach(({ note_data: d, path }, i, a) => {
     tabManager.add(d, i === a.length - 1, path);
-    if (i === a.length - 1) goto(resolve("/edit/[id]", { id: d.id }));
+    if (i === a.length - 1) goto(resolve("/edit/[id]", { id: d.meta.id }));
   });
 }

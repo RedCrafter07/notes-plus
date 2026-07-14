@@ -76,7 +76,7 @@
     <h3 class="text-xl flex flex-row gap-2 items-center font-semibold">
       <IconClock /> Recent files
     </h3>
-    {#each recentNotes as note (`recent-${note.id}`)}
+    {#each recentNotes as note (`recent-${note.meta.id}`)}
       <div></div>
     {:else}
       <p class="text-content-2">

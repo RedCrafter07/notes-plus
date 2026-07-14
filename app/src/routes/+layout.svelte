@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import "@fontsource-variable/funnel-display";
-  import "@fontsource-variable/funnel-sans";
+  import "@fontsource-variable/funnel-display/wght.css";
+  import "@fontsource-variable/funnel-sans/wght.css";
   import "../app.css";
   import "../mocha.css";
   import { commands, events, type OpenData } from "$lib/tauri/bindings";

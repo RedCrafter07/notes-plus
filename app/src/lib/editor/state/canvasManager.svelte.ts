@@ -192,7 +192,7 @@ class CanvasManager {
 
   private drawOnCanvas(
     path: string | Path2D,
-    layerID: number,
+    layerID: string,
     c = canvasManager.color,
   ) {
     const ctx = canvasManager.layerCtx[layerID];

@@ -42,7 +42,7 @@ class TabManager {
     if (index === this.#activeTab) {
       const newIndex = Math.min(index, this.#tabs.length - 2); // -2 since one tab gets removed
       this.#activeTab = newIndex;
-      contentManager.import(this.#tabs[newIndex]);
+      if (this.#activeTab !== -1) contentManager.import(this.#tabs[newIndex]);
     } else if (index < this.#activeTab) {
       this.#activeTab--;
     }
@@ -92,7 +92,9 @@ class TabManager {
     return this.#tabs[this.#activeTab];
   }
   set current(data: NoteData) {
-    this.#tabs[this.#activeTab] = { ...data, unsaved: true };
+    const { path } = this.#tabs[this.#activeTab];
+
+    this.#tabs[this.#activeTab] = { ...data, unsaved: true, path };
   }
 
   set currentPath(path: string) {
