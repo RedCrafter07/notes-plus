@@ -39,16 +39,20 @@ class TabManager {
       return;
     }
 
-    if (index === this.#activeTab) {
-      const newIndex = Math.min(index, this.#tabs.length - 2); // -2 since one tab gets removed
-      this.#activeTab = newIndex;
-      if (this.#activeTab !== -1) contentManager.import(this.#tabs[newIndex]);
-    } else if (index < this.#activeTab) {
+    const wasActive = index === this.#activeTab;
+    if (index < this.#activeTab) {
       this.#activeTab--;
     }
 
-    if (this.#activeTab === -1) goto(resolve("/"));
     this.#tabs.splice(index, 1);
+
+    if (wasActive) {
+      const newIndex = Math.min(index, this.#tabs.length - 1);
+      this.#activeTab = newIndex;
+      if (this.#activeTab !== -1) contentManager.import(this.#tabs[newIndex]);
+    }
+
+    if (this.#activeTab === -1) goto(resolve("/"));
   }
 
   get activeTab() {
