@@ -40,10 +40,13 @@ pub(crate) fn handle_args(app: &AppHandle, args: Option<Vec<String>>, cwd: Optio
     let Ok(note) = archive.build_data() else {
         return;
     };
+    let Some(path_string) = path.to_str() else {
+        return;
+    };
 
     Open(OpenData {
         note_data: note,
-        path: args[1].to_string(),
+        path: path_string.into(),
     })
     .emit(app)
     .expect("Failed to emit Open event");
