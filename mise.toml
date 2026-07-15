@@ -2,6 +2,9 @@
 bun = "latest"
 rust = { version = "1.97.0", profile = "default" }
 
+[env]
+NO_STRIP = "1" #fixes an error when bundling to .appimage
+
 [tasks.dev]
 description = "Start RedNotes Plus in dev mode"
 run = "cd app && bun tauri dev"
