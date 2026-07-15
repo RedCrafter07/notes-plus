@@ -6,10 +6,7 @@ pub fn export_bindings() {
     use specta_typescript::Typescript;
     let builder = get_builder();
 
-    let path = cfg_select! {
-        debug_assertions => "../src/lib/tauri/bindings.ts",
-        _ => "src/lib/tauri/bindings.ts",
-    };
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../src/lib/tauri/bindings.ts");
 
     builder
         .export(
