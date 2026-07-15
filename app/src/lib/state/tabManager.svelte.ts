@@ -15,7 +15,7 @@ class TabManager {
 
     if (tabByID !== -1) {
       if (setActive) {
-        this.#activeTab = tabByID;
+        this.activeTab = tabByID;
         goto(resolve("/edit/[id]", { id: noteData.meta.id }));
       }
       return;
