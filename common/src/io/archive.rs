@@ -5,7 +5,7 @@ use std::{
     path::Path,
 };
 use thiserror::Error;
-use zip::{CompressionMethod, ZipArchive, ZipWriter, write::SimpleFileOptions};
+use zip::{CompressionMethod, ZipArchive, ZipWriter, result::ZipError, write::SimpleFileOptions};
 
 use crate::structs::data::{Content, FromToBin, Meta, NoteData, State};
 
@@ -19,6 +19,8 @@ pub enum RnpfError {
     ArchiveError(#[from] zip::result::ZipError),
     #[error("The provided file has an unknown version")]
     InvalidVersion,
+    #[error("The provided file is invalid")]
+    InvalidFile,
 }
 
 // TODO: Add attachment support
@@ -88,7 +90,14 @@ impl Rnpf {
         let mut zip = ZipArchive::new(&self.file)?;
 
         let mut file_data = Vec::new();
-        zip.by_name(name)?.read_to_end(&mut file_data)?;
+        let file = zip.by_name(name);
+        let mut file = match file {
+            Ok(f) => f,
+            Err(ZipError::FileNotFound) => return Err(RnpfError::InvalidFile),
+            Err(e) => return Err(e.into()),
+        };
+
+        file.read_to_end(&mut file_data)?;
 
         Ok(T::from_bytes(&file_data)?)
     }

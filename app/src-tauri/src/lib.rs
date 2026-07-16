@@ -8,6 +8,8 @@ pub mod util;
 use serde_json::json;
 use tauri_plugin_store::StoreExt;
 
+use crate::util::app_handle;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(target_os = "linux")]
@@ -34,10 +36,10 @@ pub fn run() {
             tauri_builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
                 use std::path::PathBuf;
 
-                use crate::util::handle_args;
+                use crate::{structs::ResultExt, util::handle_args};
                 use tauri::Manager;
 
-                handle_args(app, Some(args), Some(PathBuf::from(cwd)));
+                handle_args(app, Some(args), Some(PathBuf::from(cwd))).unwrap_or_display(());
 
                 let _ = app
                     .get_webview_window("main")
@@ -53,6 +55,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
+            app_handle::init(app.handle().clone());
+
             // This is also required if you want to use events
             builder.mount_events(app);
 

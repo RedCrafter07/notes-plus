@@ -2,7 +2,7 @@ use serde_json::json;
 use tauri_plugin_store::StoreExt;
 use tauri_specta::Event;
 
-use crate::{events::SettingsUpdate, structs::Settings};
+use crate::{events::SettingsUpdate, structs::Settings, util::dialog::show_error};
 
 fn load_settings(app: &tauri::AppHandle) -> Settings {
     let Ok(store) = app.store("data.json") else {
@@ -18,16 +18,16 @@ fn load_settings(app: &tauri::AppHandle) -> Settings {
 }
 fn save_settings(app: &tauri::AppHandle, settings: Settings) {
     let Ok(store) = app.store("data.json") else {
-        eprintln!("Failed to open store while saving settings");
+        show_error("Failed to open store while saving settings".into());
         return;
     };
     store.set("settings", json!(settings));
     if let Err(e) = store.save() {
-        eprintln!("Failed to save settings: {e}");
+        show_error(format!("Failed to save settings: {e}"));
     };
     store.close_resource();
     if let Err(e) = SettingsUpdate(settings).emit(app) {
-        eprintln!("Failed to emit settings update event: {e}");
+        show_error(format!("Failed to emit settings update event: {e}"));
     }
 }
 

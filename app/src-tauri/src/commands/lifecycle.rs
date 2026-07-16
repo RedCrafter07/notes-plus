@@ -14,8 +14,8 @@ pub fn ready(app: tauri::AppHandle) {
 
     #[cfg(desktop)]
     {
-        use crate::util::handle_args;
+        use crate::{structs::ResultExt, util::handle_args};
 
-        handle_args(&app, None, None);
+        handle_args(&app, None, None).unwrap_or_display(());
     }
 }

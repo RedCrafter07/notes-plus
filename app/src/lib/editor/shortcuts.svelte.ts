@@ -31,12 +31,8 @@ export function useShortcuts() {
             type: "success",
           });
           tabManager.activeNote.unsaved = false;
-        } else {
-          popupManager.add({
-            message: "An error occurred while saving the note.",
-            type: "destructive",
-          });
         }
+        // do not show popup otherwise, as errors get handled and sent by the backend automatically.
       } else {
         const path = await commands.saveNoteToStorage(contentManager.export());
 
@@ -49,11 +45,6 @@ export function useShortcuts() {
             tabManager.activeNote.unsaved = false;
             tabManager.currentPath = path;
           }
-        } else {
-          popupManager.add({
-            message: "An error occurred while saving the note.",
-            type: "destructive",
-          });
         }
       }
     } else {
@@ -73,10 +64,6 @@ export function useShortcuts() {
       } else {
         // Revert ID, no saving since error occurred
         contentManager.id = lastId;
-        popupManager.add({
-          message: "An error occurred while saving the file. Please try again",
-          type: "destructive",
-        });
       }
     }
   }

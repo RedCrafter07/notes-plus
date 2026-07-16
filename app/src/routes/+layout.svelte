@@ -17,15 +17,16 @@
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { jotStore } from "$lib/state/jotStore.svelte";
+  import { handleDialog } from "$lib/util/dialog";
 
   const { children } = $props();
 
   onMount(async () => {
-    events.open.listen((e) => {
+    await events.open.listen((e) => {
       openNote(e.payload);
     });
 
-    events.settingsUpdate.listen((e) => {
+    await events.settingsUpdate.listen((e) => {
       settingsStore.store = e.payload;
     });
 
@@ -66,12 +67,16 @@
     document.addEventListener("keydown", keydownEvent);
 
     let unlisten: UnlistenFn;
+    let dialogUnlisten: UnlistenFn;
 
     (async () => {
       unlisten = await getCurrentWindow().onCloseRequested(async (e) => {
         e.preventDefault();
 
         await quit();
+      });
+      dialogUnlisten = await events.dialogEvent.listen(async (e) => {
+        handleDialog(e.payload);
       });
     })();
 

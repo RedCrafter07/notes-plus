@@ -1,6 +1,8 @@
 use serde_json::json;
 use tauri_plugin_store::StoreExt;
 
+use crate::util::dialog::show_error;
+
 fn load_jot_notes(app: &tauri::AppHandle) -> Vec<String> {
     let Ok(store) = app.store("data.json") else {
         return Vec::new();
@@ -15,12 +17,12 @@ fn load_jot_notes(app: &tauri::AppHandle) -> Vec<String> {
 }
 fn save_jot_notes(app: &tauri::AppHandle, notes: &[String]) {
     let Ok(store) = app.store("data.json") else {
-        eprintln!("Failed to open store while saving jot notes");
+        show_error("Failed to open store while saving jot notes".into());
         return;
     };
     store.set("jotNotes", json!(notes));
     if let Err(e) = store.save() {
-        eprintln!("Failed to save jot notes: {e}");
+        show_error(format!("Failed to save jot notes: {e}"));
     };
     store.close_resource();
 }

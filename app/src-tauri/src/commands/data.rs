@@ -6,6 +6,8 @@ use common::structs::data::NoteData;
 use common::structs::defaults::Defaults;
 use tauri::Manager;
 
+use crate::util::dialog::show_error;
+
 #[tauri::command]
 #[specta::specta]
 pub fn get_recent() -> Vec<NoteData> {
@@ -25,30 +27,30 @@ pub fn get_notebooks(app: tauri::AppHandle) -> Option<EntryType> {
     let path = match app.path().app_data_dir() {
         Ok(p) => p.join("notebooks"),
         Err(e) => {
-            eprintln!("Application storage could not be found: {e}");
+            show_error(format!("Application storage could not be found: {e}"));
             return None;
         }
     };
 
     if path.exists() && !path.is_dir() {
-        eprintln!(
+        show_error(format!(
             "The path {} is a file, not a folder. The notebooks could not be indexed.",
-            path.to_str().unwrap_or("")
-        );
+            path.display()
+        ));
         return None;
     }
 
     if !path.exists()
         && let Err(e) = create_dir_all(&path)
     {
-        eprintln!("Could not create notebooks directory: {e}");
+        show_error(format!("Could not create notebooks directory: {e}"));
         return None;
     }
 
     match build_index(&path) {
         Ok(index) => Some(EntryType::from_index(index)),
         Err(e) => {
-            eprintln!("Could not index notebooks: {e}");
+            show_error(format!("Could not index notebooks: {e}"));
             None
         }
     }

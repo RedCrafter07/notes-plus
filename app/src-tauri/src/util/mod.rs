@@ -2,9 +2,13 @@ use crate::commands::*;
 use crate::events;
 
 use tauri_specta::{Builder, collect_commands, collect_events};
+pub(crate) mod app_handle;
+pub(crate) mod dialog;
+mod display_error;
 pub mod export_bindings;
 mod handle_args;
 
+pub(crate) use display_error::*;
 pub(crate) use export_bindings::*;
 pub(crate) use handle_args::*;
 
@@ -29,7 +33,11 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             get_notebooks,
             set_jot_notes,
         ])
-        .events(collect_events![events::Open, events::SettingsUpdate])
+        .events(collect_events![
+            events::Open,
+            events::SettingsUpdate,
+            events::DialogEvent
+        ])
         .typ::<common::structs::data::NoteData>()
         .typ::<common::structs::defaults::Defaults>()
         .typ::<crate::structs::Settings>()

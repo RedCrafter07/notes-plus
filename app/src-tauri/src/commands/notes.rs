@@ -7,20 +7,33 @@ use common::{
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
-use crate::structs::OpenData;
+use crate::{
+    structs::OpenData,
+    util::{
+        dialog::{DialogType, show_dialog, show_error},
+        display_error,
+    },
+};
 
 #[tauri::command]
 #[specta::specta]
 pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<OpenData> {
-    let notes = app
+    let paths = app
         .dialog()
         .file()
         .add_filter("RedNotes Plus File", &["rnpf"])
         .set_picker_mode(tauri_plugin_dialog::PickerMode::Document)
-        .blocking_pick_files()
-        .unwrap_or_default();
+        .blocking_pick_files();
 
-    let notes: Vec<PathBuf> = notes
+    let paths = match paths {
+        Some(p) => p,
+        None => {
+            show_dialog(DialogType::Warning, "Selection aborted".into());
+            return vec![];
+        }
+    };
+
+    let notes: Vec<PathBuf> = paths
         .iter()
         .filter_map(|f| f.as_path().map(PathBuf::from))
         .collect();
@@ -42,7 +55,7 @@ fn open_paths(paths: &[PathBuf]) -> Vec<OpenData> {
         .filter_map(|p| match open_single(p) {
             Ok(data) => Some(data),
             Err(e) => {
-                eprintln!("Failed to open note {}: {e}", p.display());
+                show_error(format!("Failed to open note {}: {e}", p.display()));
                 None
             }
         })
@@ -78,6 +91,7 @@ pub fn save_note(note_data: NoteData, path: String) -> bool {
         Ok(_) => true,
         Err(e) => {
             eprintln!("An error occurred while saving a note: {e}");
+            display_error(e.into());
             false
         }
     }
@@ -101,17 +115,32 @@ fn sanitize_note_id(id: &str) -> Option<&str> {
 #[tauri::command]
 #[specta::specta]
 pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Option<String> {
-    let path = app.path().app_data_dir().ok()?.join("notebooks");
+    let path = match app.path().app_data_dir() {
+        Ok(p) => p.join("notebooks"),
+        Err(e) => {
+            show_error(format!("Could not find application storage: {e}"));
+            return None;
+        }
+    };
 
-    if !path.exists() {
-        std::fs::create_dir_all(&path).ok()?;
+    if !path.exists()
+        && let Err(e) = std::fs::create_dir_all(&path)
+    {
+        show_error(format!("Could not create notebooks directory: {e}"));
+        return None;
     }
 
-    let safe_id = sanitize_note_id(&note_data.meta.id)?;
+    let Some(safe_id) = sanitize_note_id(&note_data.meta.id) else {
+        show_error(format!("'{}' is not a valid note ID", note_data.meta.id));
+        return None;
+    };
     let file_name = format!("{}.rnpf", safe_id);
     let full_path = path.join(file_name);
 
-    save(&full_path, note_data).ok()?;
+    if let Err(e) = save(&full_path, note_data) {
+        display_error(e.into());
+        return None;
+    };
 
     Some(full_path.to_str()?.to_string())
 }
@@ -126,8 +155,17 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<St
         .set_picker_mode(tauri_plugin_dialog::PickerMode::Document)
         .blocking_save_file()?;
 
-    let path = path.as_path()?;
-    save(path, note_data).ok()?;
+    let path = match path.as_path() {
+        Some(p) => p,
+        None => {
+            show_dialog(DialogType::Warning, "Selection aborted".into());
+            return None;
+        }
+    };
+    if let Err(e) = save(path, note_data) {
+        display_error(e.into());
+        return None;
+    };
 
     Some(path.to_string_lossy().into())
 }

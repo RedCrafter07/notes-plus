@@ -3,14 +3,28 @@ use std::path::{Path, PathBuf};
 use common::io::archive::Rnpf;
 use tauri::AppHandle;
 use tauri_specta::Event;
+use thiserror::Error;
 
-use crate::{events::Open, structs::OpenData};
+use crate::{
+    events::Open,
+    structs::{OpenData, Result},
+};
 
-pub(crate) fn handle_args(app: &AppHandle, args: Option<Vec<String>>, cwd: Option<PathBuf>) {
+#[derive(Debug, Error)]
+pub enum ArgsError {
+    #[error("Cannot use path as string: '{0}'")]
+    InvalidPath(PathBuf), // carries the offending path now too
+}
+
+pub(crate) fn handle_args(
+    app: &AppHandle,
+    args: Option<Vec<String>>,
+    cwd: Option<PathBuf>,
+) -> Result<()> {
     let args = args.unwrap_or_else(|| std::env::args().collect());
 
     if args.len() <= 1 {
-        return;
+        return Ok(());
     }
 
     let base = cwd
@@ -24,30 +38,18 @@ pub(crate) fn handle_args(app: &AppHandle, args: Option<Vec<String>>, cwd: Optio
         base.join(args_path)
     };
 
-    if !path.exists() {
-        eprintln!("Cannot open {}: file does not exist", path.display());
-        return;
-    }
+    let archive = Rnpf::new(&path)?;
+    let note = archive.build_data()?;
 
-    let archive = match Rnpf::new(&path) {
-        Ok(a) => a,
-        Err(e) => {
-            eprintln!("Cannot open {}: {e}", path.display());
-            return;
-        }
-    };
-
-    let Ok(note) = archive.build_data() else {
-        return;
-    };
-    let Some(path_string) = path.to_str() else {
-        return;
-    };
+    let path_string = path
+        .to_str()
+        .ok_or_else(|| ArgsError::InvalidPath(path.clone()))?;
 
     Open(OpenData {
         note_data: note,
         path: path_string.into(),
     })
-    .emit(app)
-    .expect("Failed to emit Open event");
+    .emit(app)?;
+
+    Ok(())
 }
