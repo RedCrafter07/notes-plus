@@ -8,12 +8,16 @@
     scale,
     pattern,
     zoom,
+    uuid: useUUID,
   }: {
     color: string;
     scale: number;
     pattern: BackgroundPattern | null;
     zoom?: boolean;
+    uuid?: boolean;
   } = $props();
+
+  let uuid = crypto.randomUUID();
 
   const zoomedScale = $derived(zoom ? scale * contentManager.zoom : scale);
   const offsetX = $derived(
@@ -28,7 +32,7 @@
 <svg width="100%" height="100%">
   <defs>
     <pattern
-      id="bg-pattern-{pattern}"
+      id={`bg-pattern-${pattern}${useUUID ? `-${uuid}` : ""}`}
       x={offsetX}
       y={offsetY}
       width={zoom ? zoomedScale : scale}
@@ -75,7 +79,7 @@
       y={-canvasManager.height / 2}
       width={canvasManager.width}
       height={canvasManager.height}
-      fill="url(#bg-pattern-{pattern})"
+      fill={`url(#bg-pattern-${pattern}${useUUID ? `-${uuid}` : ""})`}
     />
   </g>
 </svg>

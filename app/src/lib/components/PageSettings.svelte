@@ -73,6 +73,7 @@
     >
       {#if type !== "Blank"}
         <BackgroundPatterns
+          uuid
           pattern={type}
           color={patternColor}
           scale={patternScale}
@@ -82,7 +83,6 @@
     <div
       class={[
         "absolute w-full h-full border-4 top-0 rounded-xl transition-all",
-
         active ? "border-primary" : "border-transparent",
       ]}
     ></div>
