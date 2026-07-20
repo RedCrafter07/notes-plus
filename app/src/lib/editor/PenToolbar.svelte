@@ -5,8 +5,8 @@
   import { toRadian } from "$lib/util/geometry";
   import { IconPlus } from "@tabler/icons-svelte";
   import { settingsStore } from "$lib/state/settingsStore.svelte";
-  import { invoke } from "@tauri-apps/api/core";
   import ColorEditPopup from "$lib/components/ColorEditPopup.svelte";
+  import { commands } from "$lib/tauri/bindings";
 
   let { radius }: { radius: number } = $props();
   const visible = $derived(canvasManager.tool === "pen");
@@ -34,11 +34,9 @@
     if (editingIndex !== null) canvasManager.color = colors[editingIndex];
   });
 
-  function persistColors() {
+  async function persistColors() {
     // Best-effort persistence: no-ops gracefully on builds without the command.
-    invoke("set_colors", {
-      colors: $state.snapshot(settingsStore.store.colors),
-    }).catch(() => {});
+    await commands.setColors($state.snapshot(settingsStore.store.colors));
   }
 
   function openEditor(index: number) {
