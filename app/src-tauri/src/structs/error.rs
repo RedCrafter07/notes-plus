@@ -4,13 +4,13 @@ use thiserror::Error;
 use crate::util::{ArgsError, display_error};
 
 pub trait ResultExt<T> {
-    fn or_display(self) -> Option<T>;
+    // fn or_display(self) -> Option<T>;
 
     fn unwrap_or_display(self, fallback: T) -> T;
 
-    fn unwrap_or_display_default(self) -> T
-    where
-        T: Default;
+    // fn unwrap_or_display_default(self) -> T
+    // where
+    //     T: Default;
 }
 
 #[derive(Debug, Error)]
@@ -28,19 +28,19 @@ pub enum AppError {
 pub type Result<T> = std::result::Result<T, AppError>;
 
 impl<T> ResultExt<T> for Result<T> {
-    fn or_display(self) -> Option<T> {
-        self.map_err(display_error).ok()
-    }
+    // fn or_display(self) -> Option<T> {
+    //     self.map_err(display_error).ok()
+    // }
     fn unwrap_or_display(self, fallback: T) -> T {
         self.unwrap_or_else(|e| {
             display_error(e);
             fallback
         })
     }
-    fn unwrap_or_display_default(self) -> T
-    where
-        T: Default,
-    {
-        Self::unwrap_or_display(self, T::default())
-    }
+    // fn unwrap_or_display_default(self) -> T
+    // where
+    //     T: Default,
+    // {
+    //     Self::unwrap_or_display(self, T::default())
+    // }
 }
