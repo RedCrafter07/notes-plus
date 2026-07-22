@@ -89,39 +89,55 @@ class CanvasManager {
   }
 
   eraser(x: number, y: number) {
+    let changed = false;
     contentManager.layers.forEach((l, i) => {
-      if (l.locked || !l.visible) return l;
+      if (l.locked || !l.visible) return;
 
+      let layerChanged = false;
       const blocks = l.blocks.flatMap((b) => {
-        if (b.Stroke) {
-          const s = b.Stroke;
-          if (s.points.length === 0) return [];
-          const newPoints = erase(
-            s.points,
-            this.translateToRelative(x, y, 0.5),
-            this.eraserRadius,
-          );
+        // The block is not a stroke and thus cannot be erased.
+        if (!b.Stroke) return b;
 
-          return newPoints.map(
-            (p) =>
-              ({
-                Stroke: {
-                  ...s,
-                  id: crypto.randomUUID(),
-                  points: p,
-                },
-              }) satisfies Block,
-          );
-        } else return b;
+        const s = b.Stroke;
+        if (s.points.length === 0) return []; // empty stroke, skip/delete
+
+        const newPoints = erase(
+          s.points,
+          this.translateToRelative(x, y, 0.5),
+          this.eraserRadius,
+        );
+
+        if (newPoints.length === 1 && newPoints[0].length === s.points.length)
+          // newPoints returns one stroke. When the length of the points matches, the points are precisely the same, thus no change has occurred.
+          return b;
+
+        // Otherwise, it did change
+        layerChanged = true;
+
+        return newPoints.map(
+          (p) =>
+            ({
+              Stroke: {
+                ...s,
+                id: crypto.randomUUID(),
+                points: p,
+              },
+            }) satisfies Block,
+        );
       });
 
-      contentManager.layers[i] = {
-        ...l,
-        blocks,
-      };
+      if (layerChanged) {
+        // prevent unnecessary override
+        contentManager.layers[i] = {
+          ...l,
+          blocks,
+        };
+        changed = true;
+      }
     });
 
-    tabManager.setEdited();
+    // Something has changed. Mark the tab as edited
+    if (changed) tabManager.setEdited();
   }
 
   finishStroke() {
