@@ -18,7 +18,7 @@ class ContentManager {
   public addNewPage(forceDefault: boolean = false, total = this.pages.length) {
     const settingsSource =
       settingsStore.store.use_last_page_settings && !forceDefault
-        ? this.activePage
+        ? this.page
         : defaultsStore.store.page;
 
     const newPage = {
@@ -49,13 +49,13 @@ class ContentManager {
   }
 
   get size(): { width: number; height: number } | "Infinite" {
-    const { width, height } = this.activePage;
+    const { width, height } = this.page;
     if (width < 0 || height < 0) return "Infinite";
     return { width, height };
   }
 
   get layers() {
-    return this.activePage.layers;
+    return this.page.layers;
   }
 
   get editedAt() {
@@ -86,7 +86,8 @@ class ContentManager {
       this.#note.state.current_page = page;
   }
 
-  get activePage() {
+  /** Gets the active page */
+  get page() {
     return this.#pages[this.currentPage];
   }
 

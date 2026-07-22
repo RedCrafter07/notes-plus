@@ -2,12 +2,7 @@ import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import type { NoteData } from "$lib/tauri/bindings";
 import { contentManager } from "./contentManager.svelte";
-import {
-  defaultNote,
-  defaultsStore,
-  EMPTY_NOTE,
-  getDefaultNote,
-} from "./defaultsStore.svelte";
+import { EMPTY_NOTE } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
 
 type Tab = { note: NoteData; unsaved: boolean; path?: string };
@@ -72,6 +67,7 @@ class TabManager {
     }
   }
 
+  /** Mark the active tab as edited */
   setEdited() {
     const tab = this.#tabs[this.#activeTab];
     if (!tab) return;
@@ -83,10 +79,12 @@ class TabManager {
     return this.#tabs;
   }
 
+  /** Gets the entire active tab data */
   get tab(): Tab {
     return this.#tabs[this.#activeTab];
   }
 
+  /** Gets the note of the active tab */
   get note() {
     return this.#tabs[this.#activeTab]?.note ?? EMPTY_NOTE;
   }

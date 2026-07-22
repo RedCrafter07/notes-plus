@@ -65,16 +65,3 @@ export const defaultsStore = new Store<Defaults>({
     },
   },
 });
-
-export function getDefaultNote(): NoteData {
-  console.log("Default note store triggered");
-  return {
-    ...defaultNote,
-    meta: {
-      ...defaultNote.meta,
-      id: crypto.randomUUID(),
-      created_at: Math.floor(Date.now() / 1000).toString(),
-      edited_at: Math.floor(Date.now() / 1000).toString(),
-    },
-  };
-}
