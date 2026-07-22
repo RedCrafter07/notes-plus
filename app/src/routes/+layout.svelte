@@ -86,6 +86,7 @@
         capture: true,
       });
       unlisten();
+      dialogUnlisten();
     };
   });
 
