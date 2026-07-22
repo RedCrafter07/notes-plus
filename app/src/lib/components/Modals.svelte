@@ -8,7 +8,7 @@
 </script>
 
 <JotDown />
-{#if tabManager.tabs.length > 0}
+{#if tabManager.activeTab !== -1}
   <Unsaved />
   <PageSettings />
   <UnsavedClose />

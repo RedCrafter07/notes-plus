@@ -1,4 +1,5 @@
 import type { Defaults, Layer, NoteData, Page } from "$lib/tauri/bindings";
+import { deepFreeze } from "$lib/util/deepFreeze";
 import { Store } from "$lib/util/store.svelte";
 
 const defaultLayer: Layer = {
@@ -39,7 +40,9 @@ export const defaultNote: NoteData = {
   },
 };
 
-export const EMPTY_NOTE = Object.freeze(structuredClone(defaultNote));
+export const EMPTY_NOTE = import.meta.env.DEV
+  ? deepFreeze(structuredClone(defaultNote))
+  : structuredClone(defaultNote);
 
 export const defaultsStore = new Store<Defaults>({
   layer: defaultLayer,
