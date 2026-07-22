@@ -2,16 +2,24 @@ import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import type { NoteData } from "$lib/tauri/bindings";
 import { contentManager } from "./contentManager.svelte";
+import {
+  defaultNote,
+  defaultsStore,
+  EMPTY_NOTE,
+  getDefaultNote,
+} from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
 
-type Tab = NoteData & { unsaved: boolean; path?: string };
+type Tab = { note: NoteData; unsaved: boolean; path?: string };
 
 class TabManager {
   #tabs = $state<Tab[]>([]);
   #activeTab = $state(-1);
 
   add(noteData: NoteData, setActive: boolean = false, path?: string) {
-    const tabByID = this.#tabs.findIndex((t) => t.meta.id === noteData.meta.id);
+    const tabByID = this.#tabs.findIndex(
+      (t) => t.note.meta.id === noteData.meta.id,
+    );
 
     if (tabByID !== -1) {
       if (setActive) {
@@ -22,7 +30,7 @@ class TabManager {
     }
 
     const l = this.#tabs.push({
-      ...noteData,
+      note: noteData,
       unsaved: false,
       path,
     });
@@ -49,7 +57,6 @@ class TabManager {
     if (wasActive) {
       const newIndex = Math.min(index, this.#tabs.length - 1);
       this.#activeTab = newIndex;
-      if (this.#activeTab !== -1) contentManager.import(this.#tabs[newIndex]);
     }
 
     if (this.#activeTab === -1) goto(resolve("/"));
@@ -59,21 +66,9 @@ class TabManager {
     return this.#activeTab;
   }
 
-  get activeNote() {
-    if (this.#activeTab === -1) return null;
-    return this.#tabs[this.#activeTab];
-  }
-
   set activeTab(tabIndex: number) {
     if (tabIndex === -1 || (tabIndex < this.#tabs.length && tabIndex >= 0)) {
-      this.#tabs[this.#activeTab] = {
-        ...contentManager.export(),
-        unsaved: this.activeNote?.unsaved ?? false,
-      };
-
       this.#activeTab = tabIndex;
-
-      if (tabIndex !== -1) contentManager.import(this.activeNote!);
     }
   }
 
@@ -92,13 +87,8 @@ class TabManager {
     return this.#tabs[this.#activeTab];
   }
 
-  get current() {
-    return this.#tabs[this.#activeTab];
-  }
-  set current(data: NoteData) {
-    const { path } = this.#tabs[this.#activeTab];
-
-    this.#tabs[this.#activeTab] = { ...data, unsaved: true, path };
+  get note() {
+    return this.#tabs[this.#activeTab]?.note ?? EMPTY_NOTE;
   }
 
   set currentPath(path: string) {

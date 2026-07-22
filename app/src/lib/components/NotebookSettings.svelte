@@ -1,7 +1,6 @@
 <script lang="ts">
   import { contentManager } from "$lib/state/contentManager.svelte";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
-  import { tabManager } from "$lib/state/tabManager.svelte";
   import { IconDownload } from "@tabler/icons-svelte";
   import Input from "./Input.svelte";
   import Overlay from "./Overlay.svelte";
@@ -22,7 +21,7 @@
 
     if (titleSnapshot.length > 0) {
       contentManager.title = titleSnapshot;
-      tabManager.current = contentManager.export();
+      // tabManager.current = contentManager.export();
     } else {
       titleSnapshot = contentManager.title;
     }

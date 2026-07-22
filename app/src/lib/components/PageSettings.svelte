@@ -30,7 +30,7 @@
   let pageName = $state("Page 0");
 
   $effect(() => {
-    if (contentManager.pages[pageIndex]) {
+    if (!isNaN(pageIndex) && contentManager.pages[pageIndex]) {
       bgColor = contentManager.pages[pageIndex].background_color;
       patternColor = contentManager.pages[pageIndex].pattern_color;
       patternScale = contentManager.pages[pageIndex].pattern_scale;

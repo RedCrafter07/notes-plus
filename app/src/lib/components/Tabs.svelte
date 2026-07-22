@@ -20,8 +20,8 @@
   }
 
   $effect(() => {
-    if (!tabManager.activeNote) return;
-    const t = tabs[tabManager.activeNote.meta.id];
+    if (!tabManager.tab) return;
+    const t = tabs[tabManager.tab.note.meta.id];
     if (t) t.scrollIntoView({ behavior: "instant" });
   });
 
@@ -68,7 +68,7 @@
       tabBarElement.scrollLeft += e.deltaY + e.deltaX;
     }}
   >
-    {#each tabManager.tabs as tab, i (`tabs-${tab.meta.id}`)}
+    {#each tabManager.tabs as tab, i (`tabs-${tab.note.meta.id}`)}
       {@const active = tabManager.activeTab === i}
       <div
         class={[
@@ -81,7 +81,7 @@
           },
         ]}
         role="tab"
-        use:assignTab={tab.meta.id}
+        use:assignTab={tab.note.meta.id}
       >
         <button
           class="flex-1 flex items-center w-full h-full min-w-max"
@@ -92,11 +92,13 @@
           }}
           onclick={() => {
             updateTab(i);
-            goto(resolve("/edit/[id]", { id: tabManager.tabs[i].meta.id }));
+            goto(
+              resolve("/edit/[id]", { id: tabManager.tabs[i].note.meta.id }),
+            );
           }}
         >
           <p class="min-w-max">
-            {`${tab.meta.title}${tab.unsaved ? " *" : ""}`}
+            {`${tab.note.meta.title}${tab.unsaved ? " *" : ""}`}
           </p>
         </button>
         <button

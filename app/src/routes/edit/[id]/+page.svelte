@@ -51,7 +51,7 @@
 
 <div
   class="w-full h-full relative touch-none hide-cursor overflow-hidden"
-  style="background-color: {contentManager.currentPage.background_color};"
+  style="background-color: {contentManager.activePage.background_color};"
   bind:clientWidth={canvasManager.width}
   bind:clientHeight={canvasManager.height}
   class:hide-cursor={!(
@@ -67,9 +67,9 @@
   role="document"
 >
   <BackgroundPatterns
-    pattern={contentManager.currentPage.pattern}
-    scale={contentManager.currentPage.pattern_scale}
-    color={contentManager.currentPage.pattern_color}
+    pattern={contentManager.activePage.pattern}
+    scale={contentManager.activePage.pattern_scale}
+    color={contentManager.activePage.pattern_color}
     zoom
   />
   <div

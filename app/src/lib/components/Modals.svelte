@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabManager } from "$lib/state/tabManager.svelte";
   import JotDown from "./JotDown.svelte";
   import NotebookSettings from "./NotebookSettings.svelte";
   import PageSettings from "./PageSettings.svelte";
@@ -7,7 +8,9 @@
 </script>
 
 <JotDown />
-<Unsaved />
-<PageSettings />
-<NotebookSettings />
-<UnsavedClose />
+{#if tabManager.tabs.length > 0}
+  <Unsaved />
+  <PageSettings />
+  <UnsavedClose />
+  <NotebookSettings />
+{/if}

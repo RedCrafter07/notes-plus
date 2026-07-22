@@ -1,6 +1,5 @@
 <script lang="ts">
   import { contentManager } from "$lib/state/contentManager.svelte";
-  import { defaultsStore } from "$lib/state/defaultsStore.svelte";
   import { editorComponents } from "$lib/state/editorComponents.svelte";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import { IconPlus, IconSettings } from "@tabler/icons-svelte";
@@ -56,11 +55,11 @@
               <!-- svelte-ignore a11y_click_events_have_key_events -->
               <div
                 onclick={() => {
-                  contentManager.activePage = i;
+                  contentManager.currentPage = i;
                 }}
                 class={[
                   "p-2 rounded-xl border-2 bg-base-2 w-full cursor-pointer hover:bg-overlay/30 transition-all active:scale-95",
-                  contentManager.activePage === i
+                  contentManager.currentPage === i
                     ? "border-accent"
                     : "border-transparent",
                 ]}
