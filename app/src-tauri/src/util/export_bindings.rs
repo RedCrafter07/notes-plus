@@ -15,3 +15,13 @@ pub fn export_bindings() {
         )
         .expect("Failed to export typescript bindings");
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    #[ignore]
+    fn export_typescript_bindings() {
+        super::export_bindings();
+        println!("Wrote bindings!");
+    }
+}
