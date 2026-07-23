@@ -19,7 +19,7 @@ pub fn export_bindings() {
 #[cfg(test)]
 mod tests {
     #[test]
-    #[ignore]
+    #[ignore = "run explicitly to (re)generate the TypeScript bindings"]
     fn export_typescript_bindings() {
         super::export_bindings();
         println!("Wrote bindings!");
