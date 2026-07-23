@@ -9,7 +9,7 @@ use crate::{commands::open_and_emit, events::DragDropFileEvent};
 pub fn handle_drag_drop(handle: &AppHandle, event: &DragDropEvent) {
     match event {
         DragDropEvent::Drop { paths, .. } => {
-            let rnpf: Vec<PathBuf> = paths.iter().filter(is_rnpf).cloned().collect();
+            let rnpf: Vec<PathBuf> = paths.iter().filter(|p| is_rnpf(p)).cloned().collect();
 
             if !rnpf.is_empty() {
                 open_and_emit(handle, &rnpf);
@@ -18,7 +18,7 @@ pub fn handle_drag_drop(handle: &AppHandle, event: &DragDropEvent) {
             DragDropFileEvent(0).emit(handle).ok();
         }
         DragDropEvent::Enter { paths, .. } => {
-            let length = paths.iter().filter(is_rnpf).count();
+            let length = paths.iter().filter(|p| is_rnpf(p)).count();
 
             DragDropFileEvent(length as u32).emit(handle).ok();
         }

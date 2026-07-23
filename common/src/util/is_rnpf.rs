@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::path::Path;
 
-pub fn is_rnpf(path: &&PathBuf) -> bool {
-    path.extension()
+pub fn is_rnpf(path: impl AsRef<Path>) -> bool {
+    path.as_ref()
+        .extension()
         .is_some_and(|e| e.eq_ignore_ascii_case("rnpf"))
 }
 
