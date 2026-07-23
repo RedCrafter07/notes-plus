@@ -1,6 +1,6 @@
 [tools]
-bun = "latest"
-rust = { version = "1.97.0", profile = "default" }
+bun = "1.4.0"
+rust = { version = "1.98.0", profile = "default" }
 
 [env]
 NO_STRIP = "1" #fixes an error when bundling to .appimage
