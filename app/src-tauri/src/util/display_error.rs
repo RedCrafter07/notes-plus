@@ -38,6 +38,9 @@ fn get_error_message(e: AppError) -> String {
         AppError::Rnpf(RnpfError::FileError(ref io)) if io.kind() == ErrorKind::NotFound => {
             "The specified file couldn't be found!".into()
         }
+        AppError::Rnpf(RnpfError::InvalidPath) => {
+            "The provided path is not valid UTF-8 and thus cannot be opened.".into()
+        }
         AppError::Rnpf(_) => "The archive could not be opened and may be corrupt.".into(),
         AppError::Tauri(e) => format!("Internal event error: {e}"),
         AppError::Index(e) => match e {
