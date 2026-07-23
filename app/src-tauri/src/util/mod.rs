@@ -34,6 +34,8 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             use_last_page_settings,
             get_notebooks,
             set_jot_notes,
+            set_tool_switch,
+            set_shift_swaps_scroll_axes,
         ])
         .events(collect_events![
             events::Open,

@@ -57,6 +57,22 @@ pub fn set_colors(app: tauri::AppHandle, colors: Vec<String>) {
 
 #[tauri::command]
 #[specta::specta]
+pub fn set_shift_swaps_scroll_axes(app: tauri::AppHandle, enabled: bool) {
+    let mut settings = load_settings(&app);
+    settings.shift_swaps_scroll_axes = enabled;
+    save_settings(&app, settings);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_tool_switch(app: tauri::AppHandle, disable: bool) {
+    let mut settings = load_settings(&app);
+    settings.disable_tool_switch = disable;
+    save_settings(&app, settings);
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn get_settings(app: tauri::AppHandle) -> Settings {
     load_settings(&app)
 }
