@@ -3,7 +3,10 @@ use std::{io::ErrorKind, path::Path};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::io::archive::{Rnpf, RnpfError};
+use crate::{
+    io::archive::{Rnpf, RnpfError},
+    util::is_rnpf,
+};
 
 #[derive(Error, Debug)]
 pub enum IndexError {
@@ -51,7 +54,7 @@ pub fn build_index(path: &Path) -> Result<(Vec<File>, IndexErrorResult), IndexEr
 
         let path = entry.path();
         // Skip, path is invalid
-        if path.extension().is_none_or(|e| e != "rnpf") {
+        if !is_rnpf(&&path) {
             continue;
         }
 
