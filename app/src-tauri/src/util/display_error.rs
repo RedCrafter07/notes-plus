@@ -6,12 +6,20 @@ use crate::{
     structs::AppError,
     util::{
         ArgsError,
-        dialog::{DialogType, show_dialog},
+        dialog::{DialogType, show_dialog, show_dialog_with_title},
     },
 };
 
 pub fn display_error(e: AppError) {
     show_dialog(DialogType::Error, get_error_message(e));
+}
+
+pub fn display_error_with_path(path: &str, e: AppError) {
+    show_dialog_with_title(
+        DialogType::Error,
+        format!("Error while opening {path}"),
+        get_error_message(e),
+    );
 }
 
 fn get_error_message(e: AppError) -> String {

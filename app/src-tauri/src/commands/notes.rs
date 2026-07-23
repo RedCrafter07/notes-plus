@@ -11,7 +11,7 @@ use crate::{
     structs::OpenData,
     util::{
         dialog::{DialogType, show_dialog, show_error},
-        display_error,
+        display_error, display_error_with_path,
     },
 };
 
@@ -55,20 +55,17 @@ fn open_paths(paths: &[PathBuf]) -> Vec<OpenData> {
         .filter_map(|p| match open_single(p) {
             Ok(data) => Some(data),
             Err(e) => {
-                show_error(format!("Failed to open note {}: {e}", p.display()));
+                display_error_with_path(&p.display().to_string(), e.into());
                 None
             }
         })
         .collect()
 }
 
-fn open_single(path: &Path) -> anyhow::Result<OpenData> {
+fn open_single(path: &Path) -> Result<OpenData, RnpfError> {
     let archive = Rnpf::new(path)?;
     let data = archive.build_data()?;
-    let path_str = path
-        .to_str()
-        .ok_or_else(|| anyhow::anyhow!("path is not valid UTF-8"))?
-        .to_string();
+    let path_str = path.to_str().ok_or(RnpfError::InvalidPath)?.to_string();
 
     Ok(OpenData {
         path: path_str,

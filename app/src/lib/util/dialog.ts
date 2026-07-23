@@ -22,5 +22,6 @@ export function handleDialog(data: DialogData) {
   popupManager.add({
     type: dialogType,
     message: data.message,
+    title: data.title ?? undefined,
   });
 }

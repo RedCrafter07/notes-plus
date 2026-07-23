@@ -26,7 +26,9 @@ pub struct File {
     pub edited_at: u64,
 }
 
-pub fn build_index(path: &Path) -> Result<Vec<File>, IndexError> {
+pub type IndexErrorResult = Vec<(String, IndexError)>;
+
+pub fn build_index(path: &Path) -> Result<(Vec<File>, IndexErrorResult), IndexError> {
     // Get files in folder, iterate over files
     if !path.is_dir() {
         return Err(
@@ -34,14 +36,36 @@ pub fn build_index(path: &Path) -> Result<Vec<File>, IndexError> {
         );
     }
 
-    // Pass each filepath to index_file function
-    let index: Vec<File> = path
-        .read_dir()?
-        .filter_map(|f| index_file(&f.ok()?.path()).ok())
-        .collect();
+    // Split the results into success and errors for better UX
+    let mut success = Vec::new();
+    let mut errors: IndexErrorResult = Vec::new();
 
-    // Finally, return the vector of indexed files
-    Ok(index)
+    for entry in path.read_dir()? {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(e) => {
+                errors.push((path.display().to_string(), e.into()));
+                continue;
+            }
+        };
+
+        let path = entry.path();
+        // Skip, path is invalid
+        if path.extension().is_none_or(|e| e != "rnpf") {
+            continue;
+        }
+
+        let result = index_file(&path);
+
+        // Split the results according to the outcome
+        match result {
+            Ok(file) => success.push(file),
+            Err(e) => errors.push((path.display().to_string(), e)),
+        };
+    }
+
+    // Return both sides
+    Ok((success, errors))
 }
 
 fn err_not_found(message: &str) -> std::io::Error {

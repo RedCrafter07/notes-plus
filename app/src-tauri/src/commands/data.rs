@@ -7,6 +7,7 @@ use common::structs::defaults::Defaults;
 use tauri::Manager;
 
 use crate::util::dialog::show_error;
+use crate::util::display_error_with_path;
 
 #[tauri::command]
 #[specta::specta]
@@ -48,7 +49,13 @@ pub fn get_notebooks(app: tauri::AppHandle) -> Option<EntryType> {
     }
 
     match build_index(&path) {
-        Ok(index) => Some(EntryType::from_index(index)),
+        Ok((success, errors)) => {
+            errors
+                .into_iter()
+                .for_each(|(path, error)| display_error_with_path(&path, error.into()));
+
+            Some(EntryType::from_index(success))
+        }
         Err(e) => {
             show_error(format!("Could not index notebooks: {e}"));
             None

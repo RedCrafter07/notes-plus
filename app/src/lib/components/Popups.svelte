@@ -31,12 +31,12 @@
           "bg-success text-success-content": currentPopup.type === "success",
           "bg-warning text-warning-content": currentPopup.type === "warning",
         },
-        "p-2 rounded-xl flex flex-col gap-2 pointer-events-auto w-max h-max",
+        "p-2 rounded-xl flex flex-col gap-1 pointer-events-auto w-max h-max",
       ]}
     >
       {#if currentPopup.title}
         <div class="flex flex-row gap-4 items-center justify-between w-full">
-          <h3>{currentPopup.title}</h3>
+          <h3 class="font-semibold">{currentPopup.title}</h3>
           <button
             class="opacity-75 hover:opacity-100 transition-all aspect-square"
             onclick={() => {
