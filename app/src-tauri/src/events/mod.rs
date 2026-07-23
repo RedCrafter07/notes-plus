@@ -15,3 +15,6 @@ pub struct SettingsUpdate(pub Settings);
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 pub struct DialogEvent(pub DialogData);
+
+#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
+pub struct DragDropFileEvent(pub u32);

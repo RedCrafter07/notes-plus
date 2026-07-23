@@ -4,11 +4,13 @@ use common::{
     io::archive::{Rnpf, RnpfError},
     structs::data::NoteData,
 };
-use tauri::Manager;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_dialog::DialogExt;
+use tauri_specta::Event;
 
 use crate::{
-    structs::OpenData,
+    events::Open,
+    structs::{AppError, OpenData, ResultExt},
     util::{
         dialog::{DialogType, show_dialog, show_error},
         display_error, display_error_with_path,
@@ -47,6 +49,15 @@ pub fn open_notes(paths: Vec<String>) -> Vec<OpenData> {
     let path_data: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
     open_paths(&path_data)
+}
+
+pub fn open_and_emit(app: &AppHandle, paths: &[PathBuf]) {
+    for data in open_paths(paths) {
+        Open(data)
+            .emit(app)
+            .map_err(AppError::from)
+            .unwrap_or_display(());
+    }
 }
 
 fn open_paths(paths: &[PathBuf]) -> Vec<OpenData> {

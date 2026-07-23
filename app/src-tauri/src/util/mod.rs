@@ -7,10 +7,12 @@ pub(crate) mod dialog;
 mod display_error;
 pub mod export_bindings;
 mod handle_args;
+mod handle_drag_drop;
 
 pub(crate) use display_error::*;
 pub(crate) use export_bindings::*;
 pub(crate) use handle_args::*;
+pub(crate) use handle_drag_drop::*;
 
 pub(crate) fn get_builder() -> tauri_specta::Builder {
     Builder::<tauri::Wry>::new()
@@ -36,7 +38,8 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
         .events(collect_events![
             events::Open,
             events::SettingsUpdate,
-            events::DialogEvent
+            events::DialogEvent,
+            events::DragDropFileEvent
         ])
         .typ::<common::structs::data::NoteData>()
         .typ::<common::structs::defaults::Defaults>()

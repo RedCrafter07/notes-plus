@@ -6,9 +6,10 @@ mod structs;
 pub mod util;
 
 use serde_json::json;
+use tauri::{Manager, WindowEvent};
 use tauri_plugin_store::StoreExt;
 
-use crate::util::app_handle;
+use crate::util::{app_handle, handle_drag_drop};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -54,6 +55,12 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(builder.invoke_handler())
+        .on_window_event(|window, event| {
+            if let WindowEvent::DragDrop(event) = event {
+                let handle = window.app_handle();
+                handle_drag_drop(handle, event);
+            };
+        })
         .setup(move |app| {
             app_handle::init(app.handle().clone());
 
