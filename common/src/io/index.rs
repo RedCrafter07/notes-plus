@@ -54,7 +54,7 @@ pub fn build_index(path: &Path) -> Result<(Vec<File>, IndexErrorResult), IndexEr
 
         let path = entry.path();
         // Skip, path is invalid
-        if !is_rnpf(&&path) {
+        if !is_rnpf(&path) {
             continue;
         }
 

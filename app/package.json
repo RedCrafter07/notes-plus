@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "prebuild": "cargo build -r && cargo run -r --bin export-bindings",
+    "prebuild": "cargo test -p rednotes-plus export_typescript_bindings -- --include-ignored --show-output",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "vitest"
   },
   "license": "MIT",
   "dependencies": {
@@ -30,11 +31,13 @@
     "@tabler/icons-svelte": "^3.44.0",
     "@tailwindcss/vite": "^4.3.2",
     "@tauri-apps/cli": "^2.11.4",
+    "@types/bun": "^1.3.14",
     "perfect-freehand": "^1.2.3",
     "svelte": "^5.56.4",
     "svelte-check": "^4.7.2",
     "tailwindcss": "^4.3.2",
     "typescript": "~6.0.3",
-    "vite": "^8.1.4"
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10"
   }
 }
