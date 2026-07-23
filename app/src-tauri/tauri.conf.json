@@ -16,6 +16,8 @@
         "visible": false,
         "width": 1200,
         "height": 600,
+        "minWidth": 1200,
+        "minHeight": 600,
         "center": true
       }
     ],
