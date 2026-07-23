@@ -18,6 +18,7 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { jotStore } from "$lib/state/jotStore.svelte";
   import { handleDialog } from "$lib/util/dialog";
+  import DropOverlay from "$lib/components/DropOverlay.svelte";
 
   const { children } = $props();
 
@@ -107,6 +108,7 @@
 </script>
 
 <div class="h-screen bg-base-3 text-content-1">
+  <DropOverlay />
   <Modals />
   <div class="flex flex-col h-full">
     <Tabs />
