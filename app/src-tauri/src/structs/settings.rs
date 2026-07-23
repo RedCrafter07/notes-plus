@@ -8,6 +8,7 @@ pub struct Settings {
     pub use_last_page_settings: bool,
     pub colors: Vec<String>,
     pub shift_swaps_scroll_axes: bool,
+    pub disable_tool_switch: bool,
 }
 
 impl Default for Settings {
@@ -16,7 +17,8 @@ impl Default for Settings {
             sidebar_collapsed: false,
             use_last_page_settings: true,
             colors: vec!["#000000".into(), "#f22e2e".into(), "#55ea41".into()],
-            shift_swaps_scroll_axes: false,
+            shift_swaps_scroll_axes: true,
+            disable_tool_switch: false,
         }
     }
 }
