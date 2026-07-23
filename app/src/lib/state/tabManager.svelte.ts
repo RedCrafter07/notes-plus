@@ -4,6 +4,7 @@ import type { NoteData } from "$lib/tauri/bindings";
 import { contentManager } from "./contentManager.svelte";
 import { EMPTY_NOTE } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
+import { popupManager } from "./popupManager.svelte";
 
 type Tab = { note: NoteData; unsaved: boolean; path?: string };
 
@@ -20,6 +21,10 @@ class TabManager {
       if (setActive) {
         this.activeTab = tabByID;
         goto(resolve("/edit/[id]", { id: noteData.meta.id }));
+        popupManager.add({
+          type: "info",
+          message: `The notebook "${noteData.meta.title}" is already opened.`,
+        });
       }
       return;
     }
