@@ -78,7 +78,8 @@ export function canvasController(
     if (
       !canvasManager.lockTool &&
       e.pointerType === "pen" &&
-      !lassoManager.selection
+      !lassoManager.selection &&
+      !settingsStore.store.disable_tool_switch
     ) {
       switch (e.button) {
         case 0:
