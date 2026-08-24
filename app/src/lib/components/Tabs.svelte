@@ -1,11 +1,13 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
+  import { handleSave } from "$lib/editor/handleSave.svelte";
   import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
   import { editorComponents } from "$lib/state/editorComponents.svelte";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
   import {
+    IconDeviceFloppy,
     IconHome,
     IconNotebook,
     IconNotebookOff,
@@ -101,6 +103,16 @@
             {`${tab.note.meta.title}${tab.unsaved ? " *" : ""}`}
           </p>
         </button>
+        {#if active && tab.unsaved}
+          <button
+            class="opacity-50 hover:opacity-100 hover:text-success transition-all"
+            onclick={async () => {
+              await handleSave(false);
+            }}
+          >
+            <IconDeviceFloppy />
+          </button>
+        {/if}
         <button
           class="opacity-50 hover:opacity-100 hover:text-destructive transition-all"
           onclick={() => {
