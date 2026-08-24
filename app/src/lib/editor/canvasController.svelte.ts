@@ -177,29 +177,14 @@ export function canvasController(
     cursorY = e.offsetY;
     updateCursor(true, cursorX, cursorY);
 
-    switch (currentButton) {
-      case 0:
-        if (canvasManager.drawing) {
-          canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
-        } else if (canvasManager.tool === "eraser") {
-          canvasManager.eraser(e.offsetX, e.offsetY);
-        } else if (canvasManager.tool === "lasso") {
-          lassoManager.points.push(
-            canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
-          );
-        }
-        break;
-      case 5:
-        canvasManager.eraser(e.offsetX, e.offsetY);
-        break;
-      case 2:
-      case 1:
-        if (canvasManager.tool === "lasso") {
-          lassoManager.points.push(
-            canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
-          );
-        }
-        break;
+    if (canvasManager.drawing) {
+      canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
+    } else if (canvasManager.tool === "eraser") {
+      canvasManager.eraser(e.offsetX, e.offsetY);
+    } else if (canvasManager.tool === "lasso") {
+      lassoManager.points.push(
+        canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
+      );
     }
   };
 
