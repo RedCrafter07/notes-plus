@@ -14,7 +14,6 @@ export function canvasController(
   },
 ) {
   let pointerType = "mouse";
-  let currentButton = -1;
   let touchX = 0;
   let touchY = 0;
   let initialPinchDistance = 1;
@@ -44,7 +43,6 @@ export function canvasController(
 
   const onPointerLeave = () => {
     updateCursor(false);
-    currentButton = -1;
 
     if (canvasManager.tool === "lasso") {
       if (lassoManager.isSelecting) {
@@ -73,7 +71,6 @@ export function canvasController(
   const onPointerDown = (e: PointerEvent) => {
     if (isUIEvent(e)) return;
     pointerType = e.pointerType;
-    currentButton = e.button;
 
     if (
       !canvasManager.lockTool &&
@@ -163,7 +160,6 @@ export function canvasController(
       }
     }
 
-    currentButton = -1;
     canvasManager.drawing = false;
     canvasManager.finishStroke();
   };
@@ -177,11 +173,13 @@ export function canvasController(
     cursorY = e.offsetY;
     updateCursor(true, cursorX, cursorY);
 
+    if (e.buttons === 0) return;
+
     if (canvasManager.drawing) {
       canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
     } else if (canvasManager.tool === "eraser") {
       canvasManager.eraser(e.offsetX, e.offsetY);
-    } else if (canvasManager.tool === "lasso") {
+    } else if (canvasManager.tool === "lasso" && lassoManager.isSelecting) {
       lassoManager.points.push(
         canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
       );
