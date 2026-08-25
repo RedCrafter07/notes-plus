@@ -40,29 +40,6 @@ export function canvasController(
     return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
   }
 
-  const onPointerEnter = (e: PointerEvent) => {
-    if (e.pointerType === "touch") return;
-
-    cursorX = e.offsetX;
-    cursorY = e.offsetY;
-    updateCursor(true, cursorX, cursorY);
-  };
-
-  const onPointerUp = (e: PointerEvent) => {
-    if (e.pointerType === "touch") return;
-
-    const tool = activeTool ?? canvasManager.tool;
-    activeTool = undefined;
-
-    callHandler(tool, "up", e);
-  };
-
-  const onPointerLeave = (e: PointerEvent) => {
-    if (e.pointerType === "touch") return;
-    updateCursor(false);
-    onPointerUp(e);
-  };
-
   const onPointerDown = (e: PointerEvent) => {
     if (isUIEvent(e)) return;
     pointerType = e.pointerType;
@@ -77,6 +54,15 @@ export function canvasController(
     callHandler(activeTool, "down", e);
   };
 
+  const onPointerUp = (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+
+    const tool = activeTool ?? canvasManager.tool;
+    activeTool = undefined;
+
+    callHandler(tool, "up", e);
+  };
+
   const onPointerMove = (e: PointerEvent) => {
     if (e.pointerType === "touch") return;
 
@@ -87,6 +73,20 @@ export function canvasController(
     if (toolFromButtons(e.buttons) === undefined) return;
 
     callHandler(activeTool ?? canvasManager.tool, "move", e);
+  };
+
+  const onPointerEnter = (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+
+    cursorX = e.offsetX;
+    cursorY = e.offsetY;
+    updateCursor(true, cursorX, cursorY);
+  };
+
+  const onPointerLeave = (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+    updateCursor(false);
+    onPointerUp(e);
   };
 
   const onWheel = (e: WheelEvent) => {
