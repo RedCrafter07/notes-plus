@@ -44,33 +44,19 @@ export function canvasController(
     updateCursor(true, cursorX, cursorY);
   };
 
-  const onPointerLeave = (e: PointerEvent) => {
+  const onPointerUp = (e: PointerEvent) => {
     if (e.pointerType === "touch") return;
 
+    lassoManager.commit();
+
+    canvasManager.drawing = false;
+    canvasManager.finishStroke();
+  };
+
+  const onPointerLeave = (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
     updateCursor(false);
-
-    if (canvasManager.tool === "lasso") {
-      if (lassoManager.isSelecting) {
-        lassoManager.updateSelection();
-        canvasManager.redrawStrokes();
-
-        if (!lassoManager.selection) {
-          lassoManager.isSelecting = true;
-          lassoManager.points = [];
-        } else {
-          const noSelection = !lassoManager.selectedLayers.some(
-            (l) => lassoManager.selection![l].length > 0,
-          );
-          lassoManager.isSelecting = noSelection;
-          if (noSelection) lassoManager.points = [];
-        }
-      }
-    }
-
-    if (canvasManager.drawing) {
-      canvasManager.drawing = false;
-      canvasManager.finishStroke();
-    }
+    onPointerUp(e);
   };
 
   const onPointerDown = (e: PointerEvent) => {
@@ -82,47 +68,14 @@ export function canvasController(
     if (e.pointerType === "pen") {
       const tool = toolFromButtons(e.buttons);
 
-      if (tool && tool !== canvasManager.tool) {
-        canvasManager.tool = tool;
-
-        if (tool === "lasso") {
-          lassoManager.isSelecting = true;
-          canvasManager.redrawStrokes();
-        }
-      }
+      if (tool) canvasManager.tool = tool;
     }
 
     if (canvasManager.tool === "lasso") {
-      if (!lassoManager.isSelecting) {
-        const cursorRelative = canvasManager.translateToRelative(
-          e.offsetX,
-          e.offsetY,
-        );
-        if (
-          lassoManager.boundingBox &&
-          cursorRelative.x >= lassoManager.boundingBox.x &&
-          cursorRelative.x <=
-            lassoManager.boundingBox.x + lassoManager.boundingBox.width &&
-          cursorRelative.y >= lassoManager.boundingBox.y &&
-          cursorRelative.y <=
-            lassoManager.boundingBox.y + lassoManager.boundingBox.height
-        ) {
-          lassoManager.isDraggingSelection = true;
-          lassoManager.dragStart = cursorRelative;
-          return;
-        } else {
-          lassoManager.reset();
-          canvasManager.redrawStrokes();
-          return;
-        }
-      } else {
-        lassoManager.points = [
-          canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
-        ];
-        lassoManager.isSelecting = true;
-        canvasManager.redrawStrokes();
-        return;
-      }
+      lassoManager.begin(
+        canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
+      );
+      return;
     }
 
     if (e.button === 0 && canvasManager.tool === "pen") {
@@ -131,33 +84,6 @@ export function canvasController(
     } else if (canvasManager.tool === "eraser") {
       canvasManager.eraser(e.offsetX, e.offsetY);
     }
-  };
-
-  const onPointerUp = (e: PointerEvent) => {
-    if (e.pointerType === "touch") return;
-
-    if (canvasManager.tool === "lasso") {
-      if (lassoManager.isDraggingSelection) {
-        lassoManager.isDraggingSelection = false;
-        lassoManager.updateDrag();
-      } else if (lassoManager.isSelecting) {
-        lassoManager.updateSelection();
-        canvasManager.redrawStrokes();
-        if (!lassoManager.selection) {
-          lassoManager.isSelecting = true;
-          lassoManager.points = [];
-        } else {
-          const noSelection = !lassoManager.selectedLayers.some(
-            (l) => lassoManager.selection![l].length > 0,
-          );
-          lassoManager.isSelecting = noSelection;
-          if (noSelection) lassoManager.points = [];
-        }
-      }
-    }
-
-    canvasManager.drawing = false;
-    canvasManager.finishStroke();
   };
 
   const onPointerMove = (e: PointerEvent) => {

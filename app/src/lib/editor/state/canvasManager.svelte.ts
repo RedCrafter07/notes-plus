@@ -224,10 +224,13 @@ class CanvasManager {
   }
 
   set tool(tool: Tool) {
-    if (this.#tool === "lasso" && tool !== "lasso") {
-      lassoManager.reset();
-    }
+    if (this.#tool === tool) return;
+
+    if (this.#tool === "lasso") lassoManager.reset();
+    else if (tool === "lasso") lassoManager.isSelecting = true;
+
     this.#tool = tool;
+    this.redrawStrokes();
   }
 
   get thickness() {

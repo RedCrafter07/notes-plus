@@ -73,7 +73,7 @@ export class LassoManager {
       );
     });
 
-    lassoManager.reset();
+    this.reset();
     canvasManager.redrawStrokes();
     tabManager.setEdited();
   }
@@ -192,6 +192,51 @@ export class LassoManager {
     this.dragOffsetY = 0;
     this.scaleFactor = 1;
     this.selection = undefined;
+  }
+
+  commit() {
+    if (canvasManager.tool !== "lasso") return;
+
+    if (this.isDraggingSelection) {
+      this.isDraggingSelection = false;
+      this.updateDrag();
+      return;
+    }
+
+    if (!this.isSelecting) return;
+
+    this.updateSelection();
+    canvasManager.redrawStrokes();
+
+    const hasSelection =
+      !!this.selection &&
+      this.selectedLayers.some((l) => this.selection![l].length > 0);
+
+    this.isSelecting = !hasSelection;
+    if (!hasSelection) this.points = [];
+  }
+
+  begin(point: Point) {
+    if (this.isSelecting) {
+      this.points = [point];
+    } else if (this.isInsideSelection(point)) {
+      this.isDraggingSelection = true;
+      this.dragStart = point;
+      return;
+    } else {
+      this.reset();
+    }
+
+    canvasManager.redrawStrokes();
+  }
+
+  isInsideSelection(p: Point) {
+    const b = this.boundingBox;
+    if (!b) return false;
+
+    return (
+      p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height
+    );
   }
 }
 
