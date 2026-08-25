@@ -7,7 +7,7 @@ export interface Popup {
 
 class PopupManager {
   #queue = $state<Popup[]>([]);
-  #timeout?: number;
+  #timeout?: NodeJS.Timeout;
 
   add(popup: Omit<Popup, "id">) {
     this.#queue.push({
