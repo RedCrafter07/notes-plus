@@ -80,9 +80,17 @@ export function canvasController(
 
     if (e.button === 0 && canvasManager.tool === "pen") {
       canvasManager.drawing = true;
-      canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
+      canvasManager.addPoint(
+        canvasManager.translateToRelative(
+          e.offsetX,
+          e.offsetY,
+          e.pressure ?? 0.5,
+        ),
+      );
     } else if (canvasManager.tool === "eraser") {
-      canvasManager.eraser(e.offsetX, e.offsetY);
+      canvasManager.eraser(
+        canvasManager.translateToRelative(e.offsetX, e.offsetY),
+      );
     }
   };
 
@@ -100,9 +108,17 @@ export function canvasController(
     if (toolFromButtons(e.buttons) === undefined) return;
 
     if (canvasManager.drawing) {
-      canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
+      canvasManager.addPoint(
+        canvasManager.translateToRelative(
+          e.offsetX,
+          e.offsetY,
+          e.pressure ?? 0.5,
+        ),
+      );
     } else if (canvasManager.tool === "eraser") {
-      canvasManager.eraser(e.offsetX, e.offsetY);
+      canvasManager.eraser(
+        canvasManager.translateToRelative(e.offsetX, e.offsetY),
+      );
     } else if (canvasManager.tool === "lasso" && lassoManager.isSelecting) {
       lassoManager.points.push(
         canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),

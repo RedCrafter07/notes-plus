@@ -28,9 +28,7 @@ class CanvasManager {
     contentManager.layers[contentManager.activeLayer]?.id,
   );
 
-  addPoint(x: number, y: number, pressure: number) {
-    const p = this.translateToRelative(x, y, pressure);
-
+  addPoint(p: Point) {
     if (this.points.length === 0) {
       this.points.push(p);
       return;
@@ -88,7 +86,7 @@ class CanvasManager {
     return { x, y, pressure };
   }
 
-  eraser(x: number, y: number) {
+  eraser(p: Point) {
     let changed = false;
     contentManager.layers.forEach((l, i) => {
       if (l.locked || !l.visible) return;
@@ -101,11 +99,7 @@ class CanvasManager {
         const s = b.Stroke;
         if (s.points.length === 0) return []; // empty stroke, skip/delete
 
-        const newPoints = erase(
-          s.points,
-          this.translateToRelative(x, y, 0.5),
-          this.eraserRadius,
-        );
+        const newPoints = erase(s.points, p, this.eraserRadius);
 
         if (newPoints.length === 1 && newPoints[0].length === s.points.length)
           // newPoints returns one stroke. When the length of the points matches, the points are precisely the same, thus no change has occurred.
