@@ -2,6 +2,7 @@ import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
 import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { settingsStore } from "$lib/state/settingsStore.svelte";
+import { toolFromButtons } from "./toolFromButtons.svelte";
 
 const ZOOM_STEP = 1.1;
 
@@ -78,25 +79,16 @@ export function canvasController(
 
     if (pointerType === "touch") return;
 
-    if (
-      !canvasManager.lockTool &&
-      e.pointerType === "pen" &&
-      !lassoManager.selection &&
-      !settingsStore.store.disable_tool_switch
-    ) {
-      switch (e.button) {
-        case 0:
-          canvasManager.tool = "pen";
-          break;
-        case 1:
-        case 2:
-          canvasManager.tool = "lasso";
+    if (e.pointerType === "pen") {
+      const tool = toolFromButtons(e.buttons);
+
+      if (tool && tool !== canvasManager.tool) {
+        canvasManager.tool = tool;
+
+        if (tool === "lasso") {
           lassoManager.isSelecting = true;
           canvasManager.redrawStrokes();
-          break;
-        case 5:
-          canvasManager.tool = "eraser";
-          break;
+        }
       }
     }
 
@@ -179,7 +171,7 @@ export function canvasController(
     cursorY = e.offsetY;
     updateCursor(true, cursorX, cursorY);
 
-    if (e.buttons === 0) return;
+    if (toolFromButtons(e.buttons) === undefined) return;
 
     if (canvasManager.drawing) {
       canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
