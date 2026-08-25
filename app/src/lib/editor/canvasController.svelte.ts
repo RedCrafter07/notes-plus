@@ -17,13 +17,11 @@ export function canvasController(
     updateCursor: (visible: boolean, x?: number, y?: number) => void;
   },
 ) {
-  let pointerType = "mouse";
-  let touchX = 0;
-  let touchY = 0;
-  let initialPinchDistance = 1;
+  let initialPinchDistance: number | undefined;
   let cursorX = 0;
   let cursorY = 0;
   let activeTool: Tool | undefined = undefined;
+  const activeTouch = new Map<number, { x: number; y: number }>();
 
   const isUIEvent = (e: Event) => {
     return (
@@ -42,9 +40,15 @@ export function canvasController(
 
   const onPointerDown = (e: PointerEvent) => {
     if (isUIEvent(e)) return;
-    pointerType = e.pointerType;
-    if (pointerType === "touch") return;
-    if (e.pointerType === "pen") {
+    if (e.pointerType === "touch") {
+      activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (activeTouch.size === 2) {
+        const [t0, t1] = [...activeTouch.values()];
+        initialPinchDistance = getPinchDistance(t0.x, t0.y, t1.x, t1.y);
+      }
+      return;
+    } else if (e.pointerType === "pen") {
       const tool = toolFromButtons(e.buttons);
       if (tool) canvasManager.tool = tool;
     }
@@ -55,7 +59,11 @@ export function canvasController(
   };
 
   const onPointerUp = (e: PointerEvent) => {
-    if (e.pointerType === "touch") return;
+    if (e.pointerType === "touch") {
+      activeTouch.delete(e.pointerId);
+      initialPinchDistance = undefined;
+      return;
+    }
 
     const tool = activeTool ?? canvasManager.tool;
     activeTool = undefined;
@@ -64,7 +72,29 @@ export function canvasController(
   };
 
   const onPointerMove = (e: PointerEvent) => {
-    if (e.pointerType === "touch") return;
+    if (e.pointerType === "touch") {
+      const prev = activeTouch.get(e.pointerId);
+      activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (activeTouch.size === 1) {
+        if (!prev) return;
+        const dX = e.clientX - prev.x;
+        const dY = e.clientY - prev.y;
+        contentManager.panX += dX / contentManager.zoom;
+        contentManager.panY += dY / contentManager.zoom;
+        canvasManager.redrawStrokes();
+      } else if (activeTouch.size === 2) {
+        const [t0, t1] = [...activeTouch.values()];
+        const d = getPinchDistance(t0.x, t0.y, t1.x, t1.y) || 1;
+
+        if (initialPinchDistance !== undefined) {
+          contentManager.zoom *= d / initialPinchDistance;
+          canvasManager.redrawStrokes();
+        }
+
+        initialPinchDistance = d;
+      }
+      return;
+    }
 
     cursorX = e.offsetX;
     cursorY = e.offsetY;
@@ -84,7 +114,12 @@ export function canvasController(
   };
 
   const onPointerLeave = (e: PointerEvent) => {
-    if (e.pointerType === "touch") return;
+    if (e.pointerType === "touch") {
+      activeTouch.delete(e.pointerId);
+      initialPinchDistance = undefined;
+      return;
+    }
+
     updateCursor(false);
     onPointerUp(e);
   };
@@ -108,54 +143,6 @@ export function canvasController(
     canvasManager.redrawStrokes();
   };
 
-  const onTouchStart = (e: TouchEvent) => {
-    if (isUIEvent(e)) return;
-    if (pointerType !== "touch") return;
-    if (e.touches.length === 1) {
-      e.preventDefault();
-      touchX = e.touches[0].clientX;
-      touchY = e.touches[0].clientY;
-    } else if (e.touches.length === 2) {
-      initialPinchDistance = getPinchDistance(
-        e.touches[0].clientX,
-        e.touches[0].clientY,
-        e.touches[1].clientX,
-        e.touches[1].clientY,
-      );
-    }
-  };
-
-  const onTouchMove = (e: TouchEvent) => {
-    if (pointerType !== "touch") return;
-    if (e.touches.length === 1) {
-      const deltaX = e.touches[0].clientX - touchX;
-      const deltaY = e.touches[0].clientY - touchY;
-      contentManager.panX += deltaX / contentManager.zoom;
-      contentManager.panY += deltaY / contentManager.zoom;
-      touchX = e.touches[0].clientX;
-      touchY = e.touches[0].clientY;
-      canvasManager.redrawStrokes();
-    } else if (e.touches.length === 2) {
-      let currentDistance = getPinchDistance(
-        e.touches[0].clientX,
-        e.touches[0].clientY,
-        e.touches[1].clientX,
-        e.touches[1].clientY,
-      );
-      if (currentDistance <= 0) currentDistance = 1;
-      contentManager.zoom *= currentDistance / initialPinchDistance;
-      initialPinchDistance = currentDistance;
-      canvasManager.redrawStrokes();
-    }
-  };
-
-  const onTouchEnd = (e: TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchX = e.touches[0].clientX;
-      touchY = e.touches[0].clientY;
-    }
-  };
-
   element.addEventListener("pointerenter", onPointerEnter);
   element.addEventListener("pointerleave", onPointerLeave);
   element.addEventListener("pointerdown", onPointerDown);
@@ -163,9 +150,6 @@ export function canvasController(
   element.addEventListener("pointerup", onPointerUp);
   element.addEventListener("pointercancel", onPointerUp);
   element.addEventListener("wheel", onWheel, { passive: false });
-  element.addEventListener("touchstart", onTouchStart, { passive: false });
-  element.addEventListener("touchmove", onTouchMove, { passive: false });
-  element.addEventListener("touchend", onTouchEnd);
 
   return {
     destroy() {
@@ -176,9 +160,6 @@ export function canvasController(
       element.removeEventListener("pointerup", onPointerUp);
       element.removeEventListener("pointercancel", onPointerUp);
       element.removeEventListener("wheel", onWheel);
-      element.removeEventListener("touchstart", onTouchStart);
-      element.removeEventListener("touchmove", onTouchMove);
-      element.removeEventListener("touchend", onTouchEnd);
     },
   };
 }
