@@ -18,6 +18,8 @@ export function canvasController(
   },
 ) {
   let initialPinchDistance: number | undefined;
+  let pinchRect: DOMRect | undefined;
+  let prevCenter: Record<"x" | "y", number> | undefined;
   let cursorX = 0;
   let cursorY = 0;
   let activeTool: Tool | undefined = undefined;
@@ -42,11 +44,6 @@ export function canvasController(
     if (isUIEvent(e)) return;
     if (e.pointerType === "touch") {
       activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-      if (activeTouch.size === 2) {
-        const [t0, t1] = [...activeTouch.values()];
-        initialPinchDistance = getPinchDistance(t0.x, t0.y, t1.x, t1.y);
-      }
       return;
     } else if (e.pointerType === "pen") {
       const tool = toolFromButtons(e.buttons);
@@ -85,13 +82,32 @@ export function canvasController(
       } else if (activeTouch.size === 2) {
         const [t0, t1] = [...activeTouch.values()];
         const d = getPinchDistance(t0.x, t0.y, t1.x, t1.y) || 1;
+        const c = getCenter(t0.x, t0.y, t1.x, t1.y);
 
-        if (initialPinchDistance !== undefined) {
-          contentManager.zoom *= d / initialPinchDistance;
+        if (initialPinchDistance === undefined) {
+          pinchRect = element.getBoundingClientRect();
+        }
+        if (!pinchRect) return;
+
+        const center = { x: c.x - pinchRect.left, y: c.y - pinchRect.top };
+
+        if (initialPinchDistance !== undefined && prevCenter) {
+          canvasManager.zoomAround(
+            center.x,
+            center.y,
+            d / initialPinchDistance,
+          );
+
+          contentManager.panX +=
+            (center.x - prevCenter.x) / contentManager.zoom;
+          contentManager.panY +=
+            (center.y - prevCenter.y) / contentManager.zoom;
+
           canvasManager.redrawStrokes();
         }
 
         initialPinchDistance = d;
+        prevCenter = center;
       }
       return;
     }
@@ -117,6 +133,7 @@ export function canvasController(
     if (e.pointerType === "touch") {
       activeTouch.delete(e.pointerId);
       initialPinchDistance = undefined;
+      prevCenter = undefined;
       return;
     }
 
@@ -129,7 +146,7 @@ export function canvasController(
 
     if (e.ctrlKey) {
       const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
-      contentManager.zoom *= factor;
+      canvasManager.zoomAround(e.offsetX, e.offsetY, factor);
     } else {
       // Allow the axes to be swapped?
       const a = settingsStore.store.shift_swaps_scroll_axes;

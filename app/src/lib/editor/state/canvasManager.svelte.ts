@@ -86,6 +86,16 @@ class CanvasManager {
     return { x, y, pressure };
   }
 
+  zoomAround(x: number, y: number, factor: number) {
+    const before = canvasManager.translateToRelative(x, y);
+
+    contentManager.zoom *= factor;
+
+    const z = contentManager.zoom;
+    contentManager.panX = (x - this.width / 2) / z - before.x;
+    contentManager.panY = (y - this.height / 2) / z - before.y;
+  }
+
   eraser(p: Point) {
     let changed = false;
     contentManager.layers.forEach((l, i) => {
