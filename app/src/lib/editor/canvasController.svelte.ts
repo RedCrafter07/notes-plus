@@ -36,12 +36,16 @@ export function canvasController(
   }
 
   const onPointerEnter = (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+
     cursorX = e.offsetX;
     cursorY = e.offsetY;
     updateCursor(true, cursorX, cursorY);
   };
 
-  const onPointerLeave = () => {
+  const onPointerLeave = (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+
     updateCursor(false);
 
     if (canvasManager.tool === "lasso") {
@@ -71,6 +75,8 @@ export function canvasController(
   const onPointerDown = (e: PointerEvent) => {
     if (isUIEvent(e)) return;
     pointerType = e.pointerType;
+
+    if (pointerType === "touch") return;
 
     if (
       !canvasManager.lockTool &&
@@ -127,11 +133,7 @@ export function canvasController(
       }
     }
 
-    if (
-      e.button === 0 &&
-      pointerType !== "touch" &&
-      canvasManager.tool === "pen"
-    ) {
+    if (e.button === 0 && canvasManager.tool === "pen") {
       canvasManager.drawing = true;
       canvasManager.addPoint(e.offsetX, e.offsetY, e.pressure ?? 0.5);
     } else if (canvasManager.tool === "eraser") {
@@ -139,7 +141,9 @@ export function canvasController(
     }
   };
 
-  const onPointerUp = () => {
+  const onPointerUp = (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+
     if (canvasManager.tool === "lasso") {
       if (lassoManager.isDraggingSelection) {
         lassoManager.isDraggingSelection = false;
@@ -165,6 +169,8 @@ export function canvasController(
   };
 
   const onPointerMove = (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+
     if (lassoManager.isDraggingSelection) {
       lassoManager.dragOffsetX += (e.offsetX - cursorX) / contentManager.zoom;
       lassoManager.dragOffsetY += (e.offsetY - cursorY) / contentManager.zoom;
