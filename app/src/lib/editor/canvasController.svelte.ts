@@ -1,7 +1,10 @@
-import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
-import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
+import {
+  canvasManager,
+  type Tool,
+} from "$lib/editor/state/canvasManager.svelte";
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { settingsStore } from "$lib/state/settingsStore.svelte";
+import { toolHandlers, type ToolHandlers } from "./handlers";
 import { toolFromButtons } from "./toolFromButtons.svelte";
 
 const ZOOM_STEP = 1.1;
@@ -20,6 +23,7 @@ export function canvasController(
   let initialPinchDistance = 1;
   let cursorX = 0;
   let cursorY = 0;
+  let activeTool: Tool | undefined = undefined;
 
   const isUIEvent = (e: Event) => {
     return (
@@ -47,10 +51,10 @@ export function canvasController(
   const onPointerUp = (e: PointerEvent) => {
     if (e.pointerType === "touch") return;
 
-    lassoManager.commit();
+    const tool = activeTool ?? canvasManager.tool;
+    activeTool = undefined;
 
-    canvasManager.drawing = false;
-    canvasManager.finishStroke();
+    callHandler(tool, "up", e);
   };
 
   const onPointerLeave = (e: PointerEvent) => {
@@ -62,68 +66,27 @@ export function canvasController(
   const onPointerDown = (e: PointerEvent) => {
     if (isUIEvent(e)) return;
     pointerType = e.pointerType;
-
     if (pointerType === "touch") return;
-
     if (e.pointerType === "pen") {
       const tool = toolFromButtons(e.buttons);
-
       if (tool) canvasManager.tool = tool;
     }
 
-    if (canvasManager.tool === "lasso") {
-      lassoManager.begin(
-        canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
-      );
-      return;
-    }
+    activeTool = canvasManager.tool;
 
-    if (e.button === 0 && canvasManager.tool === "pen") {
-      canvasManager.drawing = true;
-      canvasManager.addPoint(
-        canvasManager.translateToRelative(
-          e.offsetX,
-          e.offsetY,
-          e.pressure ?? 0.5,
-        ),
-      );
-    } else if (canvasManager.tool === "eraser") {
-      canvasManager.eraser(
-        canvasManager.translateToRelative(e.offsetX, e.offsetY),
-      );
-    }
+    callHandler(activeTool, "down", e);
   };
 
   const onPointerMove = (e: PointerEvent) => {
     if (e.pointerType === "touch") return;
 
-    if (lassoManager.isDraggingSelection) {
-      lassoManager.dragOffsetX += (e.offsetX - cursorX) / contentManager.zoom;
-      lassoManager.dragOffsetY += (e.offsetY - cursorY) / contentManager.zoom;
-    }
     cursorX = e.offsetX;
     cursorY = e.offsetY;
     updateCursor(true, cursorX, cursorY);
 
     if (toolFromButtons(e.buttons) === undefined) return;
 
-    if (canvasManager.drawing) {
-      canvasManager.addPoint(
-        canvasManager.translateToRelative(
-          e.offsetX,
-          e.offsetY,
-          e.pressure ?? 0.5,
-        ),
-      );
-    } else if (canvasManager.tool === "eraser") {
-      canvasManager.eraser(
-        canvasManager.translateToRelative(e.offsetX, e.offsetY),
-      );
-    } else if (canvasManager.tool === "lasso" && lassoManager.isSelecting) {
-      lassoManager.points.push(
-        canvasManager.translateToRelative(e.offsetX, e.offsetY, e.pressure),
-      );
-    }
+    callHandler(activeTool ?? canvasManager.tool, "move", e);
   };
 
   const onWheel = (e: WheelEvent) => {
@@ -198,6 +161,7 @@ export function canvasController(
   element.addEventListener("pointerdown", onPointerDown);
   element.addEventListener("pointermove", onPointerMove);
   element.addEventListener("pointerup", onPointerUp);
+  element.addEventListener("pointercancel", onPointerUp);
   element.addEventListener("wheel", onWheel, { passive: false });
   element.addEventListener("touchstart", onTouchStart, { passive: false });
   element.addEventListener("touchmove", onTouchMove, { passive: false });
@@ -210,10 +174,21 @@ export function canvasController(
       element.removeEventListener("pointerdown", onPointerDown);
       element.removeEventListener("pointermove", onPointerMove);
       element.removeEventListener("pointerup", onPointerUp);
+      element.removeEventListener("pointercancel", onPointerUp);
       element.removeEventListener("wheel", onWheel);
       element.removeEventListener("touchstart", onTouchStart);
       element.removeEventListener("touchmove", onTouchMove);
       element.removeEventListener("touchend", onTouchEnd);
     },
   };
+}
+
+function callHandler(tool: Tool, action: keyof ToolHandlers, e: PointerEvent) {
+  const point = canvasManager.translateToRelative(
+    e.offsetX,
+    e.offsetY,
+    e.pressure,
+  );
+
+  toolHandlers[tool][action]?.(point, e);
 }

@@ -195,8 +195,6 @@ export class LassoManager {
   }
 
   commit() {
-    if (canvasManager.tool !== "lasso") return;
-
     if (this.isDraggingSelection) {
       this.isDraggingSelection = false;
       this.updateDrag();
