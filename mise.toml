@@ -16,7 +16,11 @@ run = "cd app && bun tauri build"
 alias = "b"
 
 [tasks.check]
+description = "Check Rust code and frontend code for errors"
 alias = "c"
+depends = ["check-rust", "check-frontend"]
+
+[tasks.check-rust]
 description = "Check Rust code using cargo check and cargo clippy"
 depends = ["check-common","check-main"]
 alias = "crs"
@@ -26,4 +30,8 @@ run = "cd common && cargo check && cargo clippy"
 
 [tasks.check-main]
 run = "cd app && cargo check && cargo clippy"
+
+[tasks.check-frontend]
+description = "Check the frontend for type errors"
+run = "cd app && bun run check"
 alias = "cfr"
