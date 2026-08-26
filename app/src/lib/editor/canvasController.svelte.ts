@@ -160,23 +160,28 @@ export function canvasController(
     canvasManager.redrawStrokes();
   };
 
-  element.addEventListener("pointerenter", onPointerEnter);
-  element.addEventListener("pointerleave", onPointerLeave);
-  element.addEventListener("pointerdown", onPointerDown);
-  element.addEventListener("pointermove", onPointerMove);
-  element.addEventListener("pointerup", onPointerUp);
-  element.addEventListener("pointercancel", onPointerUp);
-  element.addEventListener("wheel", onWheel, { passive: false });
+  const cleanups: (() => void)[] = [];
+
+  on("pointerenter", onPointerEnter);
+  on("pointerleave", onPointerLeave);
+  on("pointerdown", onPointerDown);
+  on("pointermove", onPointerMove);
+  on("pointerup", onPointerUp);
+  on("pointercancel", onPointerUp);
+  on("wheel", onWheel, { passive: false });
+
+  function on<K extends keyof HTMLElementEventMap>(
+    type: K,
+    handler: (e: HTMLElementEventMap[K]) => void,
+    options?: AddEventListenerOptions,
+  ) {
+    element.addEventListener(type, handler, options);
+    cleanups.push(() => element.removeEventListener(type, handler, options));
+  }
 
   return {
     destroy() {
-      element.removeEventListener("pointerenter", onPointerEnter);
-      element.removeEventListener("pointerleave", onPointerLeave);
-      element.removeEventListener("pointerdown", onPointerDown);
-      element.removeEventListener("pointermove", onPointerMove);
-      element.removeEventListener("pointerup", onPointerUp);
-      element.removeEventListener("pointercancel", onPointerUp);
-      element.removeEventListener("wheel", onWheel);
+      cleanups.forEach((c) => c());
     },
   };
 }
