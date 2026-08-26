@@ -8,17 +8,22 @@ NO_STRIP = "1" #fixes an error when bundling to .appimage
 [tasks.dev]
 description = "Start RedNotes Plus in dev mode"
 run = "cd app && bun tauri dev"
+alias = "d"
 
 [tasks.build]
 description = "Build RedNotes Plus"
 run = "cd app && bun tauri build"
+alias = "b"
 
 [tasks.check]
+alias = "c"
 description = "Check Rust code using cargo check and cargo clippy"
 depends = ["check-common","check-main"]
+alias = "crs"
 
 [tasks.check-common]
 run = "cd common && cargo check && cargo clippy"
 
 [tasks.check-main]
 run = "cd app && cargo check && cargo clippy"
+alias = "cfr"
