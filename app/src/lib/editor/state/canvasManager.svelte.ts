@@ -1,11 +1,17 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
-import type { Block, Point } from "$lib/tauri/bindings";
+import type { Block, Point, Stroke } from "$lib/tauri/bindings";
+import {
+  circleIntersectsBounds,
+  getStrokeBounds,
+  type ContentBounds,
+} from "$lib/util/canvasBounds";
 import { inputToPath } from "../svg";
 import { erase } from "../tools/erase";
 import { lassoManager } from "./lassoManager.svelte";
 
 export type Tool = "eraser" | "pen" | "lasso";
+type CacheEntry = { path?: Path2D; bounds?: ContentBounds | null };
 
 class CanvasManager {
   #tool = $state<Tool>("pen");
@@ -27,6 +33,34 @@ class CanvasManager {
   activeLayerID = $derived(
     contentManager.layers[contentManager.activeLayer]?.id,
   );
+
+  #strokeCache = new Map<string, CacheEntry>();
+
+  #entry(id: string) {
+    let e = this.#strokeCache.get(id);
+    if (!e) this.#strokeCache.set(id, (e = {}));
+    return e;
+  }
+
+  private getPath(s: Stroke) {
+    const e = this.#entry(s.id);
+    return (e.path ??= new Path2D(inputToPath(s.points, s.thickness, false)));
+  }
+
+  private getBounds(s: Stroke) {
+    const e = this.#entry(s.id);
+    if (e.bounds === undefined) e.bounds = getStrokeBounds(s);
+    return e.bounds;
+  }
+
+  cleanCache() {
+    const live = new Set<string>();
+    for (const l of contentManager.layers)
+      for (const b of l.blocks) if (b.Stroke) live.add(b.Stroke.id);
+
+    for (const k of [...this.#strokeCache.keys()])
+      if (!live.has(k)) this.#strokeCache.delete(k);
+  }
 
   addPoint(p: Point) {
     if (this.points.length === 0) {
@@ -109,6 +143,10 @@ class CanvasManager {
         const s = b.Stroke;
         if (s.points.length === 0) return []; // empty stroke, skip/delete
 
+        const bounds = this.getBounds(s);
+        if (bounds && !circleIntersectsBounds(p, this.eraserRadius, bounds))
+          return b;
+
         const newPoints = erase(s.points, p, this.eraserRadius);
 
         if (newPoints.length === 1 && newPoints[0].length === s.points.length)
@@ -141,7 +179,10 @@ class CanvasManager {
     });
 
     // Something has changed. Mark the tab as edited
-    if (changed) tabManager.setEdited();
+    if (changed) {
+      tabManager.setEdited();
+      this.cleanCache();
+    }
   }
 
   finishStroke() {
@@ -204,8 +245,8 @@ class CanvasManager {
       ctx.scale(contentManager.zoom, contentManager.zoom);
       ctx.translate(contentManager.panX, contentManager.panY);
 
-      for (const { color, points, thickness } of strokes) {
-        this.drawOnCanvas(inputToPath(points, thickness, false), l.id, color);
+      for (const s of strokes) {
+        this.drawOnCanvas(this.getPath(s), l.id, s.color);
       }
     });
   }

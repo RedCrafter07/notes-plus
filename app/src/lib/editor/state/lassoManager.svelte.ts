@@ -74,6 +74,7 @@ export class LassoManager {
     });
 
     this.reset();
+    canvasManager.cleanCache();
     canvasManager.redrawStrokes();
     tabManager.setEdited();
   }
@@ -155,6 +156,7 @@ export class LassoManager {
         block: {
           Stroke: {
             ...c.block.Stroke,
+            id: crypto.randomUUID(),
             points: c.block.Stroke.points.map((p) => ({
               ...p,
               x: p.x + this.dragOffsetX,
@@ -180,6 +182,7 @@ export class LassoManager {
     });
 
     tabManager.setEdited();
+    canvasManager.cleanCache();
 
     this.dragOffsetX = 0;
     this.dragOffsetY = 0;
