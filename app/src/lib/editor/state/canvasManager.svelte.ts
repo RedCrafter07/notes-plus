@@ -5,6 +5,7 @@ import {
   circleIntersectsBounds,
   getStrokeBounds,
   type ContentBounds,
+  type Point2D,
 } from "$lib/util/canvasBounds";
 import { inputToPath } from "../svg";
 import { erase } from "../tools/erase";
@@ -130,7 +131,22 @@ class CanvasManager {
     contentManager.panY = (y - this.height / 2) / z - before.y;
   }
 
-  eraser(p: Point) {
+  eraseAlong(from: Point2D, to: Point2D) {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+
+    const steps = Math.max(
+      1,
+      Math.ceil(Math.hypot(dx, dy) / (this.eraserRadius / 2)),
+    );
+
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      this.eraser({ x: from.x + dx * t, y: from.y + dy * t });
+    }
+  }
+
+  eraser(p: Omit<Point, "pressure">) {
     let changed = false;
     contentManager.layers.forEach((l, i) => {
       if (l.locked || !l.visible) return;
@@ -181,7 +197,6 @@ class CanvasManager {
     // Something has changed. Mark the tab as edited
     if (changed) {
       tabManager.setEdited();
-      this.cleanCache();
     }
   }
 
