@@ -17,13 +17,19 @@ export function canvasController(
     updateCursor: (visible: boolean, x?: number, y?: number) => void;
   },
 ) {
+  let elementRect = element.getBoundingClientRect();
   let initialPinchDistance: number | undefined;
-  let pinchRect: DOMRect | undefined;
   let prevCenter: Record<"x" | "y", number> | undefined;
   let cursorX = 0;
   let cursorY = 0;
   let activeTool: Tool | undefined = undefined;
   const activeTouch = new Map<number, { x: number; y: number }>();
+
+  // update elementRect on resize
+  const obs = new ResizeObserver(() => {
+    elementRect = element.getBoundingClientRect();
+  });
+  obs.observe(element);
 
   const isUIEvent = (e: Event) => {
     return (
@@ -42,6 +48,7 @@ export function canvasController(
 
   const onPointerDown = (e: PointerEvent) => {
     if (isUIEvent(e)) return;
+    elementRect = element.getBoundingClientRect();
     if (e.pointerType === "touch") {
       activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
       return;
@@ -86,12 +93,7 @@ export function canvasController(
         const d = getPinchDistance(t0.x, t0.y, t1.x, t1.y) || 1;
         const c = getCenter(t0.x, t0.y, t1.x, t1.y);
 
-        if (initialPinchDistance === undefined) {
-          pinchRect = element.getBoundingClientRect();
-        }
-        if (!pinchRect) return;
-
-        const center = { x: c.x - pinchRect.left, y: c.y - pinchRect.top };
+        const center = { x: c.x - elementRect.left, y: c.y - elementRect.top };
 
         if (initialPinchDistance !== undefined && prevCenter) {
           canvasManager.zoomAround(
@@ -120,11 +122,21 @@ export function canvasController(
 
     if (toolFromButtons(e.buttons) === undefined) return;
 
-    callHandler(activeTool ?? canvasManager.tool, "move", e);
+    const tool = activeTool ?? canvasManager.tool;
+
+    if (tool === "pen") {
+      for (const s of e.getCoalescedEvents?.() ?? [e]) {
+        callHandler(tool, "move", s);
+      }
+    } else {
+      callHandler(tool, "move", e);
+    }
   };
 
   const onPointerEnter = (e: PointerEvent) => {
     if (e.pointerType === "touch") return;
+
+    elementRect = element.getBoundingClientRect();
 
     cursorX = e.offsetX;
     cursorY = e.offsetY;
@@ -183,16 +195,21 @@ export function canvasController(
   return {
     destroy() {
       cleanups.forEach((c) => c());
+      obs.disconnect();
     },
   };
-}
 
-function callHandler(tool: Tool, action: keyof ToolHandlers, e: PointerEvent) {
-  const point = canvasManager.translateToRelative(
-    e.offsetX,
-    e.offsetY,
-    e.pressure,
-  );
+  function callHandler(
+    tool: Tool,
+    action: keyof ToolHandlers,
+    e: PointerEvent,
+  ) {
+    const point = canvasManager.translateToRelative(
+      e.clientX - elementRect.x,
+      e.clientY - elementRect.y,
+      e.pressure,
+    );
 
-  toolHandlers[tool][action]?.(point, e);
+    toolHandlers[tool][action]?.(point, e);
+  }
 }
