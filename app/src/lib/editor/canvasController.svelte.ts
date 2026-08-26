@@ -50,6 +50,8 @@ export function canvasController(
       if (tool) canvasManager.tool = tool;
     }
 
+    element.setPointerCapture(e.pointerId);
+
     activeTool = canvasManager.tool;
 
     callHandler(activeTool, "down", e);
@@ -138,7 +140,6 @@ export function canvasController(
     }
 
     updateCursor(false);
-    onPointerUp(e);
   };
 
   const onWheel = (e: WheelEvent) => {
