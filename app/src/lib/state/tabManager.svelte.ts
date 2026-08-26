@@ -5,8 +5,7 @@ import { contentManager } from "./contentManager.svelte";
 import { EMPTY_NOTE } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
 import { popupManager } from "./popupManager.svelte";
-
-type Tab = { note: NoteData; unsaved: boolean; path?: string };
+import { Tab } from "./tab.svelte";
 
 class TabManager {
   #tabs = $state<Tab[]>([]);
@@ -29,11 +28,7 @@ class TabManager {
       return;
     }
 
-    const l = this.#tabs.push({
-      note: noteData,
-      unsaved: false,
-      path,
-    });
+    const l = this.#tabs.push(new Tab(noteData, path));
 
     if (setActive) {
       this.activeTab = l - 1;
@@ -76,8 +71,23 @@ class TabManager {
   setEdited() {
     const tab = this.#tabs[this.#activeTab];
     if (!tab) return;
-    tab.unsaved = true;
+    tab.markEdited();
     contentManager.updateEditDate();
+  }
+
+  undo() {
+    this.tab?.history.undo();
+  }
+
+  redo() {
+    this.tab?.history.redo();
+  }
+
+  transact(label: string, fn: () => void) {
+    const history = this.tab?.history;
+
+    if (history) history.transact(label, fn);
+    else fn();
   }
 
   get tabs() {

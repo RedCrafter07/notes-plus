@@ -18,7 +18,7 @@ export async function handleSave(saveAs: boolean) {
           message: "Note saved successfully!",
           type: "success",
         });
-        tabManager.tab.unsaved = false;
+        tabManager.tab.markSaved();
       }
       // do not show popup otherwise, as errors get handled and sent by the backend automatically.
     } else {
@@ -32,7 +32,7 @@ export async function handleSave(saveAs: boolean) {
           type: "success",
         });
         if (tabManager.tab) {
-          tabManager.tab.unsaved = false;
+          tabManager.tab.markSaved();
           tabManager.tab.path = path;
         }
       }
@@ -51,7 +51,7 @@ export async function handleSave(saveAs: boolean) {
 
     if (path) {
       tabManager.currentPath = path;
-      if (tabManager.tab) tabManager.tab.unsaved = false;
+      tabManager.tab?.markSaved();
     } else {
       // Revert ID, no saving since error occurred
       contentManager.id = lastId;

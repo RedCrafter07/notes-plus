@@ -49,3 +49,23 @@ export function runSelection(lassoPoints: Point[]): LassoSelection | undefined {
 
   return Object.keys(selection).length > 0 ? selection : undefined;
 }
+
+export function selectionFromIds(blockIds: string[]): LassoSelection | null {
+  if (blockIds.length === 0) return null;
+
+  const wanted = new Set(blockIds);
+  const selection: LassoSelection = {};
+
+  contentManager.layers.forEach((l) => {
+    const layerSelection: { index: number; block: Block }[] = [];
+
+    l.blocks.forEach((block, index) => {
+      if (block.Stroke && wanted.has(block.Stroke.id))
+        layerSelection.push({ index, block });
+    });
+
+    if (layerSelection.length > 0) selection[l.id] = layerSelection;
+  });
+
+  return Object.keys(selection).length > 0 ? selection : null;
+}

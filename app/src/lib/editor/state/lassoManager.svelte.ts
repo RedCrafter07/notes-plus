@@ -60,87 +60,89 @@ export class LassoManager {
   }
 
   deleteSelection() {
-    this.selectedLayers.forEach((l) => {
-      const i = contentManager.layers.findIndex((layer) => layer.id === l);
+    tabManager.transact("Delete", () => {
+      this.selectedLayers.forEach((l) => {
+        const i = contentManager.layers.findIndex((layer) => layer.id === l);
 
-      contentManager.layers[i].blocks = contentManager.layers[i].blocks.filter(
-        (b) =>
+        contentManager.layers[i].blocks = contentManager.layers[
+          i
+        ].blocks.filter((b) =>
           this.selection && b.Stroke !== undefined
             ? !this.selection[l]
                 .map((s) => s.block.Stroke.id)
                 .includes(b.Stroke.id)
             : true,
-      );
-    });
+        );
+      });
 
-    this.reset();
-    canvasManager.cleanCache();
-    canvasManager.redrawStrokes();
-    tabManager.setEdited();
+      this.reset();
+      canvasManager.cleanCache();
+      canvasManager.redrawStrokes();
+    });
   }
 
   duplicateSelection() {
-    if (!this.selection) return;
+    tabManager.transact("Duplicate", () => {
+      if (!this.selection) return;
 
-    const newSelection: LassoSelection = {};
+      const newSelection: LassoSelection = {};
 
-    this.selectedLayers.forEach((lID) => {
-      const layerIndex = contentManager.layers.findIndex((l) => l.id === lID);
-      if (layerIndex === -1) return;
+      this.selectedLayers.forEach((lID) => {
+        const layerIndex = contentManager.layers.findIndex((l) => l.id === lID);
+        if (layerIndex === -1) return;
 
-      const currentLayerBlocks = contentManager.layers[layerIndex].blocks;
+        const currentLayerBlocks = contentManager.layers[layerIndex].blocks;
 
-      let highestIndex = -1;
+        let highestIndex = -1;
 
-      const duplicatedSelection = this.selection![lID].map((s) => {
-        const actualIndex = currentLayerBlocks.findIndex(
-          (b) => b.Stroke?.id === s.block.Stroke?.id,
-        );
-        if (actualIndex > highestIndex) highestIndex = actualIndex;
+        const duplicatedSelection = this.selection![lID].map((s) => {
+          const actualIndex = currentLayerBlocks.findIndex(
+            (b) => b.Stroke?.id === s.block.Stroke?.id,
+          );
+          if (actualIndex > highestIndex) highestIndex = actualIndex;
 
-        if (s.block.Stroke) {
-          const newBlock = {
-            Stroke: {
-              ...s.block.Stroke,
-              id: crypto.randomUUID(),
-              points: s.block.Stroke.points.map((p) => ({ ...p })),
-            },
-          } satisfies Block;
+          if (s.block.Stroke) {
+            const newBlock = {
+              Stroke: {
+                ...s.block.Stroke,
+                id: crypto.randomUUID(),
+                points: s.block.Stroke.points.map((p) => ({ ...p })),
+              },
+            } satisfies Block;
 
-          return newBlock;
+            return newBlock;
+          }
+
+          return s.block;
+        });
+
+        if (highestIndex !== -1) {
+          const newBlocks = [
+            ...contentManager.layers[layerIndex].blocks.slice(
+              0,
+              highestIndex + 1,
+            ),
+            ...duplicatedSelection,
+            ...contentManager.layers[layerIndex].blocks.slice(highestIndex + 1),
+          ];
+
+          contentManager.layers[layerIndex].blocks = newBlocks;
+
+          newSelection[lID] = duplicatedSelection.map((b, i) => ({
+            index: highestIndex + 1 + i,
+            block: b,
+          }));
         }
-
-        return s.block;
       });
 
-      if (highestIndex !== -1) {
-        const newBlocks = [
-          ...contentManager.layers[layerIndex].blocks.slice(
-            0,
-            highestIndex + 1,
-          ),
-          ...duplicatedSelection,
-          ...contentManager.layers[layerIndex].blocks.slice(highestIndex + 1),
-        ];
+      this.selection = newSelection;
+      this.dragOffsetX = 0;
+      this.dragOffsetY = 0;
 
-        contentManager.layers[layerIndex].blocks = newBlocks;
-
-        newSelection[lID] = duplicatedSelection.map((b, i) => ({
-          index: highestIndex + 1 + i,
-          block: b,
-        }));
-      }
-    });
-
-    this.selection = newSelection;
-    this.dragOffsetX = 0;
-    this.dragOffsetY = 0;
-
-    tabManager.setEdited();
-
-    popupManager.add({
-      message: "Elements duplicated",
-      type: "success",
+      popupManager.add({
+        message: "Elements duplicated",
+        type: "success",
+      });
     });
   }
 
@@ -181,7 +183,6 @@ export class LassoManager {
       }
     });
 
-    tabManager.setEdited();
     canvasManager.cleanCache();
 
     this.dragOffsetX = 0;
@@ -195,6 +196,7 @@ export class LassoManager {
     this.dragOffsetY = 0;
     this.scaleFactor = 1;
     this.selection = undefined;
+    this.isDraggingSelection = false;
   }
 
   commit() {

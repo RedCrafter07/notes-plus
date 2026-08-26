@@ -147,7 +147,6 @@ class CanvasManager {
   }
 
   eraser(p: Omit<Point, "pressure">) {
-    let changed = false;
     contentManager.layers.forEach((l, i) => {
       if (l.locked || !l.visible) return;
 
@@ -190,14 +189,8 @@ class CanvasManager {
           ...l,
           blocks,
         };
-        changed = true;
       }
     });
-
-    // Something has changed. Mark the tab as edited
-    if (changed) {
-      tabManager.setEdited();
-    }
   }
 
   finishStroke() {
@@ -214,8 +207,6 @@ class CanvasManager {
         points: this.points,
       },
     });
-
-    tabManager.setEdited();
 
     this.points = [];
   }
@@ -253,6 +244,7 @@ class CanvasManager {
         );
 
       const ctx = canvasManager.layerCtx[l.id];
+      if (!ctx) return;
 
       ctx.resetTransform();
       ctx.scale(this.dpr, this.dpr);
@@ -286,10 +278,13 @@ class CanvasManager {
   set tool(tool: Tool) {
     if (this.#tool === tool) return;
 
-    if (this.#tool === "lasso") lassoManager.reset();
-    else if (tool === "lasso") lassoManager.isSelecting = true;
+    tabManager.transact("Switch tool", () => {
+      if (this.#tool === "lasso") lassoManager.reset();
+      else if (tool === "lasso") lassoManager.isSelecting = true;
 
-    this.#tool = tool;
+      this.#tool = tool;
+    });
+
     this.redrawStrokes();
   }
 

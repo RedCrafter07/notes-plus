@@ -4,10 +4,17 @@ import {
 } from "$lib/editor/state/canvasManager.svelte";
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { settingsStore } from "$lib/state/settingsStore.svelte";
+import { tabManager } from "$lib/state/tabManager.svelte";
 import { toolHandlers, type ToolHandlers } from "./handlers";
 import { toolFromButtons } from "./toolFromButtons.svelte";
 
 const ZOOM_STEP = 1.1;
+
+const TOOL_LABELS: Record<Tool, string> = {
+  pen: "Draw",
+  eraser: "Erase",
+  lasso: "Select",
+};
 
 export function canvasController(
   element: HTMLElement,
@@ -61,6 +68,8 @@ export function canvasController(
 
     activeTool = canvasManager.tool;
 
+    tabManager.tab.history.begin(TOOL_LABELS[activeTool]);
+
     callHandler(activeTool, "down", e);
   };
 
@@ -75,6 +84,7 @@ export function canvasController(
     activeTool = undefined;
 
     callHandler(tool, "up", e);
+    tabManager.tab.history.commit();
   };
 
   const onPointerMove = (e: PointerEvent) => {
