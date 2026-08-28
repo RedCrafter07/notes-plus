@@ -1,8 +1,10 @@
 <script lang="ts">
   let {
     value = $bindable(),
+    onchange,
   }: {
     value: string;
+    onchange?: (v: string) => void | Promise<void>;
   } = $props();
 </script>
 
@@ -17,5 +19,10 @@
     class="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
     bind:value
     aria-label="Choose color"
+    onchange={onchange
+      ? async (e) => {
+          await onchange(e.currentTarget.value);
+        }
+      : undefined}
   />
 </div>
