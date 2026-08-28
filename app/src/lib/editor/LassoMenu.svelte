@@ -4,6 +4,10 @@
   import { canvasManager } from "./state/canvasManager.svelte";
   import { lassoManager } from "./state/lassoManager.svelte";
   import { fade } from "svelte/transition";
+  import { onMount } from "svelte";
+  import ColorSwatch from "$lib/components/ColorSwatch.svelte";
+
+  let color = $state<string>("#000000");
 
   let height = $state(0);
   let width = $state(0);
@@ -45,6 +49,10 @@
           (lassoManager.boundingBox.width * contentManager.zoom - width) / 2
       : 0,
   );
+
+  $effect(() => {
+    color = lassoManager.selectionColor ?? "#00000000";
+  });
 </script>
 
 {#if !lassoManager.isSelecting && !lassoManager.isDraggingSelection && canvasManager.tool === "lasso"}
@@ -57,6 +65,17 @@
     style="top: {topOffset}px; left: {leftOffset}px"
     role="group"
   >
+    <button
+      class="cursor-pointer"
+      onpointerdown={(e) => {
+        e.stopPropagation();
+      }}
+    >
+      <ColorSwatch
+        value={color}
+        onchange={(c) => lassoManager.colorSelection(c)}
+      />
+    </button>
     <button
       class="cursor-pointer"
       onpointerdown={(e) => {

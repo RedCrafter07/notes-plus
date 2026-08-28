@@ -146,6 +146,52 @@ export class LassoManager {
     });
   }
 
+  get selectionColor(): string | null {
+    if (!this.selection) return null;
+
+    let color: string | null = null;
+
+    for (const l of this.selectedLayers) {
+      for (const c of this.selection[l]!) {
+        if (color === null) color = c.block.Stroke.color;
+        else if (c.block.Stroke.color !== color) return null;
+      }
+    }
+
+    return color;
+  }
+
+  colorSelection(color: string) {
+    if (!this.selection) return;
+
+    const newSelection: LassoSelection = {};
+
+    tabManager.transact("Change color", () => {
+      this.selectedLayers.forEach((lID) => {
+        const layerIndex = contentManager.layers.findIndex(
+          (layer) => lID === layer.id,
+        );
+
+        let blocks = [...contentManager.layers[layerIndex].blocks];
+
+        newSelection[lID] = this.selection![lID].map((s) => {
+          const block = {
+            Stroke: { ...s.block.Stroke, color },
+          } satisfies Block;
+
+          blocks[s.index] = block;
+
+          return { index: s.index, block };
+        });
+
+        contentManager.layers[layerIndex].blocks = blocks;
+      });
+    });
+
+    this.selection = newSelection;
+    canvasManager.redrawStrokes();
+  }
+
   scaleSelection() {}
 
   updateDrag() {
