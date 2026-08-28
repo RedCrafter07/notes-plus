@@ -154,14 +154,13 @@ export function canvasController(
   };
 
   const onPointerLeave = (e: PointerEvent) => {
+    updateCursor(false);
     if (e.pointerType === "touch") {
       activeTouch.delete(e.pointerId);
       initialPinchDistance = undefined;
       prevCenter = undefined;
       return;
     }
-
-    updateCursor(false);
   };
 
   const onWheel = (e: WheelEvent) => {
