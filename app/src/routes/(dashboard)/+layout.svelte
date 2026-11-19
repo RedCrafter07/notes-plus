@@ -1,12 +1,14 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { settingsStore } from "$lib/state/settingsStore.svelte";
+  import { settingsStore, updateSettings } from "$lib/state/settingsStore.svelte";
   import { commands } from "$lib/tauri/bindings";
   import { newNote, openNotes } from "$lib/util/notes.svelte";
   import {
     IconFolder,
     IconHome,
+    IconLayoutSidebarLeftCollapse,
+    IconLayoutSidebarLeftExpand,
     IconPlus,
     IconSettings,
   } from "@tabler/icons-svelte";
@@ -79,16 +81,21 @@
           <p>Settings</p>
         {/if}
       </button>
+      <button
+        class="flex flex-row gap-2 items-center text-content-3 hover:text-content-1 transition-all"
+        onclick={() =>
+          updateSettings({ sidebar_collapsed: !settingsStore.store.sidebar_collapsed })}
+        aria-label={settingsStore.store.sidebar_collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {#if settingsStore.store.sidebar_collapsed}
+          <IconLayoutSidebarLeftExpand />
+        {:else}
+          <IconLayoutSidebarLeftCollapse />
+          <p>Collapse</p>
+        {/if}
+      </button>
     </div>
   </div>
-  <!-- svelte-ignore a11y_consider_explicit_label -->
-  <button
-    tabindex="-1"
-    class="h-full w-1 hover:bg-overlay/50 transition-all"
-    onclick={async () => {
-      await commands.collapseSidebar(!settingsStore.store.sidebar_collapsed);
-    }}
-  ></button>
   <div class="flex-1 p-4 overflow-y-auto h-full">
     {@render children()}
   </div>

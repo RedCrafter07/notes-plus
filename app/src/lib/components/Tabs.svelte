@@ -56,6 +56,7 @@
       updateTab(-1);
       goto(resolve("/"));
     }}
+    aria-label="Home"
   >
     <IconHome />
   </button>
@@ -105,7 +106,9 @@
         </button>
         {#if active && tab.unsaved}
           <button
-            class="opacity-50 hover:opacity-100 hover:text-success transition-all"
+            class="w-9 h-9 -my-1 grid place-items-center rounded-lg opacity-50 hover:opacity-100 hover:text-success hover:bg-overlay/30 transition-all"
+            aria-label="Save"
+            title="Save (Ctrl+S)"
             onclick={async () => {
               await handleSave(false);
             }}
@@ -114,7 +117,8 @@
           </button>
         {/if}
         <button
-          class="opacity-50 hover:opacity-100 hover:text-destructive transition-all"
+          class="w-9 h-9 -my-1 -mr-1 grid place-items-center rounded-lg opacity-50 hover:opacity-100 hover:text-destructive hover:bg-overlay/30 transition-all"
+          aria-label="Close {tab.note.meta.title}"
           onclick={() => {
             tabManager.remove(i);
           }}
@@ -129,6 +133,8 @@
     onclick={() => {
       editorComponents.toggleRightBar();
     }}
+    aria-label={editorComponents.rightBarOpen ? "Hide pages and layers" : "Show pages and layers"}
+    title="Pages and layers"
   >
     {#if editorComponents.rightBarOpen}
       <IconNotebookOff />
@@ -141,6 +147,8 @@
     onclick={() => {
       overlayManager.setOpen("notebook-settings");
     }}
+    aria-label="Notebook settings and export"
+    title="Notebook settings and export"
   >
     <IconSettings />
   </button>

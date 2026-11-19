@@ -2,17 +2,34 @@
   import FileBrowser from "$lib/components/FileBrowser.svelte";
   import { fsStore } from "$lib/state/fsStore.svelte";
   import { jotStore } from "$lib/state/jotStore.svelte";
-  import { commands, type NoteData } from "$lib/tauri/bindings";
+  import { commands, type File } from "$lib/tauri/bindings";
   import { FileSystemNavigator, isFolder } from "$lib/util/fileSystem.svelte";
-  import { IconClock, IconFolder, IconPencil } from "@tabler/icons-svelte";
+  import { openNotes } from "$lib/util/notes.svelte";
+  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import {
+    IconClock,
+    IconFolder,
+    IconNotebook,
+    IconPencil,
+    IconPlus,
+  } from "@tabler/icons-svelte";
 
-  let recentNotes = $state<NoteData[]>([]);
+  let recentNotes = $state<File[]>([]);
+
+  const dateFormat = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  async function openRecent(path: string) {
+    openNotes(await commands.openNotes([path]));
+  }
   let jotNoteInputs = $state<HTMLInputElement[]>([]);
 
   $effect(() => {
     (async () => {
       jotStore.store = await commands.listJotNotes();
-      recentNotes = await commands.getRecent();
+      recentNotes = await commands.getRecent(6);
 
       const notebooks = await commands.getNotebooks();
       if (notebooks && isFolder(notebooks))
@@ -28,12 +45,49 @@
 </script>
 
 <div class="container mx-auto flex flex-col gap-4 h-full">
-  {#if jotStore.store.length > 0}
-    <div class="flex flex-col gap-4 bg-base-2 p-4 rounded-xl">
-      <h3 class="flex flex-row gap-2 items-center font-semibold text-xl">
+  <div class="flex flex-col gap-4 p-4 rounded-xl bg-base-2">
+    <h3 class="text-xl flex flex-row gap-2 items-center font-semibold">
+      <IconClock /> Recent files
+    </h3>
+    {#if recentNotes.length > 0}
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-2">
+        {#each recentNotes as note (note.path)}
+          <button
+            class="flex flex-row gap-3 items-center p-3 rounded-xl bg-base-1 hover:bg-overlay/30 active:scale-95 transition-all text-left"
+            onclick={() => openRecent(note.path)}
+          >
+            <IconNotebook class="shrink-0 text-primary" />
+            <span class="flex flex-col min-w-0">
+              <span class="font-semibold truncate">{note.title}</span>
+              <span class="text-sm text-content-3 truncate">
+                {dateFormat.format(new Date(Number(note.edited_at) * 1000))}
+                {#if note.folder}· {note.folder}{/if}
+              </span>
+            </span>
+          </button>
+        {/each}
+      </div>
+    {:else}
+      <p class="text-content-2">
+        No recent files found. Why don't you create one?
+      </p>
+    {/if}
+  </div>
+
+  <div class="flex flex-col gap-4 bg-base-2 p-4 rounded-xl">
+    <div class="flex flex-row items-center gap-2">
+      <h3 class="flex flex-row gap-2 items-center font-semibold text-xl flex-1">
         <IconPencil />
         Jot Notes
       </h3>
+      <button
+        class="flex flex-row gap-1 items-center px-3 h-10 rounded-xl bg-base-1 hover:bg-overlay/30 active:scale-95 transition-all"
+        onclick={() => overlayManager.setOpen("jotDown")}
+      >
+        <IconPlus size={18} /> Jot down
+      </button>
+    </div>
+    {#if jotStore.store.length > 0}
       <div
         class="flex flex-col gap-2"
         onfocusout={async (e) => {
@@ -61,29 +115,20 @@
                   e.preventDefault();
                   jotStore.store.splice(i, 1);
                   if (i !== 0) jotNoteInputs[i - 1].focus();
-                  else jotNoteInputs[i + 1].focus();
+                  else jotNoteInputs[i + 1]?.focus();
                 }
               }}
             />
           </div>
         {/each}
       </div>
-      <p class="opacity-50 text-sm">Press Ctrl+J anywhere to add a new note</p>
-    </div>
-  {/if}
-
-  <div class="flex flex-col gap-4 p-4 rounded-xl bg-base-2">
-    <h3 class="text-xl flex flex-row gap-2 items-center font-semibold">
-      <IconClock /> Recent files
-    </h3>
-    {#each recentNotes as note (`recent-${note.meta.id}`)}
-      <div></div>
-    {:else}
-      <p class="text-content-2">
-        No recent files found. Why don't you create one?
-      </p>
-    {/each}
+    {/if}
+    <p class="opacity-50 text-sm">
+      Quick thoughts that don't belong in a notebook yet. Press Ctrl+J anywhere
+      to add one.
+    </p>
   </div>
+
   <div class="flex flex-col gap-4 p-4 rounded-xl bg-base-2">
     <h3 class="text-xl flex flex-row gap-2 items-center font-semibold">
       <IconFolder /> Browse files
