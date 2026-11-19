@@ -7,6 +7,7 @@ description = "Shared components for RedNotes Plus"
 
 [dependencies]
 anyhow = "1.0.103"
+base64 = "0.23.1"
 chrono = "0.4.44"
 flate2 = "1.1.9"
 serde = { version = "1.0.228", features = ["derive"] }

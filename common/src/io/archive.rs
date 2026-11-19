@@ -1,13 +1,18 @@
 use std::{
+    collections::BTreeMap,
     ffi::OsString,
     fs::{File, rename},
     io::{Read, Seek, Write},
     path::Path,
 };
 use thiserror::Error;
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 use zip::{CompressionMethod, ZipArchive, ZipWriter, result::ZipError, write::SimpleFileOptions};
 
-use crate::structs::data::{Content, FromToBin, Meta, NoteData, State};
+use crate::{
+    io::migrate::{CURRENT_VERSION, migrate_content, parse_version},
+    structs::data::{Content, FromToBin, Meta, NoteData, State},
+};
 
 #[derive(Error, Debug)]
 pub enum RnpfError {
@@ -23,23 +28,33 @@ pub enum RnpfError {
     InvalidPath,
     #[error("The provided file is invalid")]
     InvalidFile,
+    #[error("An attachment in the note is not a valid data URL")]
+    InvalidAsset,
 }
 
-// TODO: Add attachment support
-
+/// Archive layout (version 3):
+///
+/// ```text
+/// version          "3", stored uncompressed
+/// meta             Meta as JSON
+/// data             Content as JSON
+/// state            State as JSON
+/// assets/index     { asset id: mime type } as JSON
+/// assets/<id>      raw bytes of each attachment
+/// ```
 pub struct Rnpf {
     file: File,
+    version: u32,
 }
+
+const ASSET_INDEX: &str = "assets/index";
 
 impl Rnpf {
     pub fn new(path: &Path) -> Result<Self, RnpfError> {
-        let rnpf = Self {
-            file: File::options().read(true).open(path)?,
-        };
+        let file = File::options().read(true).open(path)?;
+        let version = Self::read_version(&file)?;
 
-        rnpf.validate_version()?;
-
-        Ok(rnpf)
+        Ok(Self { file, version })
     }
 
     pub fn create_from_data(path: &Path, note_data: NoteData) -> Result<(), RnpfError> {
@@ -54,6 +69,7 @@ impl Rnpf {
         Self::write_vec(&mut zip, "meta", &note_data.meta)?;
         Self::write_vec(&mut zip, "data", &note_data.content)?;
         Self::write_vec(&mut zip, "state", &note_data.state)?;
+        Self::write_assets(&mut zip, &note_data)?;
         Self::write_version(&mut zip)?;
 
         zip.finish()?;
@@ -72,6 +88,7 @@ impl Rnpf {
             content: self.get_data()?,
             meta: self.get_meta()?,
             state: self.get_state()?,
+            assets: self.get_assets()?,
         };
         data.normalize();
 
@@ -79,7 +96,40 @@ impl Rnpf {
     }
 
     pub fn get_data(&self) -> Result<Content, RnpfError> {
-        self.read_data("data")
+        let raw: serde_json::Value = self.read_data("data")?;
+        let migrated = migrate_content(raw, self.version)?;
+
+        Ok(serde_json::from_value(migrated)?)
+    }
+
+    /// Reads every attachment back into a `data:` URL.
+    pub fn get_assets(&self) -> Result<BTreeMap<String, String>, RnpfError> {
+        if self.version < 3 {
+            return Ok(BTreeMap::new());
+        }
+
+        let index: BTreeMap<String, String> = match self.read_data(ASSET_INDEX) {
+            Ok(i) => i,
+            Err(RnpfError::InvalidFile) => return Ok(BTreeMap::new()),
+            Err(e) => return Err(e),
+        };
+
+        let mut zip = ZipArchive::new(&self.file)?;
+        let mut assets = BTreeMap::new();
+
+        for (id, mime) in index {
+            let mut bytes = Vec::new();
+            match zip.by_name(&format!("assets/{id}")) {
+                Ok(mut f) => f.read_to_end(&mut bytes)?,
+                // A missing asset should not make the whole note unreadable.
+                Err(ZipError::FileNotFound) => continue,
+                Err(e) => return Err(e.into()),
+            };
+
+            assets.insert(id, format!("data:{mime};base64,{}", BASE64.encode(&bytes)));
+        }
+
+        Ok(assets)
     }
     pub fn get_meta(&self) -> Result<Meta, RnpfError> {
         self.read_data("meta")
@@ -104,7 +154,7 @@ impl Rnpf {
         Ok(T::from_bytes(&file_data)?)
     }
 
-    fn write_vec<T: FromToBin + serde::Serialize, W: Write + Seek>(
+    fn write_vec<T: serde::Serialize + ?Sized, W: Write + Seek>(
         zip: &mut ZipWriter<W>,
         file_name: &str,
         data: &T,
@@ -112,33 +162,65 @@ impl Rnpf {
         let options = SimpleFileOptions::default().compression_method(CompressionMethod::Zstd);
 
         zip.start_file(file_name, options)?;
-        zip.write_all(&data.to_bytes()?)?;
+        zip.write_all(&serde_json::to_vec(data)?)?;
 
         Ok(())
     }
 
-    fn validate_version(&self) -> Result<(), RnpfError> {
-        let mut archive = ZipArchive::new(&self.file)?;
+    /// Only assets that are still referenced are written. This is the one place
+    /// unused attachments get garbage-collected.
+    fn write_assets<W: Write + Seek>(
+        zip: &mut ZipWriter<W>,
+        note_data: &NoteData,
+    ) -> Result<(), RnpfError> {
+        let used = note_data.used_assets();
+        let mut index = BTreeMap::new();
+        // Images are already compressed; zstd would only cost time.
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
 
+        for (id, url) in note_data.assets.iter().filter(|(id, _)| used.contains(*id)) {
+            let (mime, bytes) = decode_data_url(url)?;
+
+            zip.start_file(format!("assets/{id}"), options)?;
+            zip.write_all(&bytes)?;
+            index.insert(id.as_str(), mime);
+        }
+
+        Self::write_vec(zip, ASSET_INDEX, &index)
+    }
+
+    fn read_version(file: &File) -> Result<u32, RnpfError> {
+        let mut archive = ZipArchive::new(file)?;
         let mut version = String::new();
 
         archive.by_name("version")?.read_to_string(&mut version)?;
 
-        if version == "2" {
-            Ok(())
-        } else {
-            Err(RnpfError::InvalidVersion)
-        }
+        parse_version(&version)
     }
 
     fn write_version<W: Write + Seek>(zip: &mut ZipWriter<W>) -> Result<(), RnpfError> {
         let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
 
         zip.start_file("version", options)?;
-        zip.write_all(b"2")?;
+        zip.write_all(CURRENT_VERSION.to_string().as_bytes())?;
 
         Ok(())
     }
+}
+
+/// Splits `data:<mime>;base64,<payload>` into its mime type and decoded bytes.
+fn decode_data_url(url: &str) -> Result<(&str, Vec<u8>), RnpfError> {
+    let rest = url.strip_prefix("data:").ok_or(RnpfError::InvalidAsset)?;
+    let (header, payload) = rest.split_once(',').ok_or(RnpfError::InvalidAsset)?;
+    let mime = header
+        .strip_suffix(";base64")
+        .ok_or(RnpfError::InvalidAsset)?;
+
+    let bytes = BASE64
+        .decode(payload)
+        .map_err(|_| RnpfError::InvalidAsset)?;
+
+    Ok((mime, bytes))
 }
 
 fn tmp_path_for(path: &Path) -> std::path::PathBuf {
@@ -150,4 +232,49 @@ fn tmp_path_for(path: &Path) -> std::path::PathBuf {
     file_name.push(format!(".tmp-{}", std::process::id()));
 
     path.with_file_name(file_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::structs::data::{Block, ImageBlock};
+
+    #[test]
+    fn decodes_data_urls() {
+        let (mime, bytes) = decode_data_url("data:image/png;base64,aGk=").unwrap();
+        assert_eq!(mime, "image/png");
+        assert_eq!(bytes, b"hi");
+
+        assert!(decode_data_url("image/png;base64,aGk=").is_err());
+        assert!(decode_data_url("data:image/png,hi").is_err());
+    }
+
+    #[test]
+    fn round_trips_assets_and_drops_unused_ones() {
+        let dir = std::env::temp_dir().join(format!("rnpf-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("note.rnpf");
+
+        let mut note = NoteData::default();
+        note.content.pages[0].layers[0]
+            .blocks
+            .push(Block::Image(ImageBlock {
+                id: "img".into(),
+                x: 0.0,
+                y: 0.0,
+                width: 10.0,
+                height: 10.0,
+                asset: "used".into(),
+            }));
+        note.assets.insert("used".into(), "data:image/png;base64,aGk=".into());
+        note.assets.insert("unused".into(), "data:image/png;base64,aGk=".into());
+
+        Rnpf::create_from_data(&path, note).unwrap();
+        let loaded = Rnpf::new(&path).unwrap().build_data().unwrap();
+
+        assert_eq!(loaded.assets.len(), 1);
+        assert_eq!(loaded.assets["used"], "data:image/png;base64,aGk=");
+
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 }

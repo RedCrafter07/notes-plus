@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -8,6 +10,9 @@ pub struct NoteData {
     pub meta: Meta,
     pub content: Content,
     pub state: State,
+    /// Binary attachments (images, PDF page renders) as `data:` URLs, keyed by
+    /// asset id. Stored as raw files under `assets/` inside the archive.
+    pub assets: BTreeMap<String, String>,
 }
 
 impl NoteData {
@@ -38,11 +43,33 @@ impl NoteData {
             self.state.zoom = 1.0;
         }
 
+        // Drop assets nothing refers to. Done here (at load/save time) rather than
+        // on delete, so undo can still restore a block whose asset was "removed".
+        let used = self.used_assets();
+        self.assets.retain(|id, _| used.contains(id.as_str()));
+
         // Add layer if no layer is present
         for page in &mut self.content.pages {
             if page.layers.is_empty() {
                 page.layers.push(Layer::default());
             }
         }
+    }
+
+    pub fn used_assets(&self) -> std::collections::BTreeSet<String> {
+        let mut used = std::collections::BTreeSet::new();
+        for page in &self.content.pages {
+            if let Some(a) = &page.background_asset {
+                used.insert(a.clone());
+            }
+            for layer in &page.layers {
+                for block in &layer.blocks {
+                    if let Some(a) = block.asset() {
+                        used.insert(a.to_string());
+                    }
+                }
+            }
+        }
+        used
     }
 }
