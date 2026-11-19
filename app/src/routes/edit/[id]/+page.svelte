@@ -16,6 +16,8 @@
   import { pageRect } from "$lib/editor/pageFormats";
   import { tabManager } from "$lib/state/tabManager.svelte";
   import { insertImageFile } from "$lib/editor/import/image";
+  import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
 
   let cursorX = $state(0);
   let cursorY = $state(0);
@@ -31,6 +33,11 @@
       canvasManager.drawing,
     ),
   );
+
+  // Without an open tab there is nothing to edit (e.g. after a reload).
+  $effect(() => {
+    if (!tabManager.tab) goto(resolve("/"));
+  });
 
   // One effect for all canvas repaints: it tracks what is drawn and asks the
   // frame loop for a repaint whenever any of it changes.

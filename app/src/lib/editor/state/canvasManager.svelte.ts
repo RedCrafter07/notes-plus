@@ -21,6 +21,8 @@ export type { Tool } from "../tools/registry";
 
 /** Screen pixels of margin around a page when fitting it to the view. */
 const FIT_MARGIN = 32;
+/** Extra room at the top and bottom for the floating toolbar and page controls. */
+const FIT_MARGIN_Y = 88;
 /** Never zoom past this when fitting a page; huge zoom on a big screen is unpleasant. */
 const MAX_FIT_ZOOM = 1.6;
 /** Screen pixels of a fixed page that always stay on screen while panning. */
@@ -226,7 +228,7 @@ class CanvasManager {
     }
 
     const zoomW = (this.width - FIT_MARGIN * 2) / r.width;
-    const zoomH = (this.height - FIT_MARGIN * 2) / r.height;
+    const zoomH = (this.height - FIT_MARGIN_Y * 2) / r.height;
     const tall = !isInfinite(page) && r.height > r.width && zoomW < zoomH * 2;
 
     const z = tall
@@ -237,7 +239,7 @@ class CanvasManager {
     contentManager.panX = -(r.min.x + r.width / 2);
     contentManager.panY =
       tall && r.height * z > this.height
-        ? (FIT_MARGIN - this.height / 2) / contentManager.zoom - r.min.y
+        ? (FIT_MARGIN_Y - this.height / 2) / contentManager.zoom - r.min.y
         : -(r.min.y + r.height / 2);
   }
 

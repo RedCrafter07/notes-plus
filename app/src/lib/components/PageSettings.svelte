@@ -199,7 +199,7 @@
             aria-pressed={active}
           >
             <div
-              class="w-full aspect-[4/3] rounded-lg overflow-hidden relative"
+              class="w-full h-16 rounded-lg overflow-hidden relative"
               style="background-color: {page.background_color};"
             >
               {#if p.id}

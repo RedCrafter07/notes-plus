@@ -104,6 +104,10 @@ export function canvasController(
 
     if (e.pointerType === "touch") return touchDown(e);
 
+    // Suppress the compatibility mousedown, whose default action would move
+    // focus to <body> and immediately blur a text box this tap just opened.
+    e.preventDefault();
+
     if (e.pointerType === "pen") {
       const tool = toolFromButtons(e.buttons);
       if (tool) canvasManager.tool = tool;
