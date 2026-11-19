@@ -19,8 +19,24 @@
   import { jotStore } from "$lib/state/jotStore.svelte";
   import { handleDialog } from "$lib/util/dialog";
   import DropOverlay from "$lib/components/DropOverlay.svelte";
+  import { useAutosave } from "$lib/editor/autosave.svelte";
+  import { saveTab } from "$lib/editor/handleSave.svelte";
+  import { clearTextLayouts } from "$lib/editor/text";
+  import { clearTextBounds } from "$lib/editor/blocks";
+  import { requestRedraw } from "$lib/editor/render/scheduler";
 
   const { children } = $props();
+
+  useAutosave();
+
+  // Text is measured with the note font; re-measure once it has loaded.
+  onMount(() => {
+    document.fonts?.ready.then(() => {
+      clearTextLayouts();
+      clearTextBounds();
+      requestRedraw();
+    });
+  });
 
   onMount(async () => {
     await events.open.listen((e) => {
@@ -93,6 +109,11 @@
 
   async function quit() {
     await jotStore.save();
+
+    if (settingsStore.store.autosave)
+      await Promise.all(
+        tabManager.tabs.filter((t) => t.unsaved).map((t) => saveTab(t, { silent: true })),
+      );
 
     if (tabManager.tabs.some((t) => t.unsaved)) {
       overlayManager.setOpen("close-unsaved");
