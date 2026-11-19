@@ -29,13 +29,10 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             save_note_to_storage,
             save_note_dialog,
             get_settings,
-            set_colors,
-            collapse_sidebar,
-            use_last_page_settings,
+            set_settings,
             get_notebooks,
             set_jot_notes,
-            set_tool_switch,
-            set_shift_swaps_scroll_axes,
+            export_file,
         ])
         .events(collect_events![
             events::Open,

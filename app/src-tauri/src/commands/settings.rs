@@ -31,43 +31,12 @@ fn save_settings(app: &tauri::AppHandle, settings: Settings) {
     }
 }
 
+/// Replaces all settings at once. The frontend sends the whole object (see
+/// `updateSettings` in `settingsStore`), so adding a setting needs no new
+/// command, only a new field on `Settings`.
 #[tauri::command]
 #[specta::specta]
-pub fn collapse_sidebar(app: tauri::AppHandle, collapse: bool) {
-    let mut settings = load_settings(&app);
-    settings.sidebar_collapsed = collapse;
-    save_settings(&app, settings);
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn use_last_page_settings(app: tauri::AppHandle, use_default: bool) {
-    let mut settings = load_settings(&app);
-    settings.use_last_page_settings = use_default;
-    save_settings(&app, settings);
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn set_colors(app: tauri::AppHandle, colors: Vec<String>) {
-    let mut settings = load_settings(&app);
-    settings.colors = colors;
-    save_settings(&app, settings);
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn set_shift_swaps_scroll_axes(app: tauri::AppHandle, enabled: bool) {
-    let mut settings = load_settings(&app);
-    settings.shift_swaps_scroll_axes = enabled;
-    save_settings(&app, settings);
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn set_tool_switch(app: tauri::AppHandle, disable: bool) {
-    let mut settings = load_settings(&app);
-    settings.disable_tool_switch = disable;
+pub fn set_settings(app: tauri::AppHandle, settings: Settings) {
     save_settings(&app, settings);
 }
 

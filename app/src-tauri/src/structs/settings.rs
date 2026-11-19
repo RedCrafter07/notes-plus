@@ -9,6 +9,8 @@ pub struct Settings {
     pub colors: Vec<String>,
     pub shift_swaps_scroll_axes: bool,
     pub disable_tool_switch: bool,
+    /// Save open notes automatically a moment after each change.
+    pub autosave: bool,
 }
 
 impl Default for Settings {
@@ -19,6 +21,7 @@ impl Default for Settings {
             colors: vec!["#000000".into(), "#f22e2e".into(), "#55ea41".into()],
             shift_swaps_scroll_axes: true,
             disable_tool_switch: false,
+            autosave: true,
         }
     }
 }

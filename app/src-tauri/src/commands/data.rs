@@ -1,18 +1,28 @@
 use std::fs::create_dir_all;
 
-use common::io::index::build_index;
+use common::io::index::{File, build_index};
 use common::io::organize_index::EntryType;
-use common::structs::data::NoteData;
 use common::structs::defaults::Defaults;
 use tauri::Manager;
 
 use crate::util::dialog::show_error;
 use crate::util::display_error_with_path;
 
+/// The most recently edited notes in app storage, newest first.
 #[tauri::command]
 #[specta::specta]
-pub fn get_recent() -> Vec<NoteData> {
-    vec![]
+pub fn get_recent(app: tauri::AppHandle, limit: u32) -> Vec<File> {
+    let Ok(path) = app.path().app_data_dir().map(|p| p.join("notebooks")) else {
+        return vec![];
+    };
+    // Errors are reported by `get_notebooks`; here a missing list is fine.
+    let Ok((mut files, _)) = build_index(&path) else {
+        return vec![];
+    };
+
+    files.sort_by_key(|f| std::cmp::Reverse(f.edited_at));
+    files.truncate(limit as usize);
+    files
 }
 
 #[tauri::command]
