@@ -1,107 +1,283 @@
 <script lang="ts">
-  import { IconEraser, IconLasso, IconPencil } from "@tabler/icons-svelte";
-  import { canvasManager, type Tool } from "./state/canvasManager.svelte";
-  import PenToolbar from "./PenToolbar.svelte";
-  import { toRadian } from "$lib/util/geometry";
+  import {
+    IconArrowBackUp,
+    IconArrowForwardUp,
+    IconPhotoPlus,
+    IconPlus,
+  } from "@tabler/icons-svelte";
+  import { fade } from "svelte/transition";
+  import ColorEditPopup from "$lib/components/ColorEditPopup.svelte";
+  import { settingsStore, updateSettings } from "$lib/state/settingsStore.svelte";
+  import { tabManager } from "$lib/state/tabManager.svelte";
+  import { canvasManager } from "./state/canvasManager.svelte";
+  import { textEditor } from "./state/textEditor.svelte";
+  import { TOOL_IDS, toolDef, type Tool } from "./tools/registry";
+  import { insertImageFile, pickFiles } from "./import/image";
 
-  let color = $state(canvasManager.color);
+  /*
+   * A horizontal bar at the top centre: away from the palm of a right-handed
+   * writer, and with room for colour and size, which the old radial menu had
+   * no space for.
+   */
 
-  const tools: {
-    id: Tool;
-    icon: typeof IconEraser;
-  }[] = [
-    {
-      id: "pen",
-      icon: IconPencil,
-    },
-    {
-      id: "eraser",
-      icon: IconEraser,
-    },
-    {
-      id: "lasso",
-      icon: IconLasso,
-    },
-  ];
+  const LONG_PRESS_MS = 450;
 
-  $effect(() => {
-    canvasManager.color = color;
-  });
+  const btnBase =
+    "w-11 h-11 shrink-0 grid place-items-center rounded-xl transition-all active:scale-90 disabled:opacity-30 disabled:pointer-events-none";
+  const btnIdle = "text-content-2 hover:bg-overlay/30 hover:text-content-1";
+  const btn = `${btnBase} ${btnIdle}`;
+  const btnOn = (active: boolean) =>
+    `${btnBase} ${active ? "bg-primary text-base-1" : btnIdle}`;
 
-  const R = 80;
+  const def = $derived(toolDef(canvasManager.tool));
+  const colors = $derived(settingsStore.store.colors ?? []);
+  const history = $derived(tabManager.tab?.history);
 
-  function iconPos(i: number, n: number) {
-    const angle = toRadian(270 - ((i + 0.5) / n) * 180); // halfway between start and end of the angle
-    const x = R + R * Math.cos(angle) * 0.62;
-    const y = R + R * Math.sin(angle) * 0.62;
-    return { x, y };
+  /** Index of the swatch open in the edit popup, or null when closed. */
+  let editingIndex = $state<number | null>(null);
+  let sizeOpen = $state(false);
+
+  function selectTool(t: Tool) {
+    canvasManager.tool = t;
+    sizeOpen = false;
   }
 
-  function slicePath(i: number, n: number) {
-    // since y is down in svg opposed to up in math, the degrees are flipped (180°). We also need to add 90° because the orientation would otherwise be horizontal.
-    const startDeg = toRadian(270 - (i / n) * 180);
-    const endDeg = toRadian(270 - ((i + 1) / n) * 180); // ends where the next one starts
+  function setColor(c: string) {
+    canvasManager.color = c;
+    // Recolour the open text box too; the toolbar does not steal its focus.
+    if (textEditor.draft) textEditor.draft.color = c;
+  }
 
-    // R is the center and also the radius (since the height of the menu is 2R)
-    const x1 = R + R * Math.cos(startDeg);
-    const y1 = R + R * Math.sin(startDeg);
-    const x2 = R + R * Math.cos(endDeg);
-    const y2 = R + R * Math.sin(endDeg);
+  function setSize(v: number) {
+    canvasManager.size = v;
+    if (canvasManager.tool === "text" && textEditor.draft)
+      textEditor.draft.fontSize = v;
+  }
 
-    return `M ${R} ${R} L ${x1} ${y1} A ${R} ${R} 0 0 0 ${x2} ${y2} Z`;
+  // Keep the drawing colour following the swatch while it is edited.
+  $effect(() => {
+    if (editingIndex !== null && colors[editingIndex])
+      setColor(colors[editingIndex]);
+  });
+
+  async function persistColors() {
+    await updateSettings({ colors: $state.snapshot(settingsStore.store.colors) });
+  }
+
+  function addColor() {
+    settingsStore.store.colors.push(canvasManager.color || "#000000");
+    editingIndex = settingsStore.store.colors.length - 1;
+  }
+
+  function closeEditor() {
+    editingIndex = null;
+    persistColors();
+  }
+
+  function deleteColor() {
+    if (editingIndex === null) return;
+    settingsStore.store.colors.splice(editingIndex, 1);
+    editingIndex = null;
+    persistColors();
+  }
+
+  // Swatches: tap selects, tapping the selected one (or a long press) edits.
+  // Double-click was unreliable with a stylus.
+  let pressTimer: ReturnType<typeof setTimeout> | undefined;
+  let longPressed = false;
+
+  function swatchDown(i: number) {
+    longPressed = false;
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      editingIndex = i;
+    }, LONG_PRESS_MS);
+  }
+
+  function swatchUp() {
+    clearTimeout(pressTimer);
+  }
+
+  function swatchClick(i: number, color: string) {
+    if (longPressed) return;
+    if (canvasManager.color === color) editingIndex = i;
+    else setColor(color);
+  }
+
+  async function insertImage() {
+    const [file] = await pickFiles("image/*");
+    if (file) await insertImageFile(file);
+  }
+
+  /** Dot size for a size preset, scaled into the 6–22 px range. */
+  function dot(v: number) {
+    const s = def.size!;
+    return 6 + ((v - s.min) / (s.max - s.min)) * 16;
   }
 </script>
 
-<PenToolbar radius={R} />
-<svg
-  class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none z-10"
-  width={R}
-  height={R * 2}
->
-  <path d={slicePath(0, 1)} class="fill-base-1" />
-  {#each tools as tool, i}
-    {@const Icon = tool.icon}
-    {@const pos = iconPos(i, tools.length)}
-    {@const active = canvasManager.tool === tool.id}
+{#snippet sep()}
+  <div class="w-px self-stretch my-1 bg-content-1/10 shrink-0"></div>
+{/snippet}
 
-    <g
-      role="button"
-      tabindex="0"
-      aria-label="{tool.id} tool"
-      aria-pressed={active}
-      class="cursor-pointer pointer-events-auto"
-      onclick={() => {
-        canvasManager.tool = tool.id;
-      }}
-      onkeydown={(e) => {
-        e.preventDefault();
-      }}
+<!--
+  mousedown is prevented so pressing a button never steals focus from an open
+  text box (which would commit it before the colour/size change lands).
+-->
+<div
+  class="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100%-1.5rem)]"
+  role="toolbar"
+  aria-label="Editor tools"
+  tabindex="-1"
+  onmousedown={(e) => {
+    if (!(e.target instanceof HTMLInputElement)) e.preventDefault();
+  }}
+>
+  <div
+    class="flex flex-row items-center gap-1 p-1.5 rounded-2xl bg-base-1/95 shadow-lg border border-content-1/10 overflow-x-auto hide-scrollbars"
+  >
+    <button
+      class={btn}
+      disabled={!history?.canUndo}
+      onclick={() => tabManager.undo()}
+      aria-label="Undo"
+      title={history?.undoLabel ? `Undo ${history.undoLabel}` : "Undo"}
     >
-      <path
-        d={slicePath(i, tools.length)}
-        class={[
-          "transition-colors",
-          active
-            ? "fill-content-2 hover:fill-content-3"
-            : "fill-base-1 hover:fill-base-2",
-        ]}
-      />
-      <foreignObject
-        x={pos.x - 12.5}
-        y={pos.y - 12.5}
-        width="25"
-        height="25"
-        class="pointer-events-none overflow-visible"
+      <IconArrowBackUp />
+    </button>
+    <button
+      class={btn}
+      disabled={!history?.canRedo}
+      onclick={() => tabManager.redo()}
+      aria-label="Redo"
+      title={history?.redoLabel ? `Redo ${history.redoLabel}` : "Redo"}
+    >
+      <IconArrowForwardUp />
+    </button>
+
+    {@render sep()}
+
+    {#each TOOL_IDS as id (id)}
+      {@const t = toolDef(id)}
+      {@const active = canvasManager.tool === id}
+      <button
+        class={btnOn(active)}
+        onclick={() => selectTool(id)}
+        aria-label={t.label}
+        aria-pressed={active}
+        title={t.label}
       >
-        <div
-          class={[
-            active ? "text-base-1" : "",
-            "w-full h-full flex items-center justify-center transition-colors",
-          ]}
+        <t.icon />
+      </button>
+    {/each}
+    <button
+      class={btn}
+      onclick={insertImage}
+      aria-label="Insert image"
+      title="Insert image"
+    >
+      <IconPhotoPlus />
+    </button>
+
+    {#if def.colored}
+      {@render sep()}
+      {#each colors as color, i (`${i}-${color}`)}
+        {@const active = color === canvasManager.color}
+        <button
+          class="w-11 h-11 shrink-0 grid place-items-center rounded-xl active:scale-90 transition-all"
+          onpointerdown={() => swatchDown(i)}
+          onpointerup={swatchUp}
+          onpointerleave={swatchUp}
+          onclick={() => swatchClick(i, color)}
+          aria-label="Colour {color}{active ? ', tap again to edit' : ''}"
+          aria-pressed={active}
+          title={active ? "Tap again to edit" : color}
         >
-          <Icon />
-        </div>
-      </foreignObject>
-    </g>
-  {/each}
-</svg>
+          <span
+            class={[
+              "rounded-full transition-all border border-content-1/30",
+              active ? "w-7 h-7 ring-2 ring-primary ring-offset-2 ring-offset-base-1" : "w-6 h-6",
+            ]}
+            style="background-color: {color};"
+          ></span>
+        </button>
+      {/each}
+      <button
+        class={btn}
+        onclick={addColor}
+        aria-label="Add colour"
+        title="Add colour"
+      >
+        <IconPlus />
+      </button>
+    {/if}
+
+    {#if def.size}
+      {@const spec = def.size}
+      {@render sep()}
+      {#each spec.presets as v (v)}
+        {@const active = canvasManager.size === v}
+        <button
+          class={btnOn(active)}
+          onclick={() => setSize(v)}
+          aria-label="{spec.label} {v}"
+          aria-pressed={active}
+          title="{spec.label}: {v}"
+        >
+          <span
+            class="rounded-full bg-current"
+            style="width: {dot(v)}px; height: {dot(v)}px;"
+          ></span>
+        </button>
+      {/each}
+      <button
+        class={[
+          "h-11 min-w-11 px-2 shrink-0 rounded-xl text-sm font-semibold tabular-nums transition-all active:scale-95",
+          sizeOpen || !spec.presets.includes(canvasManager.size)
+            ? "bg-primary text-base-1"
+            : "hover:bg-overlay/30 text-content-2",
+        ]}
+        onclick={() => (sizeOpen = !sizeOpen)}
+        aria-label="Custom {spec.label.toLowerCase()}"
+        aria-expanded={sizeOpen}
+        title="Custom {spec.label.toLowerCase()}"
+      >
+        {Math.round(canvasManager.size)}
+      </button>
+    {/if}
+  </div>
+
+  {#if sizeOpen && def.size}
+    {@const spec = def.size}
+    <div
+      transition:fade={{ duration: 100 }}
+      class="absolute right-0 top-full mt-2 p-3 w-64 rounded-xl bg-base-1 shadow-lg border border-content-1/10 flex flex-col gap-2"
+    >
+      <label class="flex flex-row justify-between text-sm text-content-2" for="tool-size">
+        <span>{spec.label}</span>
+        <span class="tabular-nums">{Math.round(canvasManager.size)}</span>
+      </label>
+      <input
+        id="tool-size"
+        type="range"
+        class="w-full accent-[var(--primary)] h-8"
+        min={spec.min}
+        max={spec.max}
+        step="1"
+        value={canvasManager.size}
+        oninput={(e) => setSize(+e.currentTarget.value)}
+      />
+    </div>
+  {/if}
+</div>
+
+{#if editingIndex !== null}
+  {@const idx = editingIndex}
+  <ColorEditPopup
+    bind:value={settingsStore.store.colors[idx]}
+    canDelete={colors.length > 1}
+    onClose={closeEditor}
+    onDelete={deleteColor}
+  />
+{/if}
+

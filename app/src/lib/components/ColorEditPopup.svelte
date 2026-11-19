@@ -35,7 +35,7 @@
   ></div>
 
   <div
-    class="absolute right-40 top-1/2 flex w-72 -translate-y-1/2 flex-col gap-3 rounded-2xl bg-base-1 p-4 drop-shadow-lg"
+    class="absolute left-1/2 top-20 flex w-72 -translate-x-1/2 flex-col gap-3 rounded-2xl bg-base-1 p-4 drop-shadow-lg"
     transition:scale={{ duration: 180, start: 0.95, easing: quintOut }}
   >
     <div class="flex flex-row items-center">

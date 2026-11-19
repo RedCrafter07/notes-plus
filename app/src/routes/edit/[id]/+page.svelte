@@ -4,59 +4,93 @@
   import ToolCursor from "$lib/editor/ToolCursor.svelte";
   import { contentManager } from "$lib/state/contentManager.svelte";
   import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
-  import { tick } from "svelte";
+  import { tick, untrack } from "svelte";
   import LassoSelection from "$lib/editor/LassoSelection.svelte";
   import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
   import { canvasController } from "$lib/editor/canvasController.svelte";
   import LassoMenu from "$lib/editor/LassoMenu.svelte";
   import Toolbar from "$lib/editor/Toolbar.svelte";
-  import ZoomIndicator from "$lib/editor/ZoomIndicator.svelte";
-  import BackgroundPatterns from "$lib/editor/BackgroundPatterns.svelte";
+  import ViewControls from "$lib/editor/ViewControls.svelte";
+  import Paper from "$lib/editor/Paper.svelte";
+  import TextEditorOverlay from "$lib/editor/TextEditorOverlay.svelte";
+  import { pageRect } from "$lib/editor/pageFormats";
+  import { tabManager } from "$lib/state/tabManager.svelte";
+  import { insertImageFile } from "$lib/editor/import/image";
 
   let cursorX = $state(0);
   let cursorY = $state(0);
   let cursorVisible = $state(false);
 
-  let preview = $state<string>();
+  const view = $derived(canvasManager.viewBounds());
+  const clip = $derived(pageRect(contentManager.page));
 
-  let svgViewBox = $derived(
-    `${canvasManager.translateToRelative(0, 0).x} ${canvasManager.translateToRelative(0, 0).y} ${canvasManager.width / contentManager.zoom} ${canvasManager.height / contentManager.zoom}`,
-  );
-
-  $effect(() => {
-    canvasManager.redrawStrokes();
-  });
-
-  $effect(() => {
-    preview = inputToPath(
+  const preview = $derived(
+    inputToPath(
       canvasManager.points,
       canvasManager.thickness,
       canvasManager.drawing,
-    );
+    ),
+  );
+
+  // One effect for all canvas repaints: it tracks what is drawn and asks the
+  // frame loop for a repaint whenever any of it changes.
+  $effect(() => {
+    canvasManager.watch();
   });
 
+  // Fit the page into view when switching pages, and when opening a note
+  // whose view was never moved (a new note).
+  let shown: { note: string; page: number } | undefined;
   $effect(() => {
-    canvasManager.width;
-    canvasManager.height;
-    contentManager.id;
+    const note = contentManager.id;
+    const page = contentManager.currentPage;
+    void canvasManager.width;
 
-    (async () => {
-      await tick();
-      canvasManager.redrawStrokes();
-    })();
+    untrack(() => {
+      if (canvasManager.width === 0) return;
+      const pristine =
+        contentManager.zoom === 1 &&
+        contentManager.panX === 0 &&
+        contentManager.panY === 0;
+      const changedPage = shown?.note === note && shown.page !== page;
+
+      if (shown?.note !== note || changedPage) {
+        if (changedPage || pristine) tick().then(() => canvasManager.fitPage());
+        else canvasManager.clampPan();
+      }
+      shown = { note, page };
+    });
+  });
+
+  // Paste images from the clipboard.
+  $effect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (!tabManager.tab) return;
+      if (e.target instanceof HTMLElement && e.target.closest("input, textarea")) return;
+      const file = [...(e.clipboardData?.files ?? [])].find((f) =>
+        f.type.startsWith("image/"),
+      );
+      if (!file) return;
+      e.preventDefault();
+      insertImageFile(file);
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
   });
 
   useShortcuts();
 </script>
 
 <div
-  class="w-full h-full relative touch-none hide-cursor overflow-hidden"
-  style="background-color: {contentManager.page.background_color};"
+  class={[
+    "w-full h-full relative touch-none overflow-hidden bg-base-3",
+    {
+      "hide-cursor": !(canvasManager.tool === "lasso" && !lassoManager.isSelecting),
+      "cursor-text": canvasManager.tool === "text",
+    },
+  ]}
   bind:clientWidth={canvasManager.width}
   bind:clientHeight={canvasManager.height}
-  class:hide-cursor={!(
-    !lassoManager.isSelecting && canvasManager.tool === "lasso"
-  )}
   use:canvasController={{
     updateCursor: (visible, x, y) => {
       cursorVisible = visible;
@@ -66,40 +100,49 @@
   }}
   role="document"
 >
-  <BackgroundPatterns
-    pattern={contentManager.page.pattern}
-    scale={contentManager.page.pattern_scale}
-    color={contentManager.page.pattern_color}
-    zoom
-  />
+  <Paper />
   <div
     class={[
-      "absolute w-full h-full top-0 transition-all",
+      "absolute w-full h-full top-0 transition-[filter]",
       {
         "contrast-20":
-          canvasManager.tool === "lasso" && !lassoManager.isSelecting,
+          canvasManager.tool === "lasso" && !!lassoManager.selection,
       },
     ]}
   >
     {#each contentManager.layers as layer (`layer-${layer.id}`)}
       <canvas
-        class="absolute w-full h-full top-0"
+        class="absolute top-0"
         style="width: {canvasManager.width}px; height: {canvasManager.height}px;"
-        width={canvasManager.width * canvasManager.dpr}
-        height={canvasManager.height * canvasManager.dpr}
-        class:opacity-0={!layer.visible}
+        width={Math.round(canvasManager.width * canvasManager.dpr)}
+        height={Math.round(canvasManager.height * canvasManager.dpr)}
         use:canvasManager.assignContext={layer.id}
       ></canvas>
     {/each}
   </div>
 
-  <svg class="w-full h-full absolute top-0" viewBox={svgViewBox}>
-    <path d={preview} fill={canvasManager.color} />
+  <svg
+    class="w-full h-full absolute top-0 pointer-events-none"
+    viewBox="{view.min.x} {view.min.y} {view.width} {view.height}"
+    preserveAspectRatio="none"
+  >
+    {#if clip}
+      <clipPath id="page-clip">
+        <rect x={clip.min.x} y={clip.min.y} width={clip.width} height={clip.height} />
+      </clipPath>
+    {/if}
+    <path
+      d={preview}
+      fill={canvasManager.color}
+      fill-opacity={canvasManager.opacity}
+      clip-path={clip ? "url(#page-clip)" : undefined}
+    />
     <LassoSelection />
   </svg>
+  <TextEditorOverlay />
   <ToolCursor visible={cursorVisible} x={cursorX} y={cursorY} />
   <LassoMenu />
 </div>
 
 <Toolbar />
-<ZoomIndicator />
+<ViewControls />

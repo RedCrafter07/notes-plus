@@ -1,85 +1,33 @@
 <script lang="ts">
   import type { BackgroundPattern } from "$lib/tauri/bindings";
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
 
+  /** A static preview of a paper pattern (the live page uses Paper.svelte). */
   const {
     color,
     scale,
     pattern,
-    zoom,
-    uuid: useUUID,
   }: {
     color: string;
     scale: number;
     pattern: BackgroundPattern | null;
-    zoom?: boolean;
     uuid?: boolean;
   } = $props();
 
-  let uuid = crypto.randomUUID();
-
-  const zoomedScale = $derived(zoom ? scale * contentManager.zoom : scale);
-  const offsetX = $derived(
-    zoom ? (contentManager.panX * contentManager.zoom) % zoomedScale : 0,
-  );
-  const offsetY = $derived(
-    zoom ? (contentManager.panY * contentManager.zoom) % zoomedScale : 0,
-  );
-  const actualZoom = $derived(zoom ? contentManager.zoom : 1);
+  const id = $props.id();
 </script>
 
 <svg width="100%" height="100%">
   <defs>
-    <pattern
-      id={`bg-pattern-${pattern}${useUUID ? `-${uuid}` : ""}`}
-      x={offsetX}
-      y={offsetY}
-      width={zoom ? zoomedScale : scale}
-      height={zoom ? zoomedScale : scale}
-      patternUnits="userSpaceOnUse"
-    >
+    <pattern {id} width={scale} height={scale} patternUnits="userSpaceOnUse">
       {#if pattern === "Dots"}
-        <circle cx={0} cy={0} r={1.5 * actualZoom} fill={color} />
-        <circle cx={zoomedScale} cy={0} r={1.5 * actualZoom} fill={color} />
-        <circle cx={0} cy={zoomedScale} r={1.5 * actualZoom} fill={color} />
-        <circle
-          cx={zoomedScale}
-          cy={zoomedScale}
-          r={1.5 * actualZoom}
-          fill={color}
-        />
+        <circle cx={scale / 2} cy={scale / 2} r={1.2} fill={color} />
       {:else if pattern === "Lines"}
-        <line
-          x1="0"
-          y1={0}
-          x2={canvasManager.width}
-          y2={0}
-          stroke={color}
-          stroke-width={1}
-        />
+        <rect x="0" y={scale - 1} width={scale} height="1" fill={color} />
       {:else if pattern === "Squares"}
-        <rect
-          x="0"
-          y="0"
-          width={zoomedScale}
-          height={zoomedScale}
-          fill="none"
-          stroke={color}
-          stroke-width={1 * actualZoom}
-        />
+        <rect x="0" y="0" width={scale} height="1" fill={color} />
+        <rect x="0" y="0" width="1" height={scale} fill={color} />
       {/if}
     </pattern>
   </defs>
-  <g
-    transform={`translate(${canvasManager.width / 2}, ${canvasManager.height / 2})`}
-  >
-    <rect
-      x={-canvasManager.width / 2}
-      y={-canvasManager.height / 2}
-      width={canvasManager.width}
-      height={canvasManager.height}
-      fill={`url(#bg-pattern-${pattern}${useUUID ? `-${uuid}` : ""})`}
-    />
-  </g>
+  <rect width="100%" height="100%" fill="url(#{id})" />
 </svg>
