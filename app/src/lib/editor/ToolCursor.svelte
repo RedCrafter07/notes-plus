@@ -13,31 +13,39 @@
     y: number;
   } = $props();
 
-  let cursorWidth = $derived(
-    (canvasManager.tool === "lasso"
-      ? 8 / contentManager.zoom
-      : canvasManager.tool === "eraser"
-        ? canvasManager.eraserRadius * 2
-        : canvasManager.tool === "pen"
-          ? canvasManager.thickness
-          : 8) * contentManager.zoom,
+  const tool = $derived(canvasManager.tool);
+
+  /** Diameter on screen, matching what the tool will actually touch. */
+  let cursorWidth = $derived.by(() => {
+    switch (tool) {
+      case "eraser":
+        return canvasManager.eraserRadius * 2 * contentManager.zoom;
+      case "pen":
+      case "highlighter":
+        return Math.max(3, canvasManager.thickness * contentManager.zoom);
+      default:
+        return 8;
+    }
+  });
+
+  const shown = $derived(
+    visible &&
+      tool !== "text" &&
+      !(tool === "lasso" && !lassoManager.isSelecting),
   );
 </script>
 
-{#if visible && !(canvasManager.tool === "lasso" && !lassoManager.isSelecting)}
+{#if shown}
   <div
     class={[
-      "rounded-full aspect-square absolute pointer-events-none opacity-50",
-      {
-        "border border-destructive": canvasManager.tool === "eraser",
-      },
+      "rounded-full aspect-square absolute pointer-events-none",
+      tool === "eraser" ? "border-2 border-destructive bg-white/40" : "opacity-60",
     ]}
-    style="width: {cursorWidth}px; background-color: {canvasManager.tool ===
-    'pen'
-      ? canvasManager.color
-      : canvasManager.tool === 'eraser'
-        ? '#ffffff'
-        : '#99ccff'}; top: {y - cursorWidth / 2}px; left:{x -
-      cursorWidth / 2}px;"
+    style="width: {cursorWidth}px; top: {y - cursorWidth / 2}px; left: {x -
+      cursorWidth / 2}px; {tool === 'pen' || tool === 'highlighter'
+      ? `background-color: ${canvasManager.color};`
+      : tool === 'lasso'
+        ? 'background-color: #99ccff;'
+        : ''}"
   ></div>
 {/if}

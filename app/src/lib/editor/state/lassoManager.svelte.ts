@@ -1,10 +1,26 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
-import { runSelection, type LassoSelection } from "$lib/editor/tools/lasso";
+import {
+  runSelection,
+  selectionIds,
+  type LassoSelection,
+} from "$lib/editor/tools/lasso";
 import type { Block, Point } from "$lib/tauri/bindings";
 import { tabManager } from "$lib/state/tabManager.svelte";
-import { canvasManager } from "./canvasManager.svelte";
 import { popupManager } from "$lib/state/popupManager.svelte";
+import { unionBounds, type ContentBounds } from "$lib/util/canvasBounds";
+import {
+  blockBounds,
+  blockColor,
+  cloneBlock,
+  recolorBlock,
+  translateBlock,
+} from "../blocks";
 
+/*
+ * Every mutation here assigns a *new* `blocks` array to the layer instead of
+ * editing the old one in place. The renderer only watches array identity, and
+ * history compares arrays, so in-place edits would be invisible to both.
+ */
 export class LassoManager {
   isSelecting = $state(true);
   points = $state<Point[]>([]);
@@ -15,224 +31,135 @@ export class LassoManager {
   dragStart = $state({ x: 0, y: 0 });
 
   isDraggingSelection = $state(false);
-  scaleFactor = $state(1);
 
   selectedLayers = $derived(this.selection ? Object.keys(this.selection) : []);
-  boundingBox = $derived(this.getSelectionBoundingBox(this.selectedLayers));
+  boundingBox = $derived(this.getSelectionBoundingBox());
+  /** Ids of selected blocks; the canvas skips them and the overlay draws them. */
+  selectedIds = $derived(new Set(selectionIds(this.selection)));
 
-  private getSelectionBoundingBox(selectedLayers: string[]) {
+  private getSelectionBoundingBox() {
     if (!this.selection) return;
 
-    let minX = Infinity,
-      minY = Infinity;
-    let maxX = -Infinity,
-      maxY = -Infinity;
-    let maxThickness = 0;
+    let acc: ContentBounds | null = null;
+    for (const entries of Object.values(this.selection))
+      for (const { block } of entries) {
+        const b = blockBounds(block);
+        if (b) acc = acc ? unionBounds(acc, b) : b;
+      }
 
-    selectedLayers
-      .flatMap((l) => this.selection![l])
-      .forEach((v) => {
-        if (v.block.Stroke.thickness > maxThickness) {
-          maxThickness = v.block.Stroke.thickness;
-        }
-        v.block.Stroke.points.forEach((p) => {
-          if (p.x < minX) minX = p.x;
-          if (p.y < minY) minY = p.y;
-          if (p.x > maxX) maxX = p.x;
-          if (p.y > maxY) maxY = p.y;
-        });
-      });
+    if (!acc) return { x: 0, y: 0, width: 0, height: 0 };
 
-    if (minX === Infinity) return { x: 0, y: 0, width: 0, height: 0 };
-
-    const padding = maxThickness / 2 + 2;
+    const padding = 4;
     return {
-      x: minX - padding,
-      y: minY - padding,
-      width: maxX - minX + padding * 2,
-      height: maxY - minY + padding * 2,
+      x: acc.min.x - padding,
+      y: acc.min.y - padding,
+      width: acc.width + padding * 2,
+      height: acc.height + padding * 2,
     };
   }
 
   updateSelection() {
     this.selection = runSelection(this.points);
-    canvasManager.redrawStrokes();
+  }
+
+  /** Replaces each selected block via `fn`, keeping positions and the selection. */
+  private mapSelection(fn: (b: Block) => Block) {
+    if (!this.selection) return;
+    const next: LassoSelection = {};
+
+    for (const layerId of this.selectedLayers) {
+      const layer = contentManager.layers.find((l) => l.id === layerId);
+      if (!layer) continue;
+
+      const blocks = [...layer.blocks];
+      next[layerId] = this.selection[layerId].map(({ block }) => {
+        const index = blocks.findIndex((b) => b.id === block.id);
+        const replaced = fn(block);
+        if (index !== -1) blocks[index] = replaced;
+        return { index, block: replaced };
+      });
+
+      layer.blocks = blocks;
+    }
+
+    this.selection = next;
   }
 
   deleteSelection() {
     tabManager.transact("Delete", () => {
-      this.selectedLayers.forEach((l) => {
-        const i = contentManager.layers.findIndex((layer) => layer.id === l);
-
-        contentManager.layers[i].blocks = contentManager.layers[
-          i
-        ].blocks.filter((b) =>
-          this.selection && b.Stroke !== undefined
-            ? !this.selection[l]
-                .map((s) => s.block.Stroke.id)
-                .includes(b.Stroke.id)
-            : true,
-        );
-      });
-
+      const ids = this.selectedIds;
+      for (const layerId of this.selectedLayers) {
+        const layer = contentManager.layers.find((l) => l.id === layerId);
+        if (layer) layer.blocks = layer.blocks.filter((b) => !ids.has(b.id));
+      }
       this.reset();
-      canvasManager.cleanCache();
-      canvasManager.redrawStrokes();
     });
   }
 
   duplicateSelection() {
+    if (!this.selection) return;
+
     tabManager.transact("Duplicate", () => {
-      if (!this.selection) return;
+      const next: LassoSelection = {};
 
-      const newSelection: LassoSelection = {};
+      for (const layerId of this.selectedLayers) {
+        const layer = contentManager.layers.find((l) => l.id === layerId);
+        if (!layer) continue;
 
-      this.selectedLayers.forEach((lID) => {
-        const layerIndex = contentManager.layers.findIndex((l) => l.id === lID);
-        if (layerIndex === -1) return;
-
-        const currentLayerBlocks = contentManager.layers[layerIndex].blocks;
-
-        let highestIndex = -1;
-
-        const duplicatedSelection = this.selection![lID].map((s) => {
-          const actualIndex = currentLayerBlocks.findIndex(
-            (b) => b.Stroke?.id === s.block.Stroke?.id,
-          );
-          if (actualIndex > highestIndex) highestIndex = actualIndex;
-
-          if (s.block.Stroke) {
-            const newBlock = {
-              Stroke: {
-                ...s.block.Stroke,
-                id: crypto.randomUUID(),
-                points: s.block.Stroke.points.map((p) => ({ ...p })),
-              },
-            } satisfies Block;
-
-            return newBlock;
-          }
-
-          return s.block;
+        const ids = new Set(this.selection![layerId].map((s) => s.block.id));
+        let last = -1;
+        layer.blocks.forEach((b, i) => {
+          if (ids.has(b.id)) last = i;
         });
+        if (last === -1) continue;
 
-        if (highestIndex !== -1) {
-          const newBlocks = [
-            ...contentManager.layers[layerIndex].blocks.slice(
-              0,
-              highestIndex + 1,
-            ),
-            ...duplicatedSelection,
-            ...contentManager.layers[layerIndex].blocks.slice(highestIndex + 1),
-          ];
+        // Offset the copies so they are visibly separate from the originals.
+        const copies = this.selection![layerId].map((s) =>
+          translateBlock(cloneBlock(s.block), 16, 16),
+        );
+        layer.blocks = [
+          ...layer.blocks.slice(0, last + 1),
+          ...copies,
+          ...layer.blocks.slice(last + 1),
+        ];
+        next[layerId] = copies.map((block, i) => ({ index: last + 1 + i, block }));
+      }
 
-          contentManager.layers[layerIndex].blocks = newBlocks;
-
-          newSelection[lID] = duplicatedSelection.map((b, i) => ({
-            index: highestIndex + 1 + i,
-            block: b,
-          }));
-        }
-      });
-
-      this.selection = newSelection;
+      this.selection = next;
       this.dragOffsetX = 0;
       this.dragOffsetY = 0;
-
-      popupManager.add({
-        message: "Elements duplicated",
-        type: "success",
-      });
     });
+
+    popupManager.add({ message: "Elements duplicated", type: "success" });
   }
 
+  /** The shared colour of the selection, or `null` if mixed or colourless. */
   get selectionColor(): string | null {
-    if (!this.selection) return null;
-
     let color: string | null = null;
-
-    for (const l of this.selectedLayers) {
-      for (const c of this.selection[l]!) {
-        if (color === null) color = c.block.Stroke.color;
-        else if (c.block.Stroke.color !== color) return null;
+    for (const entries of Object.values(this.selection ?? {}))
+      for (const { block } of entries) {
+        const c = blockColor(block);
+        if (c === null) continue;
+        if (color === null) color = c;
+        else if (c !== color) return null;
       }
-    }
-
     return color;
   }
 
   colorSelection(color: string) {
-    if (!this.selection) return;
-
-    const newSelection: LassoSelection = {};
-
     tabManager.transact("Change color", () => {
-      this.selectedLayers.forEach((lID) => {
-        const layerIndex = contentManager.layers.findIndex(
-          (layer) => lID === layer.id,
-        );
-
-        let blocks = [...contentManager.layers[layerIndex].blocks];
-
-        newSelection[lID] = this.selection![lID].map((s) => {
-          const block = {
-            Stroke: { ...s.block.Stroke, color },
-          } satisfies Block;
-
-          blocks[s.index] = block;
-
-          return { index: s.index, block };
-        });
-
-        contentManager.layers[layerIndex].blocks = blocks;
-      });
+      this.mapSelection((b) => recolorBlock(b, color));
     });
-
-    this.selection = newSelection;
-    canvasManager.redrawStrokes();
   }
 
-  scaleSelection() {}
-
   updateDrag() {
-    if (!this.selection) return;
-
-    this.selectedLayers.forEach((l) => {
-      const contents = this.selection![l];
-      this.selection![l] = contents.map((c) => ({
-        ...c,
-        block: {
-          Stroke: {
-            ...c.block.Stroke,
-            id: crypto.randomUUID(),
-            points: c.block.Stroke.points.map((p) => ({
-              ...p,
-              x: p.x + this.dragOffsetX,
-              y: p.y + this.dragOffsetY,
-            })),
-          },
-        },
-      }));
-    });
-
-    this.selectedLayers.forEach((lID) => {
-      const i = contentManager.layers.findIndex((l) => l.id === lID);
-      if (i >= 0) {
-        const selectedLayer = this.selection![lID];
-        const newBlocks = contentManager.layers[i].blocks;
-
-        selectedLayer.forEach((l) => {
-          newBlocks[l.index] = l.block;
-        });
-
-        contentManager.layers[i].blocks = newBlocks;
-      }
-    });
-
-    canvasManager.cleanCache();
-
+    const dx = this.dragOffsetX;
+    const dy = this.dragOffsetY;
     this.dragOffsetX = 0;
     this.dragOffsetY = 0;
+
+    if (dx === 0 && dy === 0) return;
+    this.mapSelection((b) => translateBlock(b, dx, dy));
   }
 
   reset() {
@@ -240,7 +167,6 @@ export class LassoManager {
     this.isSelecting = true;
     this.dragOffsetX = 0;
     this.dragOffsetY = 0;
-    this.scaleFactor = 1;
     this.selection = undefined;
     this.isDraggingSelection = false;
   }
@@ -255,12 +181,8 @@ export class LassoManager {
     if (!this.isSelecting) return;
 
     this.updateSelection();
-    canvasManager.redrawStrokes();
 
-    const hasSelection =
-      !!this.selection &&
-      this.selectedLayers.some((l) => this.selection![l].length > 0);
-
+    const hasSelection = this.selectedIds.size > 0;
     this.isSelecting = !hasSelection;
     if (!hasSelection) this.points = [];
   }
@@ -271,12 +193,9 @@ export class LassoManager {
     } else if (this.isInsideSelection(point)) {
       this.isDraggingSelection = true;
       this.dragStart = point;
-      return;
     } else {
       this.reset();
     }
-
-    canvasManager.redrawStrokes();
   }
 
   isInsideSelection(p: Point) {

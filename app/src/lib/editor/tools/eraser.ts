@@ -1,6 +1,6 @@
 import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
 import type { Point } from "$lib/tauri/bindings";
-import type { ToolHandler, ToolHandlers } from "..";
+import type { ToolHandler, ToolHandlers } from "./types";
 
 let last: Point | undefined;
 
@@ -14,7 +14,6 @@ const move: ToolHandler = (p) => {
 };
 const up: ToolHandler = () => {
   last = undefined;
-  canvasManager.cleanCache();
 };
 
 export const eraser: ToolHandlers = { down, move, up };

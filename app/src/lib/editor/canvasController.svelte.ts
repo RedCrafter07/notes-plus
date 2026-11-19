@@ -1,20 +1,16 @@
-import {
-  canvasManager,
-  type Tool,
-} from "$lib/editor/state/canvasManager.svelte";
-import { contentManager } from "$lib/state/contentManager.svelte";
+import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
 import { settingsStore } from "$lib/state/settingsStore.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
-import { toolHandlers, type ToolHandlers } from "./handlers";
+import { toolDef, type Tool } from "./tools/registry";
+import type { ToolHandlers } from "./tools/types";
 import { toolFromButtons } from "./toolFromButtons.svelte";
 
 const ZOOM_STEP = 1.1;
 
-const TOOL_LABELS: Record<Tool, string> = {
-  pen: "Draw",
-  eraser: "Erase",
-  lasso: "Select",
-};
+/** A multi-finger touch counts as a tap if it ends this quickly... */
+const TAP_MAX_MS = 300;
+/** ...and no finger moved further than this (screen px). */
+const TAP_MAX_MOVE = 12;
 
 export function canvasController(
   element: HTMLElement,
@@ -27,159 +23,160 @@ export function canvasController(
   let elementRect = element.getBoundingClientRect();
   let initialPinchDistance: number | undefined;
   let prevCenter: Record<"x" | "y", number> | undefined;
-  let cursorX = 0;
-  let cursorY = 0;
   let activeTool: Tool | undefined = undefined;
+  /** Pen/mouse pointer currently drawing; touches are ignored meanwhile (palm rejection). */
+  let inkPointer: number | undefined;
   const activeTouch = new Map<number, { x: number; y: number }>();
 
-  // update elementRect on resize
+  /** Tracks one multi-finger touch sequence, to detect undo/redo taps. */
+  let tap: { start: number; fingers: number; origin: Map<number, { x: number; y: number }>; moved: boolean } | undefined;
+
   const obs = new ResizeObserver(() => {
     elementRect = element.getBoundingClientRect();
   });
   obs.observe(element);
 
-  const isUIEvent = (e: Event) => {
-    return (
-      e.target instanceof Element &&
-      e.target.closest('[data-ui="true"]') !== null
-    );
-  };
+  const isUIEvent = (e: Event) =>
+    e.target instanceof Element && e.target.closest('[data-ui="true"]') !== null;
 
-  function getPinchDistance(x1: number, y1: number, x2: number, y2: number) {
-    return Math.hypot(x1 - x2, y1 - y2);
+  // ------------------------------------------------------------------ touch
+
+  function touchDown(e: PointerEvent) {
+    if (inkPointer !== undefined) return; // palm while writing
+    activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (!tap) tap = { start: e.timeStamp, fingers: 0, origin: new Map(), moved: false };
+    tap.origin.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    tap.fingers = Math.max(tap.fingers, activeTouch.size);
+    // Pinch math restarts whenever the finger count changes.
+    initialPinchDistance = undefined;
+    prevCenter = undefined;
   }
 
-  function getCenter(x1: number, y1: number, x2: number, y2: number) {
-    return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+  function touchMove(e: PointerEvent) {
+    const prev = activeTouch.get(e.pointerId);
+    if (!prev) return;
+    activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    const o = tap?.origin.get(e.pointerId);
+    if (tap && o && Math.hypot(e.clientX - o.x, e.clientY - o.y) > TAP_MAX_MOVE)
+      tap.moved = true;
+
+    if (activeTouch.size === 1) {
+      canvasManager.panBy(e.clientX - prev.x, e.clientY - prev.y);
+    } else if (activeTouch.size === 2) {
+      const [t0, t1] = [...activeTouch.values()];
+      const d = Math.hypot(t0.x - t1.x, t0.y - t1.y) || 1;
+      const center = {
+        x: (t0.x + t1.x) / 2 - elementRect.left,
+        y: (t0.y + t1.y) / 2 - elementRect.top,
+      };
+
+      if (initialPinchDistance !== undefined && prevCenter) {
+        canvasManager.zoomAround(center.x, center.y, d / initialPinchDistance);
+        canvasManager.panBy(center.x - prevCenter.x, center.y - prevCenter.y);
+      }
+
+      initialPinchDistance = d;
+      prevCenter = center;
+    }
   }
+
+  function touchUp(e: PointerEvent) {
+    if (!activeTouch.delete(e.pointerId)) return;
+    initialPinchDistance = undefined;
+    prevCenter = undefined;
+
+    if (activeTouch.size > 0 || !tap) return;
+
+    // All fingers lifted: was it a quick multi-finger tap?
+    const quick = e.timeStamp - tap.start < TAP_MAX_MS && !tap.moved;
+    if (quick && tap.fingers === 2) tabManager.undo();
+    else if (quick && tap.fingers === 3) tabManager.redo();
+    tap = undefined;
+  }
+
+  // ------------------------------------------------------------ pen / mouse
 
   const onPointerDown = (e: PointerEvent) => {
     if (isUIEvent(e)) return;
     elementRect = element.getBoundingClientRect();
-    if (e.pointerType === "touch") {
-      activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      return;
-    } else if (e.pointerType === "pen") {
+
+    if (e.pointerType === "touch") return touchDown(e);
+
+    if (e.pointerType === "pen") {
       const tool = toolFromButtons(e.buttons);
       if (tool) canvasManager.tool = tool;
+      // A pen landing cancels any pan/pinch the palm may have started.
+      activeTouch.clear();
+      tap = undefined;
     }
 
     element.setPointerCapture(e.pointerId);
-
+    inkPointer = e.pointerId;
     activeTool = canvasManager.tool;
 
-    tabManager.tab.history.begin(TOOL_LABELS[activeTool]);
-
+    tabManager.tab?.history.begin(toolDef(activeTool).action);
     callHandler(activeTool, "down", e);
   };
 
   const onPointerUp = (e: PointerEvent) => {
-    if (e.pointerType === "touch") {
-      activeTouch.delete(e.pointerId);
-      initialPinchDistance = undefined;
-      return;
-    }
+    if (e.pointerType === "touch") return touchUp(e);
+    if (e.pointerId !== inkPointer) return;
 
     const tool = activeTool ?? canvasManager.tool;
     activeTool = undefined;
+    inkPointer = undefined;
 
     callHandler(tool, "up", e);
-    tabManager.tab.history.commit();
+    tabManager.tab?.history.commit();
   };
 
   const onPointerMove = (e: PointerEvent) => {
-    if (e.pointerType === "touch") {
-      const prev = activeTouch.get(e.pointerId);
-      activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (activeTouch.size === 1) {
-        if (!prev) return;
-        const dX = e.clientX - prev.x;
-        const dY = e.clientY - prev.y;
-        contentManager.panX += dX / contentManager.zoom;
-        contentManager.panY += dY / contentManager.zoom;
-        canvasManager.redrawStrokes();
-      } else if (activeTouch.size === 2) {
-        const [t0, t1] = [...activeTouch.values()];
-        const d = getPinchDistance(t0.x, t0.y, t1.x, t1.y) || 1;
-        const c = getCenter(t0.x, t0.y, t1.x, t1.y);
+    if (e.pointerType === "touch") return touchMove(e);
 
-        const center = { x: c.x - elementRect.left, y: c.y - elementRect.top };
+    updateCursor(true, e.clientX - elementRect.left, e.clientY - elementRect.top);
 
-        if (initialPinchDistance !== undefined && prevCenter) {
-          canvasManager.zoomAround(
-            center.x,
-            center.y,
-            d / initialPinchDistance,
-          );
-
-          contentManager.panX +=
-            (center.x - prevCenter.x) / contentManager.zoom;
-          contentManager.panY +=
-            (center.y - prevCenter.y) / contentManager.zoom;
-
-          canvasManager.redrawStrokes();
-        }
-
-        initialPinchDistance = d;
-        prevCenter = center;
-      }
-      return;
-    }
-
-    cursorX = e.offsetX;
-    cursorY = e.offsetY;
-    updateCursor(true, cursorX, cursorY);
-
+    if (e.pointerId !== inkPointer) return;
     if (toolFromButtons(e.buttons) === undefined) return;
 
     const tool = activeTool ?? canvasManager.tool;
 
-    if (tool === "pen") {
-      for (const s of e.getCoalescedEvents?.() ?? [e]) {
-        callHandler(tool, "move", s);
-      }
-    } else {
-      callHandler(tool, "move", e);
-    }
+    // Coalesced events give the full pen sample rate; only drawing needs it.
+    const events =
+      tool === "pen" || tool === "highlighter"
+        ? (e.getCoalescedEvents?.() ?? [e])
+        : [e];
+    for (const s of events.length ? events : [e]) callHandler(tool, "move", s);
   };
 
   const onPointerEnter = (e: PointerEvent) => {
     if (e.pointerType === "touch") return;
-
     elementRect = element.getBoundingClientRect();
-
-    cursorX = e.offsetX;
-    cursorY = e.offsetY;
-    updateCursor(true, cursorX, cursorY);
+    updateCursor(true, e.clientX - elementRect.left, e.clientY - elementRect.top);
   };
 
   const onPointerLeave = (e: PointerEvent) => {
-    updateCursor(false);
-    if (e.pointerType === "touch") {
-      activeTouch.delete(e.pointerId);
-      initialPinchDistance = undefined;
-      prevCenter = undefined;
-      return;
-    }
+    if (e.pointerType !== "touch") updateCursor(false);
   };
 
   const onWheel = (e: WheelEvent) => {
+    if (isUIEvent(e)) return;
     e.preventDefault();
 
+    const x = e.clientX - elementRect.left;
+    const y = e.clientY - elementRect.top;
+
     if (e.ctrlKey) {
-      const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
-      canvasManager.zoomAround(e.offsetX, e.offsetY, factor);
+      // Trackpad pinches arrive as ctrl+wheel with small deltas; scale with them.
+      const factor = Math.pow(ZOOM_STEP, -e.deltaY / (Math.abs(e.deltaY) > 20 ? 100 : 10));
+      canvasManager.zoomAround(x, y, factor);
     } else {
-      // Allow the axes to be swapped?
-      const a = settingsStore.store.shift_swaps_scroll_axes;
-      const x = e.shiftKey && a ? e.deltaY : e.deltaX;
-      const y = e.shiftKey && a ? e.deltaX : e.deltaY;
-
-      contentManager.panX -= x / contentManager.zoom;
-      contentManager.panY -= y / contentManager.zoom;
+      const swap = e.shiftKey && settingsStore.store.shift_swaps_scroll_axes;
+      const dx = swap ? e.deltaY : e.deltaX;
+      const dy = swap ? e.deltaX : e.deltaY;
+      canvasManager.panBy(-dx, -dy);
     }
-
-    canvasManager.redrawStrokes();
   };
 
   const cleanups: (() => void)[] = [];
@@ -208,17 +205,13 @@ export function canvasController(
     },
   };
 
-  function callHandler(
-    tool: Tool,
-    action: keyof ToolHandlers,
-    e: PointerEvent,
-  ) {
+  function callHandler(tool: Tool, action: keyof ToolHandlers, e: PointerEvent) {
     const point = canvasManager.translateToRelative(
       e.clientX - elementRect.x,
       e.clientY - elementRect.y,
       e.pressure,
     );
 
-    toolHandlers[tool][action]?.(point, e);
+    toolDef(tool).handlers[action]?.(point, e);
   }
 }

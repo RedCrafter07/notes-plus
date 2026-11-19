@@ -1,95 +1,154 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
+import { popupManager } from "$lib/state/popupManager.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
-import type { Block, Point, Stroke } from "$lib/tauri/bindings";
+import type { Block, Point } from "$lib/tauri/bindings";
 import {
+  boundsFromRect,
   circleIntersectsBounds,
-  getStrokeBounds,
   type ContentBounds,
   type Point2D,
 } from "$lib/util/canvasBounds";
-import { inputToPath } from "../svg";
+import { blockBounds, newId, pruneBlockCaches } from "../blocks";
+import { isInfinite, pageExtent, pageRect } from "../pageFormats";
+import { drawBlocks } from "../render/draw";
+import { onPaint, requestRedraw } from "../render/scheduler";
+import { defaultSizes, toolDef, type Tool } from "../tools/registry";
 import { erase } from "../tools/erase";
 import { lassoManager } from "./lassoManager.svelte";
+import { textEditor } from "./textEditor.svelte";
 
-export type Tool = "eraser" | "pen" | "lasso";
-type CacheEntry = { path?: Path2D; bounds?: ContentBounds | null };
+export type { Tool } from "../tools/registry";
+
+/** Screen pixels of margin around a page when fitting it to the view. */
+const FIT_MARGIN = 32;
+/** Never zoom past this when fitting a page; huge zoom on a big screen is unpleasant. */
+const MAX_FIT_ZOOM = 1.6;
+/** Screen pixels of a fixed page that always stay on screen while panning. */
+const KEEP_VISIBLE = 64;
 
 class CanvasManager {
   #tool = $state<Tool>("pen");
   lockTool = $state(false);
+  /** When on, stroke width is in page units and grows with zoom (like paper). */
   zoomLock = $state(true);
   color = $state("#000000");
-  #thickness = $state(6);
-  eraserRadius = $state(24);
+  /** Per-tool size: stroke width, eraser radius or font size. */
+  sizes = $state<Record<Tool, number>>(defaultSizes());
 
   drawing = $state(false);
   points = $state<Point[]>([]);
 
   width = $state(0);
   height = $state(0);
-  layerCtx = $state<Record<string, CanvasRenderingContext2D>>({});
+  layerCtx: Record<string, CanvasRenderingContext2D> = {};
 
   dpr = $state(typeof window !== "undefined" ? window.devicePixelRatio : 1);
 
-  activeLayerID = $derived(
-    contentManager.layers[contentManager.activeLayer]?.id,
-  );
-
-  #strokeCache = new Map<string, CacheEntry>();
-
-  #entry(id: string) {
-    let e = this.#strokeCache.get(id);
-    if (!e) this.#strokeCache.set(id, (e = {}));
-    return e;
+  constructor() {
+    onPaint(() => this.paint());
   }
 
-  private getPath(s: Stroke) {
-    const e = this.#entry(s.id);
-    return (e.path ??= new Path2D(inputToPath(s.points, s.thickness, false)));
+  // ---------------------------------------------------------------- rendering
+
+  /**
+   * Reads everything that affects the layer canvases, so that calling this
+   * inside an `$effect` re-runs it (and schedules one repaint) whenever any of
+   * it changes. This replaces calling `redrawStrokes()` by hand after every
+   * mutation: forgetting a call is no longer possible.
+   *
+   * It tracks array identity, not contents, which is why mutations must
+   * assign new `blocks` arrays rather than editing them in place.
+   */
+  watch() {
+    for (const l of contentManager.layers) {
+      void l.blocks;
+      void l.blocks.length;
+      void l.visible;
+    }
+    void contentManager.page.width;
+    void contentManager.page.height;
+    void contentManager.zoom;
+    void contentManager.panX;
+    void contentManager.panY;
+    void this.width;
+    void this.height;
+    void this.dpr;
+    void lassoManager.selectedIds;
+    void textEditor.hiddenId;
+    void tabManager.note.assets;
+    requestRedraw();
   }
 
-  private getBounds(s: Stroke) {
-    const e = this.#entry(s.id);
-    if (e.bounds === undefined) e.bounds = getStrokeBounds(s);
-    return e.bounds;
+  /** The visible area in content space. */
+  viewBounds(): ContentBounds {
+    const tl = this.translateToRelative(0, 0);
+    const br = this.translateToRelative(this.width, this.height);
+    return boundsFromRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
   }
 
+  private paint() {
+    const page = contentManager.page;
+    const assets = tabManager.note.assets;
+    const view = this.viewBounds();
+    const clip = pageRect(page);
+
+    const skip = new Set(lassoManager.selectedIds);
+    if (textEditor.hiddenId) skip.add(textEditor.hiddenId);
+
+    for (const l of page.layers) {
+      const ctx = this.layerCtx[l.id];
+      if (!ctx) continue;
+
+      ctx.resetTransform();
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      if (!l.visible) continue;
+
+      ctx.save();
+      ctx.scale(this.dpr, this.dpr);
+      ctx.translate(this.width / 2, this.height / 2);
+      ctx.scale(contentManager.zoom, contentManager.zoom);
+      ctx.translate(contentManager.panX, contentManager.panY);
+
+      // On a fixed page, ink past the edge is kept but not shown, like paper.
+      if (clip) {
+        ctx.beginPath();
+        ctx.rect(clip.min.x, clip.min.y, clip.width, clip.height);
+        ctx.clip();
+      }
+
+      drawBlocks(ctx, l.blocks, assets, view, skip);
+      ctx.restore();
+    }
+  }
+
+  /**
+   * Drops cached outlines/bounds for blocks that no longer exist anywhere:
+   * in any page of any open tab. (Scoping this to the active page used to
+   * throw away the cache of every other page and tab on each undo.)
+   */
   cleanCache() {
     const live = new Set<string>();
-    for (const l of contentManager.layers)
-      for (const b of l.blocks) if (b.Stroke) live.add(b.Stroke.id);
+    for (const tab of tabManager.tabs)
+      for (const page of tab.note.content.pages)
+        for (const l of page.layers) for (const b of l.blocks) live.add(b.id);
 
-    for (const k of [...this.#strokeCache.keys()])
-      if (!live.has(k)) this.#strokeCache.delete(k);
-  }
-
-  addPoint(p: Point) {
-    if (this.points.length === 0) {
-      this.points.push(p);
-      return;
-    }
-
-    const lastPoint = this.points[this.points.length - 1];
-    if (!lastPoint) {
-      this.points.push(p);
-      return;
-    }
-
-    const dx = p.x - lastPoint.x;
-    const dy = p.y - lastPoint.y;
-    const distSq = dx * dx + dy * dy;
-
-    if (distSq > 0) {
-      this.points.push(p);
-    }
+    pruneBlockCaches(live);
   }
 
   assignContext(element: HTMLCanvasElement, id: string) {
     const ctx = element.getContext("2d");
     if (ctx) {
       this.layerCtx[id] = ctx;
+      requestRedraw();
     }
+    return {
+      destroy: () => {
+        if (this.layerCtx[id]?.canvas === element) delete this.layerCtx[id];
+      },
+    };
   }
+
+  // ------------------------------------------------------------ coordinates
 
   translateToRelative(x: number, y: number, pressure: number = 0.5) {
     x = x - this.width / 2;
@@ -101,34 +160,133 @@ class CanvasManager {
     x = x - contentManager.panX;
     y = y - contentManager.panY;
 
-    return {
-      x,
-      y,
-      pressure,
-    };
-  }
-
-  translateToAbsolute(p: Point): Point {
-    let { x, y, pressure } = p;
-
-    x = x + contentManager.panX;
-    y = y + contentManager.panY;
-    x = x * contentManager.zoom;
-    y = y * contentManager.zoom;
-    x = x + this.width / 2;
-    y = y + this.height / 2;
-
     return { x, y, pressure };
   }
 
+  translateToAbsolute(p: Point2D): Point2D {
+    return {
+      x: (p.x + contentManager.panX) * contentManager.zoom + this.width / 2,
+      y: (p.y + contentManager.panY) * contentManager.zoom + this.height / 2,
+    };
+  }
+
+  /** Pans by a screen-pixel delta. */
+  panBy(dx: number, dy: number) {
+    contentManager.panX += dx / contentManager.zoom;
+    contentManager.panY += dy / contentManager.zoom;
+    this.clampPan();
+  }
+
   zoomAround(x: number, y: number, factor: number) {
-    const before = canvasManager.translateToRelative(x, y);
+    const before = this.translateToRelative(x, y);
 
     contentManager.zoom *= factor;
 
     const z = contentManager.zoom;
     contentManager.panX = (x - this.width / 2) / z - before.x;
     contentManager.panY = (y - this.height / 2) / z - before.y;
+    this.clampPan();
+  }
+
+  /**
+   * Keeps a fixed-size page from being panned out of sight. Infinite pages
+   * are left alone; "Fit" is the way back there.
+   */
+  clampPan() {
+    const page = contentManager.page;
+    if (isInfinite(page) || this.width === 0) return;
+
+    const z = contentManager.zoom;
+    const keep = KEEP_VISIBLE / z;
+    const hx = this.width / 2 / z;
+    const hy = this.height / 2 / z;
+
+    // The content point at the centre of the screen is (-panX, -panY).
+    const cx = clamp(-contentManager.panX, keep - hx, page.width + hx - keep);
+    const cy = clamp(-contentManager.panY, keep - hy, page.height + hy - keep);
+    contentManager.panX = -cx;
+    contentManager.panY = -cy;
+  }
+
+  /**
+   * Fits the current page into the view: a tall page is fitted to the width
+   * and shown from the top, a wide one is shown whole. An infinite page is
+   * fitted to its content (or reset to the origin when empty).
+   */
+  fitPage() {
+    if (this.width === 0 || this.height === 0) return;
+    const page = contentManager.page;
+    const r = pageExtent(page);
+
+    if (!r || r.width === 0 || r.height === 0) {
+      contentManager.zoom = 1;
+      contentManager.panX = 0;
+      contentManager.panY = 0;
+      return;
+    }
+
+    const zoomW = (this.width - FIT_MARGIN * 2) / r.width;
+    const zoomH = (this.height - FIT_MARGIN * 2) / r.height;
+    const tall = !isInfinite(page) && r.height > r.width && zoomW < zoomH * 2;
+
+    const z = tall
+      ? Math.min(zoomW, MAX_FIT_ZOOM)
+      : Math.min(zoomW, zoomH, isInfinite(page) ? 1 : MAX_FIT_ZOOM);
+    contentManager.zoom = z;
+
+    contentManager.panX = -(r.min.x + r.width / 2);
+    contentManager.panY =
+      tall && r.height * z > this.height
+        ? (FIT_MARGIN - this.height / 2) / contentManager.zoom - r.min.y
+        : -(r.min.y + r.height / 2);
+  }
+
+  // ------------------------------------------------------------------ tools
+
+  get tool() {
+    return this.#tool;
+  }
+
+  set tool(tool: Tool) {
+    if (this.#tool === tool) return;
+
+    tabManager.transact("Switch tool", () => {
+      if (this.#tool === "lasso") lassoManager.reset();
+      else if (tool === "lasso") lassoManager.isSelecting = true;
+      if (this.#tool === "text") textEditor.commit();
+
+      this.#tool = tool;
+    });
+  }
+
+  /** Size of the active tool (stroke width, eraser radius or font size). */
+  get size() {
+    return this.sizes[this.#tool];
+  }
+
+  set size(v: number) {
+    this.sizes[this.#tool] = v;
+  }
+
+  /** Width of the stroke being drawn, in content units. */
+  get thickness() {
+    const t = this.sizes[this.#tool];
+    return this.zoomLock ? t : t / contentManager.zoom;
+  }
+
+  get eraserRadius() {
+    return this.sizes.eraser;
+  }
+
+  get opacity() {
+    return toolDef(this.#tool).opacity ?? 1;
+  }
+
+  // ------------------------------------------------------------------ input
+
+  addPoint(p: Point) {
+    const last = this.points[this.points.length - 1];
+    if (!last || last.x !== p.x || last.y !== p.y) this.points.push(p);
   }
 
   eraseAlong(from: Point2D, to: Point2D) {
@@ -146,157 +304,68 @@ class CanvasManager {
     }
   }
 
-  eraser(p: Omit<Point, "pressure">) {
-    contentManager.layers.forEach((l, i) => {
-      if (l.locked || !l.visible) return;
+  /** Cuts strokes under the eraser. Text and images are removed with the lasso. */
+  eraser(p: Point2D) {
+    const r = this.eraserRadius;
 
-      let layerChanged = false;
-      const blocks = l.blocks.flatMap((b) => {
-        // The block is not a stroke and thus cannot be erased.
-        if (!b.Stroke) return b;
+    for (const l of contentManager.layers) {
+      if (l.locked || !l.visible) continue;
 
-        const s = b.Stroke;
-        if (s.points.length === 0) return []; // empty stroke, skip/delete
+      let changed = false;
+      const blocks = l.blocks.flatMap((b): Block[] => {
+        if (b.type !== "Stroke") return [b];
+        if (b.points.length === 0) {
+          changed = true;
+          return [];
+        }
 
-        const bounds = this.getBounds(s);
-        if (bounds && !circleIntersectsBounds(p, this.eraserRadius, bounds))
-          return b;
+        const bounds = blockBounds(b);
+        if (bounds && !circleIntersectsBounds(p, r, bounds)) return [b];
 
-        const newPoints = erase(s.points, p, this.eraserRadius);
+        const pieces = erase(b.points, p, r);
+        // One piece with every point means the eraser missed.
+        if (pieces.length === 1 && pieces[0].length === b.points.length)
+          return [b];
 
-        if (newPoints.length === 1 && newPoints[0].length === s.points.length)
-          // newPoints returns one stroke. When the length of the points matches, the points are precisely the same, thus no change has occurred.
-          return b;
-
-        // Otherwise, it did change
-        layerChanged = true;
-
-        return newPoints.map(
-          (p) =>
-            ({
-              Stroke: {
-                ...s,
-                id: crypto.randomUUID(),
-                points: p,
-              },
-            }) satisfies Block,
-        );
+        changed = true;
+        return pieces.map((points) => ({ ...b, id: newId(), points }));
       });
 
-      if (layerChanged) {
-        // prevent unnecessary override
-        contentManager.layers[i] = {
-          ...l,
-          blocks,
-        };
-      }
-    });
-  }
-
-  finishStroke() {
-    if (this.points.length === 0) return;
-    // Do not push to layer when it is locked or invisible.
-    if (contentManager.layers[contentManager.activeLayer].locked) return;
-    if (!contentManager.layers[contentManager.activeLayer].visible) return;
-
-    contentManager.layers[contentManager.activeLayer].blocks.push({
-      Stroke: {
-        id: crypto.randomUUID(),
-        color: this.color,
-        thickness: this.thickness,
-        points: this.points,
-      },
-    });
-
-    this.points = [];
-  }
-
-  clearCanvas() {
-    for (const id in canvasManager.layerCtx) {
-      const ctx = canvasManager.layerCtx[id];
-
-      ctx.save();
-      ctx.resetTransform();
-      ctx.clearRect(
-        0,
-        0,
-        canvasManager.width * this.dpr,
-        canvasManager.height * this.dpr,
-      );
-      ctx.restore();
+      if (changed) l.blocks = blocks;
     }
   }
 
-  redrawStrokes() {
-    if (canvasManager.drawing) return;
-    this.clearCanvas();
+  finishStroke() {
+    const points = $state.snapshot(this.points);
+    this.points = [];
+    if (points.length === 0) return;
 
-    contentManager.layers.forEach((l) => {
-      const selectedStrokes = lassoManager.selection
-        ? (lassoManager.selection[l.id] ?? [])
-        : [];
+    const layer = contentManager.layers[contentManager.activeLayer];
+    if (!layer) return;
+    if (layer.locked || !layer.visible) {
+      popupManager.add({
+        type: "warning",
+        message: `"${layer.name}" is ${layer.locked ? "locked" : "hidden"}.`,
+      });
+      return;
+    }
 
-      const strokes = l.blocks
-        .filter((b) => b.Stroke !== undefined)
-        .map((b) => b.Stroke)
-        .filter(
-          (s) => !selectedStrokes.some((sel) => sel.block.Stroke.id === s.id),
-        );
-
-      const ctx = canvasManager.layerCtx[l.id];
-      if (!ctx) return;
-
-      ctx.resetTransform();
-      ctx.scale(this.dpr, this.dpr);
-      ctx.translate(canvasManager.width / 2, canvasManager.height / 2);
-      ctx.scale(contentManager.zoom, contentManager.zoom);
-      ctx.translate(contentManager.panX, contentManager.panY);
-
-      for (const s of strokes) {
-        this.drawOnCanvas(this.getPath(s), l.id, s.color);
-      }
-    });
+    layer.blocks = [
+      ...layer.blocks,
+      {
+        type: "Stroke",
+        id: newId(),
+        color: this.color,
+        thickness: this.thickness,
+        opacity: this.opacity,
+        points,
+      },
+    ];
   }
+}
 
-  private drawOnCanvas(
-    path: string | Path2D,
-    layerID: string,
-    c = canvasManager.color,
-  ) {
-    const ctx = canvasManager.layerCtx[layerID];
-    if (!ctx) return;
-    if (typeof path === "string") path = new Path2D(path);
-
-    ctx.fillStyle = c;
-    ctx?.fill(path);
-  }
-
-  get tool() {
-    return this.#tool;
-  }
-
-  set tool(tool: Tool) {
-    if (this.#tool === tool) return;
-
-    tabManager.transact("Switch tool", () => {
-      if (this.#tool === "lasso") lassoManager.reset();
-      else if (tool === "lasso") lassoManager.isSelecting = true;
-
-      this.#tool = tool;
-    });
-
-    this.redrawStrokes();
-  }
-
-  get thickness() {
-    return !this.zoomLock
-      ? this.#thickness / contentManager.zoom
-      : this.#thickness;
-  }
-
-  set thickness(t: number) {
-    this.#thickness = t;
-  }
+function clamp(v: number, lo: number, hi: number) {
+  return lo > hi ? (lo + hi) / 2 : Math.min(Math.max(v, lo), hi);
 }
 
 export const canvasManager = new CanvasManager();

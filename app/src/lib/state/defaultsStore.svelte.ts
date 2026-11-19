@@ -15,8 +15,10 @@ const defaultPage: Page = {
   pattern_color: "#dddddd",
   pattern_scale: 24,
   pattern: null,
-  height: -1.0,
-  width: -1.0,
+  // A4 at 96 units per inch; mirrors `Page::default()` in Rust.
+  width: 794,
+  height: 1123,
+  background_asset: null,
   layers: [defaultLayer],
 };
 export const defaultNote: NoteData = {
@@ -38,6 +40,7 @@ export const defaultNote: NoteData = {
     pan_y: 0,
     zoom: 1.0,
   },
+  assets: {},
 };
 
 export const EMPTY_NOTE = import.meta.env.DEV
@@ -66,5 +69,6 @@ export const defaultsStore = new Store<Defaults>({
       pan_y: 0,
       zoom: 1.0,
     },
+    assets: {},
   },
 });

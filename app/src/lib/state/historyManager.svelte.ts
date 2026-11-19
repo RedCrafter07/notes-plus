@@ -3,9 +3,22 @@ import {
   type Tool,
 } from "$lib/editor/state/canvasManager.svelte";
 import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
-import { selectionFromIds } from "$lib/editor/tools/lasso";
-import type { Block } from "$lib/tauri/bindings";
+import { selectionFromIds, selectionIds } from "$lib/editor/tools/lasso";
+import type { Block, Page } from "$lib/tauri/bindings";
 import { contentManager } from "./contentManager.svelte";
+
+/*
+ * Two kinds of change are recorded:
+ *
+ * - Layer patches: the before/after `blocks` array of each touched layer.
+ * - Page structure: the before/after `pages` array, for adding, deleting or
+ *   reordering pages, page setup, and layer add/remove/rename.
+ *
+ * Both are cheap because they store references, not copies. That only works
+ * because nothing is edited in place: a changed block gets a new id, a changed
+ * page or layer list gets a new object. `contentManager` follows that rule for
+ * every structural edit.
+ */
 
 interface LayerPatch {
   layerId: string;
@@ -22,7 +35,10 @@ interface HistoryEntry {
   contentId: number;
   label: string;
   pageIndex: number;
+  pageIndexAfter: number;
   patches: LayerPatch[]; // empty for a selection-only entry
+  /** Set when pages were added, removed, replaced or reordered. */
+  pages?: { before: Page[]; after: Page[] };
   selectionBefore: EditorState;
   selectionAfter: EditorState;
 }
@@ -33,6 +49,7 @@ export class HistoryManager {
 
   #label?: string;
   #cached = new Map<string, Block[]>();
+  #pages?: Page[];
   #currentPage?: number;
   #currentTool?: Tool;
   #currentSelection: string[] = [];
@@ -47,7 +64,8 @@ export class HistoryManager {
     this.#label = label;
     this.#currentPage = contentManager.currentPage;
     this.#currentTool = canvasManager.tool;
-    this.#currentSelection = selectedIds();
+    this.#currentSelection = selectionIds(lassoManager.selection);
+    this.#pages = contentManager.pages.slice();
 
     contentManager.layers.forEach((l) => {
       this.#cached.set(l.id, [...l.blocks]);
@@ -66,7 +84,10 @@ export class HistoryManager {
     const l = this.entries.push(historyEntry);
     this.index = l - 1;
 
-    if (historyEntry.patches.length > 0) contentManager.updateEditDate();
+    if (historyEntry.patches.length > 0 || historyEntry.pages) {
+      contentManager.updateEditDate();
+      canvasManager.cleanCache();
+    }
 
     this.limitHistory();
   }
@@ -95,6 +116,7 @@ export class HistoryManager {
     try {
       const entry = this.entries[this.index];
 
+      if (entry.pages) contentManager.pages = entry.pages.before;
       contentManager.currentPage = entry.pageIndex;
       this.applyPatches(entry.patches, "before");
       this.restoreEditorState(entry.selectionBefore);
@@ -102,7 +124,6 @@ export class HistoryManager {
       this.index--;
 
       canvasManager.cleanCache();
-      canvasManager.redrawStrokes();
     } finally {
       this.#applying = false;
     }
@@ -118,14 +139,16 @@ export class HistoryManager {
     try {
       const entry = this.entries[this.index + 1];
 
-      contentManager.currentPage = entry.pageIndex;
+      if (entry.pages) contentManager.pages = entry.pages.after;
+      contentManager.currentPage = entry.pages
+        ? entry.pageIndexAfter
+        : entry.pageIndex;
       this.applyPatches(entry.patches, "after");
       this.restoreEditorState(entry.selectionAfter);
 
       this.index++;
 
       canvasManager.cleanCache();
-      canvasManager.redrawStrokes();
     } finally {
       this.#applying = false;
     }
@@ -166,12 +189,20 @@ export class HistoryManager {
       : this.#baseContentId;
   }
 
+  /** Label of the step undo would revert, for tooltips. */
+  get undoLabel() {
+    return this.canUndo ? this.entries[this.index].label : undefined;
+  }
+  get redoLabel() {
+    return this.canRedo ? this.entries[this.index + 1].label : undefined;
+  }
+
   get isDirty() {
     return this.contentId !== this.#savedContentId;
   }
 
-  markSaved() {
-    this.#savedContentId = this.contentId;
+  markSaved(contentId = this.contentId) {
+    this.#savedContentId = contentId;
   }
 
   private buildEntry(): HistoryEntry | null {
@@ -189,23 +220,31 @@ export class HistoryManager {
       patches.push({ layerId: l.id, before, after: [...l.blocks] });
     }
 
-    if (
-      patches.length === 0 &&
-      !idsChanged(this.#currentSelection, selectedIds())
-    )
+    const pagesBefore = this.#pages ?? [];
+    const pagesAfter = contentManager.pages;
+    const pages = itemsChanged(pagesBefore, pagesAfter)
+      ? { before: pagesBefore, after: pagesAfter.slice() }
+      : undefined;
+
+    const selection = selectionIds(lassoManager.selection);
+    const contentChanged = patches.length > 0 || pages !== undefined;
+
+    if (!contentChanged && !idsChanged(this.#currentSelection, selection))
       return null;
 
     return {
-      contentId: patches.length > 0 ? ++this.#nextContentId : this.contentId,
+      contentId: contentChanged ? ++this.#nextContentId : this.contentId,
       label: this.#label,
       pageIndex: this.#currentPage,
+      pageIndexAfter: contentManager.currentPage,
       patches,
+      pages,
       selectionBefore: {
         selectedBlockIds: this.#currentSelection,
         tool: this.#currentTool,
       },
       selectionAfter: {
-        selectedBlockIds: selectedIds(),
+        selectedBlockIds: selection,
         tool: canvasManager.tool,
       },
     };
@@ -213,6 +252,7 @@ export class HistoryManager {
 
   private cleanup() {
     this.#cached.clear();
+    this.#pages = undefined;
     this.#label = undefined;
     this.#currentPage = undefined;
     this.#currentTool = undefined;
@@ -229,17 +269,13 @@ export class HistoryManager {
   }
 }
 
-function blocksChanged(a: Block[], b: Block[]) {
+/** Shallow, by identity: relies on blocks and pages never being edited in place. */
+function itemsChanged<T>(a: readonly T[], b: readonly T[]) {
   if (a.length !== b.length) return true;
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return true;
   return false;
 }
-
-function selectedIds(): string[] {
-  const s = lassoManager.selection;
-  if (!s) return [];
-  return Object.values(s).flatMap((e) => e.map((x) => x.block.Stroke.id));
-}
+const blocksChanged = itemsChanged<Block>;
 
 function idsChanged(a: string[], b: string[]) {
   if (a.length !== b.length) return true;

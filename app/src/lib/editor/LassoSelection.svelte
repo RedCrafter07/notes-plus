@@ -2,7 +2,7 @@
   import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
   import { contentManager } from "$lib/state/contentManager.svelte";
   import { fade } from "svelte/transition";
-  import { inputToPath } from "./svg";
+  import BlockSvg from "./BlockSvg.svelte";
   import { canvasManager } from "./state/canvasManager.svelte";
 </script>
 
@@ -11,12 +11,8 @@
     transform="translate({lassoManager.dragOffsetX}, {lassoManager.dragOffsetY})"
   >
     {#each lassoManager.selectedLayers as l}
-      {#each lassoManager.selection[l] as e}
-        {@const stroke = e.block.Stroke}
-        <path
-          d={inputToPath(stroke.points, stroke.thickness, false)}
-          fill={stroke.color}
-        />
+      {#each lassoManager.selection[l] as e (e.block.id)}
+        <BlockSvg block={e.block} />
       {/each}
     {/each}
     <rect
@@ -26,11 +22,10 @@
       width={lassoManager.boundingBox?.width}
       height={lassoManager.boundingBox?.height}
       fill="transparent"
-      stroke="var(--base-1)"
+      stroke="var(--primary)"
       stroke-dasharray={`${5 / contentManager.zoom}`}
       stroke-width={2 / contentManager.zoom}
-      class="cursor-move pointer-events-auto"
-      role="group"
+      class="cursor-move"
     />
   </g>
 {/if}

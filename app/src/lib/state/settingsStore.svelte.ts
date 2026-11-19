@@ -1,4 +1,4 @@
-import type { Settings } from "$lib/tauri/bindings";
+import { commands, type Settings } from "$lib/tauri/bindings";
 import { Store } from "$lib/util/store.svelte";
 
 // Defaults mirror `Settings::default()` in the Rust backend so the UI has
@@ -9,4 +9,16 @@ export const settingsStore = new Store<Settings>({
   colors: ["#000000", "#f22e2e", "#55ea41"],
   shift_swaps_scroll_axes: true,
   disable_tool_switch: false,
+  autosave: true,
 });
+
+/**
+ * Changes some settings and persists them. The backend stores the whole
+ * object and broadcasts it back via `settingsUpdate`, which keeps every
+ * window in sync.
+ */
+export async function updateSettings(patch: Partial<Settings>) {
+  const next = { ...$state.snapshot(settingsStore.store), ...patch };
+  settingsStore.store = next;
+  await commands.setSettings(next);
+}

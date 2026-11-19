@@ -1,20 +1,62 @@
+import { contentManager } from "$lib/state/contentManager.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
 import { handleSave } from "./handleSave.svelte";
+import { canvasManager } from "./state/canvasManager.svelte";
+import { lassoManager } from "./state/lassoManager.svelte";
+import type { Tool } from "./tools/registry";
+
+/** Single-key tool shortcuts (only when not typing). */
+const TOOL_KEYS: Record<string, Tool> = {
+  p: "pen",
+  h: "highlighter",
+  e: "eraser",
+  s: "lasso",
+  t: "text",
+};
+
+function isTyping(e: KeyboardEvent) {
+  const t = e.target;
+  return (
+    t instanceof HTMLElement &&
+    (t.isContentEditable || t.closest("input, textarea, select") !== null)
+  );
+}
 
 export function useShortcuts() {
   $effect(() => {
     const event = async (e: KeyboardEvent) => {
-      if (!e.ctrlKey) return;
+      const key = e.key.toLowerCase();
 
-      if (e.key.toLowerCase() === "s") {
+      if (e.ctrlKey) {
+        if (key === "s") {
+          e.preventDefault();
+          await handleSave(e.shiftKey);
+        } else if (key === "z") {
+          e.preventDefault();
+          tabManager[e.shiftKey ? "redo" : "undo"]();
+        } else if (key === "y") {
+          e.preventDefault();
+          tabManager.redo();
+        } else if (key === "0") {
+          e.preventDefault();
+          canvasManager.fitPage();
+        }
+        return;
+      }
+
+      if (isTyping(e) || e.altKey || e.metaKey) return;
+
+      if (e.key === "PageDown") {
         e.preventDefault();
-        await handleSave(e.shiftKey);
-      } else if (e.key.toLowerCase() === "z") {
+        contentManager.currentPage += 1;
+      } else if (e.key === "PageUp") {
         e.preventDefault();
-        tabManager[e.shiftKey ? "redo" : "undo"]();
-      } else if (e.key.toLowerCase() === "y") {
+        contentManager.currentPage -= 1;
+      } else if ((e.key === "Delete" || e.key === "Backspace") && lassoManager.selection) {
         e.preventDefault();
-        tabManager.redo();
+        lassoManager.deleteSelection();
+      } else if (TOOL_KEYS[key] && !e.shiftKey) {
+        canvasManager.tool = TOOL_KEYS[key];
       }
     };
     document.addEventListener("keydown", event);
