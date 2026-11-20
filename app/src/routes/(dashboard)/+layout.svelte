@@ -24,7 +24,7 @@
         <div
           class={[
             "font-display text-2xl font-black",
-            { "h-6 aspect-square": settingsStore.store.sidebar_collapsed },
+            { "w-6 h-6": settingsStore.store.sidebar_collapsed },
           ]}
         >
           {#if settingsStore.store.sidebar_collapsed}
