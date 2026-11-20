@@ -8,14 +8,14 @@
     IconPlus,
   } from "@tabler/icons-svelte";
   import { fade } from "svelte/transition";
-  import ColorEditPopup from "$lib/components/ColorEditPopup.svelte";
-  import { settingsStore, updateSettings } from "$lib/state/settingsStore.svelte";
-  import { tabManager } from "$lib/state/tabManager.svelte";
+  import ColorEditPopup from "#lib/components/ColorEditPopup.svelte";
+  import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
+  import { tabManager } from "#lib/state/tabManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
   import { textEditor } from "./state/textEditor.svelte";
   import { TOOL_IDS, toolDef, type Tool } from "./tools/registry";
   import { insertImageFile, pickFiles } from "./import/image";
-  import type { ToolbarDock } from "$lib/tauri/bindings";
+  import type { ToolbarDock } from "#lib/tauri/bindings.ts";
 
   /*
    * A horizontal bar at the top centre: away from the palm of a right-handed

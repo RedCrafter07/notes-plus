@@ -1,5 +1,5 @@
-import { popupManager, type Popup } from "$lib/state/popupManager.svelte";
-import type { DialogData } from "$lib/tauri/bindings";
+import { popupManager, type Popup } from "#lib/state/popupManager.svelte.ts";
+import type { DialogData } from "#lib/tauri/bindings.ts";
 
 export function handleDialog(data: DialogData) {
   let dialogType: Popup["type"];

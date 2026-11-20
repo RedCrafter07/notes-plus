@@ -1,8 +1,8 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
   import Input from "./Input.svelte";
-  import { fsStore } from "$lib/state/fsStore.svelte";
-  import { fuzzySearch } from "$lib/util/fuzzySearch";
+  import { fsStore } from "#lib/state/fsStore.svelte.ts";
+  import { fuzzySearch } from "#lib/util/fuzzySearch.ts";
   import { IconFolder, IconPlus, IconQuestionMark } from "@tabler/icons-svelte";
 
   let {

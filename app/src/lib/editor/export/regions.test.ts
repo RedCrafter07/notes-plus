@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { boundsFromRect } from "$lib/util/canvasBounds";
+import { boundsFromRect } from "#lib/util/canvasBounds.ts";
 import { coverContent, move, nextRegion, nominalSize, reshape, resetScale } from "./regions";
 
 describe("export regions", () => {

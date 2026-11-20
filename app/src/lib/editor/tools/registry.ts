@@ -12,7 +12,7 @@ import { highlighter, pen } from "./pen";
 import { text } from "./textHandlers";
 import { laser } from "./laserHandlers";
 import type { ToolHandlers } from "./types";
-import type { Settings } from "$lib/tauri/bindings";
+import type { Settings } from "#lib/tauri/bindings.ts";
 
 /** Which list of swatches a tool uses; each is a key of `Settings`. */
 export type Palette = keyof Pick<Settings, "colors" | "highlighter_colors">;

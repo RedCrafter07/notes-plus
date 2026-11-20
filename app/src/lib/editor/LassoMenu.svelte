@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { contentManager } from "$lib/state/contentManager.svelte";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import { IconCopy, IconTrash } from "@tabler/icons-svelte";
   import { canvasManager } from "./state/canvasManager.svelte";
   import { lassoManager } from "./state/lassoManager.svelte";
   import { fade } from "svelte/transition";
   import { onMount } from "svelte";
-  import ColorSwatch from "$lib/components/ColorSwatch.svelte";
+  import ColorSwatch from "#lib/components/ColorSwatch.svelte";
 
   let color = $state<string>("#000000");
 

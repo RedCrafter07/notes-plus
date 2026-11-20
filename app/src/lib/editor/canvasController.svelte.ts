@@ -1,6 +1,6 @@
-import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
-import { settingsStore } from "$lib/state/settingsStore.svelte";
-import { tabManager } from "$lib/state/tabManager.svelte";
+import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
+import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { toolDef, type Tool } from "./tools/registry";
 import type { ToolHandlers } from "./tools/types";
 import { toolFromButtons } from "./toolFromButtons.svelte";

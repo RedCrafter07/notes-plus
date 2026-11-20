@@ -1,5 +1,5 @@
-import { commands, type Settings } from "$lib/tauri/bindings";
-import { Store } from "$lib/util/store.svelte";
+import { commands, type Settings } from "#lib/tauri/bindings.ts";
+import { Store } from "#lib/util/store.svelte.ts";
 
 // Defaults mirror `Settings::default()` in the Rust backend so the UI has
 // sensible values before `get_settings` resolves on startup.

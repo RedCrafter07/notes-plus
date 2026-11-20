@@ -1,4 +1,4 @@
-import type { Page, Point } from "$lib/tauri/bindings";
+import type { Page, Point } from "#lib/tauri/bindings.ts";
 
 /*
  * Messages from the editor window to the presenter-mode audience window,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { popupManager } from "$lib/state/popupManager.svelte";
+  import { popupManager } from "#lib/state/popupManager.svelte.ts";
   import { IconX } from "@tabler/icons-svelte";
   import { expoInOut } from "svelte/easing";
   import { fly } from "svelte/transition";

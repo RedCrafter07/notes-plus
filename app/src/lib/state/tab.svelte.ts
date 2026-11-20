@@ -1,4 +1,4 @@
-import type { NoteData } from "$lib/tauri/bindings";
+import type { NoteData } from "#lib/tauri/bindings.ts";
 import { HistoryManager } from "./historyManager.svelte";
 
 /** What was saved: compared against the live state to decide "unsaved". */

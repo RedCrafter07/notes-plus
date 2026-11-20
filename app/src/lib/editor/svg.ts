@@ -1,4 +1,4 @@
-import type { Point } from "$lib/tauri/bindings";
+import type { Point } from "#lib/tauri/bindings.ts";
 import getStroke from "perfect-freehand";
 
 export function getSvgPathFromStroke(stroke: [number, number][]) {

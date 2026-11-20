@@ -1,5 +1,5 @@
-import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
-import type { Point } from "$lib/tauri/bindings";
+import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
+import type { Point } from "#lib/tauri/bindings.ts";
 import type { ToolHandler, ToolHandlers } from "./types";
 
 let last: Point | undefined;

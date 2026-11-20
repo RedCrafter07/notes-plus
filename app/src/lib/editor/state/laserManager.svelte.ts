@@ -1,5 +1,5 @@
-import type { Point } from "$lib/tauri/bindings";
-import type { LaserStroke } from "$lib/present/protocol";
+import type { Point } from "#lib/tauri/bindings.ts";
+import type { LaserStroke } from "#lib/present/protocol.ts";
 
 /** How long a laser stroke stays fully visible after the pen lifts. */
 const HOLD_MS = 600;

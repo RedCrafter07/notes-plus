@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { BackgroundPattern } from "$lib/tauri/bindings";
+  import type { BackgroundPattern } from "#lib/tauri/bindings.ts";
 
   /** A static preview of a paper pattern (the live page uses Paper.svelte). */
   const {

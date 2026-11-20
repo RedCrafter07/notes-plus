@@ -1,14 +1,14 @@
-import { contentManager } from "$lib/state/contentManager.svelte";
-import { popupManager } from "$lib/state/popupManager.svelte";
-import { settingsStore } from "$lib/state/settingsStore.svelte";
-import { tabManager } from "$lib/state/tabManager.svelte";
-import type { Block, Point } from "$lib/tauri/bindings";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import { popupManager } from "#lib/state/popupManager.svelte.ts";
+import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
+import type { Block, Point } from "#lib/tauri/bindings.ts";
 import {
   boundsFromRect,
   circleIntersectsBounds,
   type ContentBounds,
   type Point2D,
-} from "$lib/util/canvasBounds";
+} from "#lib/util/canvasBounds.ts";
 import { blockBounds, newId, pruneBlockCaches } from "../blocks";
 import { isInfinite, pageExtent, pageRect } from "../pageFormats";
 import { drawBlocks } from "../render/draw";

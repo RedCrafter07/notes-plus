@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import { IconPencil } from "@tabler/icons-svelte";
   import Input from "./Input.svelte";
   import Overlay from "./Overlay.svelte";
-  import { jotStore } from "$lib/state/jotStore.svelte";
+  import { jotStore } from "#lib/state/jotStore.svelte.ts";
 
   let visible = $derived(overlayManager.open === "jotDown");
   let note = $state("");

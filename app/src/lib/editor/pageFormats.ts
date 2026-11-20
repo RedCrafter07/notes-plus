@@ -1,5 +1,5 @@
-import type { Layer, Page } from "$lib/tauri/bindings";
-import { boundsFromRect, unionBounds, type ContentBounds } from "$lib/util/canvasBounds";
+import type { Layer, Page } from "#lib/tauri/bindings.ts";
+import { boundsFromRect, unionBounds, type ContentBounds } from "#lib/util/canvasBounds.ts";
 import { blockBounds } from "./blocks";
 
 /*

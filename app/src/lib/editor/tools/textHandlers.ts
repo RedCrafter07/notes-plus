@@ -1,5 +1,5 @@
-import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
-import { textEditor } from "$lib/editor/state/textEditor.svelte";
+import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
+import { textEditor } from "#lib/editor/state/textEditor.svelte.ts";
 import type { ToolHandler, ToolHandlers } from "./types";
 
 /**

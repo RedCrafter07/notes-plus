@@ -1,9 +1,9 @@
-import type { ExportRegion, Orientation } from "$lib/tauri/bindings";
+import type { ExportRegion, Orientation } from "#lib/tauri/bindings.ts";
 import {
   boundsFromRect,
   boundsIntersect,
   type ContentBounds,
-} from "$lib/util/canvasBounds";
+} from "#lib/util/canvasBounds.ts";
 import { formatSize, PAGE_FORMATS, type PageFormat } from "../pageFormats";
 
 /*
@@ -17,7 +17,7 @@ import { formatSize, PAGE_FORMATS, type PageFormat } from "../pageFormats";
  * the rectangle can have any shape and exports at its own size.
  */
 
-export type { ExportRegion } from "$lib/tauri/bindings";
+export type { ExportRegion } from "#lib/tauri/bindings.ts";
 
 export const FREE = "free";
 

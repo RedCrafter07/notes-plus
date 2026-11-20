@@ -1,8 +1,8 @@
-import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
-import { contentManager } from "$lib/state/contentManager.svelte";
-import { popupManager } from "$lib/state/popupManager.svelte";
-import { commands, type Page } from "$lib/tauri/bindings";
-import { boundsFromRect, type ContentBounds } from "$lib/util/canvasBounds";
+import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import { popupManager } from "#lib/state/popupManager.svelte.ts";
+import { commands, type Page } from "#lib/tauri/bindings.ts";
+import { boundsFromRect, type ContentBounds } from "#lib/util/canvasBounds.ts";
 import { pageArea, renderArea } from "../render/page";
 import { areaToSvg } from "../render/svg";
 import { buildPdf, type PdfPage } from "./pdfWriter";

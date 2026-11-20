@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import type { Page } from "$lib/tauri/bindings";
-  import type { ContentBounds } from "$lib/util/canvasBounds";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import type { Page } from "#lib/tauri/bindings.ts";
+  import type { ContentBounds } from "#lib/util/canvasBounds.ts";
   import { renderArea } from "../render/page";
 
   /** A rendered rectangle of a page, re-rendered (debounced) when it changes. */

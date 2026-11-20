@@ -1,9 +1,9 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { settingsStore, updateSettings } from "$lib/state/settingsStore.svelte";
-  import { commands } from "$lib/tauri/bindings";
-  import { newNote, openNotes } from "$lib/util/notes.svelte";
+  import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
+  import { commands } from "#lib/tauri/bindings.ts";
+  import { newNote, openNotes } from "#lib/util/notes.svelte.ts";
   import {
     IconFolder,
     IconHome,
@@ -12,7 +12,7 @@
     IconPlus,
     IconSettings,
   } from "@tabler/icons-svelte";
-  import logo from "$lib/components/notes_static.svg?raw";
+  import logo from "#lib/components/notes_static.svg?raw";
 
   let { children } = $props();
 </script>

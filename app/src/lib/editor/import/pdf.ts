@@ -1,7 +1,7 @@
-import { contentManager } from "$lib/state/contentManager.svelte";
-import { defaultsStore } from "$lib/state/defaultsStore.svelte";
-import { popupManager } from "$lib/state/popupManager.svelte";
-import type { Page } from "$lib/tauri/bindings";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import { defaultsStore } from "#lib/state/defaultsStore.svelte.ts";
+import { popupManager } from "#lib/state/popupManager.svelte.ts";
+import type { Page } from "#lib/tauri/bindings.ts";
 
 /** PDF points are 1/72 inch; content units are 1/96 inch. */
 const PT_TO_UNITS = 96 / 72;

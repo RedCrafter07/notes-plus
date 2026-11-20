@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { File } from "$lib/tauri/bindings";
+  import type { File } from "#lib/tauri/bindings.ts";
   import { IconNotebook } from "@tabler/icons-svelte";
 
   /**

@@ -1,5 +1,5 @@
-import type { Block, Page } from "$lib/tauri/bindings";
-import type { ContentBounds } from "$lib/util/canvasBounds";
+import type { Block, Page } from "#lib/tauri/bindings.ts";
+import type { ContentBounds } from "#lib/util/canvasBounds.ts";
 import { assertNever } from "../blocks";
 import { pageRect } from "../pageFormats";
 import { inputToPath } from "../svg";

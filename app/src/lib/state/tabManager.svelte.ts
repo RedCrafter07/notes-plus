@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
-import type { NoteData } from "$lib/tauri/bindings";
+import type { NoteData } from "#lib/tauri/bindings.ts";
 import { contentManager } from "./contentManager.svelte";
 import { EMPTY_NOTE } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";

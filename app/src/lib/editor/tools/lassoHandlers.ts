@@ -1,4 +1,4 @@
-import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
+import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
 import type { ToolHandler, ToolHandlers } from "./types";
 
 const down: ToolHandler = (p) => {

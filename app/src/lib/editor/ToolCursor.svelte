@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { contentManager } from "$lib/state/contentManager.svelte";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
   import { lassoManager } from "./state/lassoManager.svelte";
 

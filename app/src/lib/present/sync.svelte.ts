@@ -1,7 +1,7 @@
-import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
-import { laserManager } from "$lib/editor/state/laserManager.svelte";
-import { contentManager } from "$lib/state/contentManager.svelte";
-import type { Page } from "$lib/tauri/bindings";
+import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
+import { laserManager } from "#lib/editor/state/laserManager.svelte.ts";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import type { Page } from "#lib/tauri/bindings.ts";
 import { presenter } from "./presenter.svelte";
 
 /** Asset ids a page draws: its PDF background and any images. */

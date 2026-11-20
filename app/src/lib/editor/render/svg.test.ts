@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import type { Page } from "$lib/tauri/bindings";
-import { boundsFromRect } from "$lib/util/canvasBounds";
+import type { Page } from "#lib/tauri/bindings.ts";
+import { boundsFromRect } from "#lib/util/canvasBounds.ts";
 import { areaToSvg } from "./svg";
 
 const page: Page = {

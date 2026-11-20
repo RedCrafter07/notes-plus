@@ -1,6 +1,6 @@
 import { emitTo, listen } from "@tauri-apps/api/event";
-import { commands, events } from "$lib/tauri/bindings";
-import { popupManager } from "$lib/state/popupManager.svelte";
+import { commands, events } from "#lib/tauri/bindings.ts";
+import { popupManager } from "#lib/state/popupManager.svelte.ts";
 import { AUDIENCE, PRESENT_EVENT, READY_EVENT, type PresentMessage, type ViewMode } from "./protocol";
 
 /*

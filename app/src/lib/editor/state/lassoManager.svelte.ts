@@ -1,13 +1,13 @@
-import { contentManager } from "$lib/state/contentManager.svelte";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
 import {
   runSelection,
   selectionIds,
   type LassoSelection,
-} from "$lib/editor/tools/lasso";
-import type { Block, Point } from "$lib/tauri/bindings";
-import { tabManager } from "$lib/state/tabManager.svelte";
-import { popupManager } from "$lib/state/popupManager.svelte";
-import { unionBounds, type ContentBounds } from "$lib/util/canvasBounds";
+} from "#lib/editor/tools/lasso.ts";
+import type { Block, Point } from "#lib/tauri/bindings.ts";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
+import { popupManager } from "#lib/state/popupManager.svelte.ts";
+import { unionBounds, type ContentBounds } from "#lib/util/canvasBounds.ts";
 import {
   blockBounds,
   blockColor,

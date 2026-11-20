@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
-  import { contentManager } from "$lib/state/contentManager.svelte";
+  import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import { fade } from "svelte/transition";
   import BlockSvg from "./BlockSvg.svelte";
   import { canvasManager } from "./state/canvasManager.svelte";

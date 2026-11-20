@@ -1,5 +1,5 @@
-import type { NoteData, Page } from "$lib/tauri/bindings";
-import { boundsFromRect, padBounds, type ContentBounds } from "$lib/util/canvasBounds";
+import type { NoteData, Page } from "#lib/tauri/bindings.ts";
+import { boundsFromRect, padBounds, type ContentBounds } from "#lib/util/canvasBounds.ts";
 import { contentBounds, pageRect } from "../pageFormats";
 import { drawBlocks, drawPaper, type Assets } from "./draw";
 import { loadImage } from "./images";

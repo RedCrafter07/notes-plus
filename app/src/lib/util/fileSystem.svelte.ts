@@ -1,4 +1,4 @@
-import type { EntryType, File } from "$lib/tauri/bindings";
+import type { EntryType, File } from "#lib/tauri/bindings.ts";
 
 export type FolderEntry = {
   content: EntryType[];

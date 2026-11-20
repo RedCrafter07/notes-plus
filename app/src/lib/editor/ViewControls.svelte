@@ -7,8 +7,8 @@
     IconPlus,
     IconSettings,
   } from "@tabler/icons-svelte";
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
   import { isInfinite } from "./pageFormats";
 

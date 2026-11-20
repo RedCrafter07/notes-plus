@@ -1,9 +1,9 @@
-import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
-import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
-import { selectionFromIds } from "$lib/editor/tools/lasso";
-import { contentManager } from "$lib/state/contentManager.svelte";
-import { popupManager } from "$lib/state/popupManager.svelte";
-import { tabManager } from "$lib/state/tabManager.svelte";
+import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
+import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
+import { selectionFromIds } from "#lib/editor/tools/lasso.ts";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import { popupManager } from "#lib/state/popupManager.svelte.ts";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { newId } from "../blocks";
 import { pageRect } from "../pageFormats";
 

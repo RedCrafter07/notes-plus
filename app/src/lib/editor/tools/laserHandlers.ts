@@ -1,4 +1,4 @@
-import { laserManager } from "$lib/editor/state/laserManager.svelte";
+import { laserManager } from "#lib/editor/state/laserManager.svelte.ts";
 import type { ToolHandler, ToolHandlers } from "./types";
 
 const down: ToolHandler = (p, e) => {

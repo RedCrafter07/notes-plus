@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
-  import { commands } from "$lib/tauri/bindings";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
+  import { commands } from "#lib/tauri/bindings.ts";
   import Overlay from "./Overlay.svelte";
 
   let visible = $derived(overlayManager.open === "close-unsaved");

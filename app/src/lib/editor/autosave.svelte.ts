@@ -1,5 +1,5 @@
-import { settingsStore } from "$lib/state/settingsStore.svelte";
-import { tabManager } from "$lib/state/tabManager.svelte";
+import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { saveTab } from "./handleSave.svelte";
 
 /** Quiet time after the last change before saving. */

@@ -1,6 +1,6 @@
-import type { Defaults, Layer, NoteData, Page } from "$lib/tauri/bindings";
-import { deepFreeze } from "$lib/util/deepFreeze";
-import { Store } from "$lib/util/store.svelte";
+import type { Defaults, Layer, NoteData, Page } from "#lib/tauri/bindings.ts";
+import { deepFreeze } from "#lib/util/deepFreeze.ts";
+import { Store } from "#lib/util/store.svelte.ts";
 
 const defaultLayer: Layer = {
   blocks: [],

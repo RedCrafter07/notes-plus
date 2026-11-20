@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tabManager } from "$lib/state/tabManager.svelte";
+  import { tabManager } from "#lib/state/tabManager.svelte.ts";
   import JotDown from "./JotDown.svelte";
   import NotebookSettings from "./NotebookSettings.svelte";
   import PageSettings from "./PageSettings.svelte";

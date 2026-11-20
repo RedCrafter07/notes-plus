@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import { editorComponents } from "$lib/state/editorComponents.svelte";
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import { editorComponents } from "#lib/state/editorComponents.svelte.ts";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import {
     IconArrowDown,
     IconArrowUp,
@@ -17,8 +17,8 @@
     IconTrash,
   } from "@tabler/icons-svelte";
   import PageThumbnail from "./PageThumbnail.svelte";
-  import { pickFiles } from "$lib/editor/import/image";
-  import { importPdf } from "$lib/editor/import/pdf";
+  import { pickFiles } from "#lib/editor/import/image.ts";
+  import { importPdf } from "#lib/editor/import/pdf.ts";
 
   const iconBtn =
     "w-10 h-10 shrink-0 grid place-items-center rounded-lg text-content-3 hover:text-content-1 hover:bg-overlay/30 active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none";

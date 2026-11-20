@@ -1,5 +1,5 @@
-import { commands } from "$lib/tauri/bindings";
-import { Store } from "$lib/util/store.svelte";
+import { commands } from "#lib/tauri/bindings.ts";
+import { Store } from "#lib/util/store.svelte.ts";
 
 class JotStore extends Store<string[]> {
   constructor() {

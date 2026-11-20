@@ -4,8 +4,8 @@
   import "../app.css";
   import "../mocha.css";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import AppShell from "$lib/components/AppShell.svelte";
-  import { AUDIENCE } from "$lib/present/protocol";
+  import AppShell from "#lib/components/AppShell.svelte";
+  import { AUDIENCE } from "#lib/present/protocol.ts";
 
   const { children } = $props();
 

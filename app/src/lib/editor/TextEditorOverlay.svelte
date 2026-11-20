@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { contentManager } from "$lib/state/contentManager.svelte";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
   import { textEditor } from "./state/textEditor.svelte";
   import { TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT } from "./text";

@@ -1,7 +1,7 @@
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
-import { tabManager } from "$lib/state/tabManager.svelte";
-import { commands, type OpenData } from "$lib/tauri/bindings";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
+import { commands, type OpenData } from "#lib/tauri/bindings.ts";
 
 export async function newNote() {
   const noteData = await commands.newNote();

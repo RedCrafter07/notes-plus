@@ -1,8 +1,8 @@
-import { contentManager } from "$lib/state/contentManager.svelte";
-import { popupManager } from "$lib/state/popupManager.svelte";
-import type { Tab } from "$lib/state/tab.svelte";
-import { tabManager } from "$lib/state/tabManager.svelte";
-import { commands } from "$lib/tauri/bindings";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import { popupManager } from "#lib/state/popupManager.svelte.ts";
+import type { Tab } from "#lib/state/tab.svelte.ts";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
+import { commands } from "#lib/tauri/bindings.ts";
 import { notePreview } from "./render/page";
 
 /**

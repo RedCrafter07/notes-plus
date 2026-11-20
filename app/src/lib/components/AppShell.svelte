@@ -1,25 +1,25 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { commands, events, type OpenData } from "$lib/tauri/bindings";
-  import { timeout } from "$lib/util/timeout";
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import { commands, events, type OpenData } from "#lib/tauri/bindings.ts";
+  import { timeout } from "#lib/util/timeout.ts";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import Modals from "./Modals.svelte";
-  import Tabs from "$lib/components/Tabs.svelte";
-  import { tabManager } from "$lib/state/tabManager.svelte";
-  import { newNote, openNotes } from "$lib/util/notes.svelte";
-  import Popups from "$lib/components/Popups.svelte";
-  import { settingsStore } from "$lib/state/settingsStore.svelte";
-  import { defaultsStore } from "$lib/state/defaultsStore.svelte";
+  import Tabs from "#lib/components/Tabs.svelte";
+  import { tabManager } from "#lib/state/tabManager.svelte.ts";
+  import { newNote, openNotes } from "#lib/util/notes.svelte.ts";
+  import Popups from "#lib/components/Popups.svelte";
+  import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
+  import { defaultsStore } from "#lib/state/defaultsStore.svelte.ts";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { jotStore } from "$lib/state/jotStore.svelte";
-  import { handleDialog } from "$lib/util/dialog";
-  import DropOverlay from "$lib/components/DropOverlay.svelte";
-  import { useAutosave } from "$lib/editor/autosave.svelte";
-  import { saveTab } from "$lib/editor/handleSave.svelte";
-  import { clearTextLayouts } from "$lib/editor/text";
-  import { clearTextBounds } from "$lib/editor/blocks";
-  import { requestRedraw } from "$lib/editor/render/scheduler";
+  import { jotStore } from "#lib/state/jotStore.svelte.ts";
+  import { handleDialog } from "#lib/util/dialog.ts";
+  import DropOverlay from "#lib/components/DropOverlay.svelte";
+  import { useAutosave } from "#lib/editor/autosave.svelte.ts";
+  import { saveTab } from "#lib/editor/handleSave.svelte.ts";
+  import { clearTextLayouts } from "#lib/editor/text.ts";
+  import { clearTextBounds } from "#lib/editor/blocks.ts";
+  import { requestRedraw } from "#lib/editor/render/scheduler.ts";
 
   const { children } = $props();
 

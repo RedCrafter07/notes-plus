@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import { IconFileExport } from "@tabler/icons-svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";

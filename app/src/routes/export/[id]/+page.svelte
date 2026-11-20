@@ -1,18 +1,18 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import Switch from "$lib/components/Switch.svelte";
-  import PageThumbnail from "$lib/components/PageThumbnail.svelte";
-  import AreaImage from "$lib/editor/export/AreaImage.svelte";
-  import RegionCanvas from "$lib/editor/export/RegionCanvas.svelte";
-  import RegionList from "$lib/editor/export/RegionList.svelte";
+  import Switch from "#lib/components/Switch.svelte";
+  import PageThumbnail from "#lib/components/PageThumbnail.svelte";
+  import AreaImage from "#lib/editor/export/AreaImage.svelte";
+  import RegionCanvas from "#lib/editor/export/RegionCanvas.svelte";
+  import RegionList from "#lib/editor/export/RegionList.svelte";
   import {
     FORMAT_INFO,
     planJobs,
     runExport,
     type ExportFormat,
     type ExportMode,
-  } from "$lib/editor/export/export";
+  } from "#lib/editor/export/export.ts";
   import {
     coverContent,
     FIXED_FORMATS,
@@ -24,13 +24,13 @@
     reshape,
     resetScale,
     type ExportRegion,
-  } from "$lib/editor/export/regions";
-  import { blockBounds } from "$lib/editor/blocks";
-  import { contentBounds, isInfinite, pageRect } from "$lib/editor/pageFormats";
-  import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import { tabManager } from "$lib/state/tabManager.svelte";
-  import type { ContentBounds } from "$lib/util/canvasBounds";
+  } from "#lib/editor/export/regions.ts";
+  import { blockBounds } from "#lib/editor/blocks.ts";
+  import { contentBounds, isInfinite, pageRect } from "#lib/editor/pageFormats.ts";
+  import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import { tabManager } from "#lib/state/tabManager.svelte.ts";
+  import type { ContentBounds } from "#lib/util/canvasBounds.ts";
   import {
     IconArrowLeft,
     IconCheck,

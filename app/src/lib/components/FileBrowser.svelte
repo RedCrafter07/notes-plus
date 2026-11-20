@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { fsStore } from "$lib/state/fsStore.svelte";
+  import { fsStore } from "#lib/state/fsStore.svelte.ts";
   import { IconArrowUp, IconFolder } from "@tabler/icons-svelte";
   import NoteCard from "./NoteCard.svelte";
   import FolderPicker from "./FolderPicker.svelte";
-  import { commands } from "$lib/tauri/bindings";
-  import { openNotes } from "$lib/util/notes.svelte";
+  import { commands } from "#lib/tauri/bindings.ts";
+  import { openNotes } from "#lib/util/notes.svelte.ts";
 
   const fs = $derived(fsStore.store);
   let selection = $state("");

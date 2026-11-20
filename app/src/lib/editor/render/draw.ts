@@ -1,5 +1,5 @@
-import type { Block, Page } from "$lib/tauri/bindings";
-import type { ContentBounds } from "$lib/util/canvasBounds";
+import type { Block, Page } from "#lib/tauri/bindings.ts";
+import type { ContentBounds } from "#lib/util/canvasBounds.ts";
 import { assertNever, blockVisibleIn } from "../blocks";
 import { layoutText, textFont, TEXT_LINE_HEIGHT } from "../text";
 import { getImage } from "./images";

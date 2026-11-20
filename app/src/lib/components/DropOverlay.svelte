@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { events } from "$lib/tauri/bindings";
+  import { events } from "#lib/tauri/bindings.ts";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { cubicOut } from "svelte/easing";
   import { fade, scale } from "svelte/transition";

@@ -1,7 +1,7 @@
 <script>
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import EditorBar from "$lib/components/EditorBar.svelte";
+  import EditorBar from "#lib/components/EditorBar.svelte";
 
   const { children } = $props();
 </script>

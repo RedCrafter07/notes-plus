@@ -1,4 +1,4 @@
-import type { ExportRegion, Layer, Page } from "$lib/tauri/bindings";
+import type { ExportRegion, Layer, Page } from "#lib/tauri/bindings.ts";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { settingsStore } from "./settingsStore.svelte";
 import { tabManager } from "./tabManager.svelte";

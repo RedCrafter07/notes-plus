@@ -1,5 +1,5 @@
-import { contentManager } from "$lib/state/contentManager.svelte";
-import type { Block, Point } from "$lib/tauri/bindings";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import type { Block, Point } from "#lib/tauri/bindings.ts";
 import { blockInPolygon } from "../blocks";
 
 export type LassoSelection = Record<string, { index: number; block: Block }[]>;

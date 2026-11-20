@@ -1,4 +1,4 @@
-import { settingsStore } from "$lib/state/settingsStore.svelte";
+import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
 import { canvasManager, type Tool } from "./state/canvasManager.svelte";
 import { lassoManager } from "./state/lassoManager.svelte";
 

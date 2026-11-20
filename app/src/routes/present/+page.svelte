@@ -2,20 +2,20 @@
   import { emitTo, listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { onMount } from "svelte";
-  import { pageRect } from "$lib/editor/pageFormats";
-  import { drawBlocks, drawPaper } from "$lib/editor/render/draw";
-  import { loadImage } from "$lib/editor/render/images";
-  import { pageArea } from "$lib/editor/render/page";
-  import { inputToPath } from "$lib/editor/svg";
+  import { pageRect } from "#lib/editor/pageFormats.ts";
+  import { drawBlocks, drawPaper } from "#lib/editor/render/draw.ts";
+  import { loadImage } from "#lib/editor/render/images.ts";
+  import { pageArea } from "#lib/editor/render/page.ts";
+  import { inputToPath } from "#lib/editor/svg.ts";
   import {
     PRESENT_EVENT,
     READY_EVENT,
     type LaserStroke,
     type PresentMessage,
     type ViewMode,
-  } from "$lib/present/protocol";
-  import type { Page, Point } from "$lib/tauri/bindings";
-  import { boundsFromRect, type ContentBounds } from "$lib/util/canvasBounds";
+  } from "#lib/present/protocol.ts";
+  import type { Page, Point } from "#lib/tauri/bindings.ts";
+  import { boundsFromRect, type ContentBounds } from "#lib/util/canvasBounds.ts";
 
   /*
    * The audience view: only the page, drawn with the same renderer as the

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
-  import { tabManager } from "$lib/state/tabManager.svelte";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
+  import { tabManager } from "#lib/state/tabManager.svelte.ts";
   import Overlay from "./Overlay.svelte";
 
   let visible = $derived(overlayManager.open?.startsWith("unsaved-") ?? false);

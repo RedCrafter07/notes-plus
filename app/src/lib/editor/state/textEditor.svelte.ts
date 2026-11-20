@@ -1,6 +1,6 @@
-import { contentManager } from "$lib/state/contentManager.svelte";
-import { tabManager } from "$lib/state/tabManager.svelte";
-import type { Point } from "$lib/tauri/bindings";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
+import type { Point } from "#lib/tauri/bindings.ts";
 import { blockBounds, newId, type TextBlock } from "../blocks";
 import { requestRedraw } from "../render/scheduler";
 

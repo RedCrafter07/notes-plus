@@ -1,11 +1,11 @@
-import type { Block, Point } from "$lib/tauri/bindings";
+import type { Block, Point } from "#lib/tauri/bindings.ts";
 import {
   boundsIntersect,
   getStrokeBounds,
   type ContentBounds,
   type Point2D,
-} from "$lib/util/canvasBounds";
-import { isPointInPolygon } from "$lib/util/geometry";
+} from "#lib/util/canvasBounds.ts";
+import { isPointInPolygon } from "#lib/util/geometry.ts";
 import { prunePaths } from "./render/strokes";
 import { layoutText } from "./text";
 

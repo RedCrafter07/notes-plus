@@ -1,14 +1,14 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { handleSave } from "$lib/editor/handleSave.svelte";
-  import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
-  import { editorComponents } from "$lib/state/editorComponents.svelte";
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
-  import { tabManager } from "$lib/state/tabManager.svelte";
-  import { settingsStore } from "$lib/state/settingsStore.svelte";
+  import { handleSave } from "#lib/editor/handleSave.svelte.ts";
+  import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
+  import { editorComponents } from "#lib/state/editorComponents.svelte.ts";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
+  import { tabManager } from "#lib/state/tabManager.svelte.ts";
+  import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
   import WindowControls from "./WindowControls.svelte";
-  import { presenter } from "$lib/present/presenter.svelte";
+  import { presenter } from "#lib/present/presenter.svelte.ts";
   import {
     IconDeviceFloppy,
     IconFileExport,

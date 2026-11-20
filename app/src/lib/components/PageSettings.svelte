@@ -1,5 +1,5 @@
 <script lang="ts">
-  import BackgroundPatterns from "$lib/editor/BackgroundPatterns.svelte";
+  import BackgroundPatterns from "#lib/editor/BackgroundPatterns.svelte";
   import {
     detectFormat,
     formatSize,
@@ -7,10 +7,10 @@
     PAGE_FORMATS,
     type Orientation,
     type PageFormat,
-  } from "$lib/editor/pageFormats";
-  import { contentManager, type PageProps } from "$lib/state/contentManager.svelte";
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
-  import type { BackgroundPattern } from "$lib/tauri/bindings";
+  } from "#lib/editor/pageFormats.ts";
+  import { contentManager, type PageProps } from "#lib/state/contentManager.svelte.ts";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
+  import type { BackgroundPattern } from "#lib/tauri/bindings.ts";
   import {
     IconCopy,
     IconInfinity,

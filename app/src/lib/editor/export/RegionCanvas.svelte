@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import { padBounds, unionBounds, type ContentBounds } from "$lib/util/canvasBounds";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import { padBounds, unionBounds, type ContentBounds } from "#lib/util/canvasBounds.ts";
   import { pageArea } from "../render/page";
   import AreaImage from "./AreaImage.svelte";
   import { formatLabel, isFree, regionBounds, type ExportRegion } from "./regions";

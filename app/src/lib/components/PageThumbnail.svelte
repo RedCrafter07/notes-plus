@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { renderPage } from "$lib/editor/render/page";
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import type { Page } from "$lib/tauri/bindings";
+  import { renderPage } from "#lib/editor/render/page.ts";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import type { Page } from "#lib/tauri/bindings.ts";
 
   let { page }: { page: Page } = $props();
 

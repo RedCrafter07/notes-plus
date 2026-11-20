@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { clamp, hexToHsv, hsvToHex, normalizeHex } from "$lib/util/colors";
+  import { clamp, hexToHsv, hsvToHex, normalizeHex } from "#lib/util/colors.ts";
 
   let {
     value = $bindable("#000000"),

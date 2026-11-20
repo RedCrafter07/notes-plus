@@ -1,10 +1,10 @@
 import {
   canvasManager,
   type Tool,
-} from "$lib/editor/state/canvasManager.svelte";
-import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
-import { selectionFromIds, selectionIds } from "$lib/editor/tools/lasso";
-import type { Block, Page } from "$lib/tauri/bindings";
+} from "#lib/editor/state/canvasManager.svelte.ts";
+import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
+import { selectionFromIds, selectionIds } from "#lib/editor/tools/lasso.ts";
+import type { Block, Page } from "#lib/tauri/bindings.ts";
 import { contentManager } from "./contentManager.svelte";
 
 /*

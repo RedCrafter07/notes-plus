@@ -1,12 +1,12 @@
 <script lang="ts">
-  import FileBrowser from "$lib/components/FileBrowser.svelte";
-  import NoteCard from "$lib/components/NoteCard.svelte";
-  import { fsStore } from "$lib/state/fsStore.svelte";
-  import { jotStore } from "$lib/state/jotStore.svelte";
-  import { commands, type File } from "$lib/tauri/bindings";
-  import { FileSystemNavigator, isFolder } from "$lib/util/fileSystem.svelte";
-  import { openNotes } from "$lib/util/notes.svelte";
-  import { overlayManager } from "$lib/state/overlayManager.svelte";
+  import FileBrowser from "#lib/components/FileBrowser.svelte";
+  import NoteCard from "#lib/components/NoteCard.svelte";
+  import { fsStore } from "#lib/state/fsStore.svelte.ts";
+  import { jotStore } from "#lib/state/jotStore.svelte.ts";
+  import { commands, type File } from "#lib/tauri/bindings.ts";
+  import { FileSystemNavigator, isFolder } from "#lib/util/fileSystem.svelte.ts";
+  import { openNotes } from "#lib/util/notes.svelte.ts";
+  import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import {
     IconClock,
     IconFolder,

@@ -1,4 +1,4 @@
-import { canvasManager } from "$lib/editor/state/canvasManager.svelte";
+import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
 import type { ToolHandler, ToolHandlers } from "./types";
 
 const down: ToolHandler = (p, e) => {

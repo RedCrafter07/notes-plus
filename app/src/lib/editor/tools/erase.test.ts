@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { erase } from "./erase";
-import type { Point } from "$lib/tauri/bindings";
+import type { Point } from "#lib/tauri/bindings.ts";
 
 const p = (x: number, y: number): Point => ({ x, y, pressure: 0.5 });
 

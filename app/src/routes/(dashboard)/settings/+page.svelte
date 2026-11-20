@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Switch from "$lib/components/Switch.svelte";
-  import { settingsStore, updateSettings } from "$lib/state/settingsStore.svelte";
+  import Switch from "#lib/components/Switch.svelte";
+  import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { IconAppWindow, IconDeviceFloppy, IconPencil } from "@tabler/icons-svelte";
 </script>
 

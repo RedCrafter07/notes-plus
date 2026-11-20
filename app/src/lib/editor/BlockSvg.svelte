@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { contentManager } from "$lib/state/contentManager.svelte";
-  import type { Block } from "$lib/tauri/bindings";
+  import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import type { Block } from "#lib/tauri/bindings.ts";
   import { inputToPath } from "./svg";
   import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT } from "./text";
 

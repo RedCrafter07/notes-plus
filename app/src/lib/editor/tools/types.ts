@@ -1,4 +1,4 @@
-import type { Point } from "$lib/tauri/bindings";
+import type { Point } from "#lib/tauri/bindings.ts";
 
 export type ToolHandler = (p: Point, e: PointerEvent) => void;
 

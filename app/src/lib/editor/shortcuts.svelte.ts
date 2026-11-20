@@ -1,12 +1,12 @@
-import { contentManager } from "$lib/state/contentManager.svelte";
-import { tabManager } from "$lib/state/tabManager.svelte";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
 import { handleSave } from "./handleSave.svelte";
 import { canvasManager } from "./state/canvasManager.svelte";
 import { lassoManager } from "./state/lassoManager.svelte";
 import type { Tool } from "./tools/registry";
-import { presenter } from "$lib/present/presenter.svelte";
+import { presenter } from "#lib/present/presenter.svelte.ts";
 
 /** Single-key tool shortcuts (only when not typing). */
 const TOOL_KEYS: Record<string, Tool> = {
