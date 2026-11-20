@@ -24,48 +24,64 @@ export async function importPdf(file: File) {
     const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
 
-    const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
-    const baseName = file.name.replace(/\.pdf$/i, "");
-    const template = $state.snapshot(defaultsStore.store.page);
-    const pages: Page[] = [];
+    // The loading task owns the document and its worker; destroying it
+    // (in `finally`, so failed imports clean up too) releases both.
+    const task = pdfjs.getDocument({ data: await file.arrayBuffer() });
+    try {
+      const doc = await task.promise;
+      const baseName = file.name.replace(/\.pdf$/i, "");
+      const template = $state.snapshot(defaultsStore.store.page);
+      const pages: Page[] = [];
 
-    for (let n = 1; n <= doc.numPages; n++) {
-      const pdfPage = await doc.getPage(n);
-      const size = pdfPage.getViewport({ scale: PT_TO_UNITS });
-      const viewport = pdfPage.getViewport({ scale: PT_TO_UNITS * RENDER_SCALE });
+      for (let n = 1; n <= doc.numPages; n++) {
+        const pdfPage = await doc.getPage(n);
+        const size = pdfPage.getViewport({ scale: PT_TO_UNITS });
+        const viewport = pdfPage.getViewport({
+          scale: PT_TO_UNITS * RENDER_SCALE,
+        });
 
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-      const ctx = canvas.getContext("2d")!;
-      // JPEG has no transparency; give transparent PDFs a white sheet.
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      await pdfPage.render({ canvasContext: ctx, canvas, viewport }).promise;
-      pdfPage.cleanup();
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext("2d")!;
+        // JPEG has no transparency; give transparent PDFs a white sheet.
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await pdfPage.render({ canvasContext: ctx, canvas, viewport }).promise;
+        pdfPage.cleanup();
 
-      const asset = contentManager.addAsset(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
-      pages.push({
-        ...template,
-        name: doc.numPages > 1 ? `${baseName} (${n})` : baseName,
-        width: Math.round(size.width),
-        height: Math.round(size.height),
-        pattern: null,
-        background_color: "#ffffff",
-        background_asset: asset,
-        regions: [],
-        layers: [
-          { id: crypto.randomUUID(), name: "Layer 1", blocks: [], visible: true, locked: false },
-        ],
+        const asset = contentManager.addAsset(
+          canvas.toDataURL("image/jpeg", JPEG_QUALITY),
+        );
+        pages.push({
+          ...template,
+          name: doc.numPages > 1 ? `${baseName} (${n})` : baseName,
+          width: Math.round(size.width),
+          height: Math.round(size.height),
+          pattern: null,
+          background_color: "#ffffff",
+          background_asset: asset,
+          regions: [],
+          layers: [
+            {
+              id: crypto.randomUUID(),
+              name: "Layer 1",
+              blocks: [],
+              visible: true,
+              locked: false,
+            },
+          ],
+        });
+      }
+
+      contentManager.appendPages(pages, "Import PDF");
+      popupManager.add({
+        type: "success",
+        message: `Added ${pages.length} page${pages.length === 1 ? "" : "s"} from "${file.name}".`,
       });
+    } finally {
+      await task.destroy();
     }
-
-    await doc.destroy();
-    contentManager.appendPages(pages, "Import PDF");
-    popupManager.add({
-      type: "success",
-      message: `Added ${pages.length} page${pages.length === 1 ? "" : "s"} from "${file.name}".`,
-    });
   } catch (e) {
     console.error(e);
     popupManager.add({
