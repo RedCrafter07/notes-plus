@@ -12,6 +12,7 @@ export const settingsStore = new Store<Settings>({
   disable_tool_switch: false,
   autosave: true,
   system_title_bar: false,
+  toolbar_dock: "top",
 });
 
 /**

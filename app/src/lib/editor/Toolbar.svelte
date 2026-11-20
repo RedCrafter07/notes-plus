@@ -2,6 +2,8 @@
   import {
     IconArrowBackUp,
     IconArrowForwardUp,
+    IconGripHorizontal,
+    IconGripVertical,
     IconPhotoPlus,
     IconPlus,
   } from "@tabler/icons-svelte";
@@ -13,6 +15,7 @@
   import { textEditor } from "./state/textEditor.svelte";
   import { TOOL_IDS, toolDef, type Tool } from "./tools/registry";
   import { insertImageFile, pickFiles } from "./import/image";
+  import type { ToolbarDock } from "$lib/tauri/bindings";
 
   /*
    * A horizontal bar at the top centre: away from the palm of a right-handed
@@ -21,6 +24,86 @@
    */
 
   const LONG_PRESS_MS = 450;
+
+  // ---------------------------------------------------------------- docking
+  //
+  // The toolbar snaps to one edge of the editor (a setting). Drag the grip:
+  // the bar follows the pointer, the nearest edge lights up, and on release
+  // it docks there. Free placement was rejected on purpose: a floating bar
+  // covers ink and gets lost on resize or rotation.
+
+  const dock = $derived(settingsStore.store.toolbar_dock);
+  const vertical = $derived(dock === "left" || dock === "right");
+
+  const PLACEMENT: Record<ToolbarDock, string> = {
+    top: "top-3 left-1/2 -translate-x-1/2 max-w-[calc(100%-1.5rem)]",
+    // Above the page/zoom controls.
+    bottom: "bottom-20 left-1/2 -translate-x-1/2 max-w-[calc(100%-1.5rem)]",
+    // Clear of the zoom controls in the bottom-left corner.
+    left: "left-3 top-1/2 -translate-y-1/2 max-h-[calc(100%-10rem)]",
+    right: "right-3 top-1/2 -translate-y-1/2 max-h-[calc(100%-10rem)]",
+  };
+  const POPOVER: Record<ToolbarDock, string> = {
+    top: "right-0 top-full mt-2",
+    bottom: "right-0 bottom-full mb-2",
+    left: "left-full ml-2 bottom-0",
+    right: "right-full mr-2 bottom-0",
+  };
+  const ORDER: ToolbarDock[] = ["top", "right", "bottom", "left"];
+
+  let root = $state<HTMLDivElement>();
+  let moving = $state<{
+    x: number;
+    y: number;
+    dx: number;
+    dy: number;
+    target: ToolbarDock;
+    /** The editor area, captured at drag start: once the bar is `position:
+     * fixed` its offsetParent is null and the area can't be looked up. */
+    area: DOMRect;
+  }>();
+
+  function nearestEdge(x: number, y: number, r: DOMRect): ToolbarDock {
+    const d: [ToolbarDock, number][] = [
+      ["top", y - r.top],
+      ["bottom", r.bottom - y],
+      ["left", x - r.left],
+      ["right", r.right - x],
+    ];
+    return d.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
+  }
+
+  function gripDown(e: PointerEvent) {
+    if (!root) return;
+    e.preventDefault();
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    const area = root.offsetParent?.getBoundingClientRect();
+    if (!area) return;
+    const r = root.getBoundingClientRect();
+    moving = { x: e.clientX, y: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, target: dock, area };
+    sizeOpen = false;
+  }
+
+  function gripMove(e: PointerEvent) {
+    if (!moving) return;
+    moving.x = e.clientX;
+    moving.y = e.clientY;
+    moving.target = nearestEdge(e.clientX, e.clientY, moving.area);
+  }
+
+  function gripUp() {
+    if (!moving) return;
+    const { target } = moving;
+    moving = undefined;
+    if (target !== dock) updateSettings({ toolbar_dock: target });
+  }
+
+  /** Keyboard: Enter/Space on the grip moves the bar to the next edge. */
+  function gripKey(e: KeyboardEvent) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    updateSettings({ toolbar_dock: ORDER[(ORDER.indexOf(dock) + 1) % ORDER.length] });
+  }
 
   const btnBase =
     "w-11 h-11 shrink-0 grid place-items-center rounded-xl transition-all active:scale-90 disabled:opacity-30 disabled:pointer-events-none";
@@ -124,25 +207,76 @@
 </script>
 
 {#snippet sep()}
-  <div class="w-px self-stretch my-1 bg-content-1/10 shrink-0"></div>
+  <div
+    class={[
+      "self-stretch bg-content-1/10 shrink-0",
+      vertical ? "h-px mx-1" : "w-px my-1",
+    ]}
+  ></div>
 {/snippet}
+
+{#if moving}
+  <!-- Drop targets: the edge the toolbar will dock to lights up. -->
+  <div class="absolute inset-0 z-20 pointer-events-none" aria-hidden="true">
+    {#each ORDER as edge (edge)}
+      <div
+        class={[
+          "absolute rounded-full transition-all",
+          edge === "top" && "top-1 left-1/4 right-1/4 h-1.5",
+          edge === "bottom" && "bottom-1 left-1/4 right-1/4 h-1.5",
+          edge === "left" && "left-1 top-1/4 bottom-1/4 w-1.5",
+          edge === "right" && "right-1 top-1/4 bottom-1/4 w-1.5",
+          moving.target === edge ? "bg-primary" : "bg-content-1/15",
+        ]}
+      ></div>
+    {/each}
+  </div>
+{/if}
 
 <!--
   mousedown is prevented so pressing a button never steals focus from an open
   text box (which would commit it before the colour/size change lands).
 -->
 <div
-  class="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100%-1.5rem)]"
+  bind:this={root}
+  class={[
+    "z-20 flex",
+    vertical ? "flex-col" : "flex-row",
+    moving ? "fixed opacity-90" : `absolute ${PLACEMENT[dock]}`,
+  ]}
+  style={moving ? `left: ${moving.x - moving.dx}px; top: ${moving.y - moving.dy}px;` : undefined}
   role="toolbar"
   aria-label="Editor tools"
+  aria-orientation={vertical ? "vertical" : "horizontal"}
   tabindex="-1"
   onmousedown={(e) => {
     if (!(e.target instanceof HTMLInputElement)) e.preventDefault();
   }}
 >
   <div
-    class="flex flex-row items-center gap-1 p-1.5 rounded-2xl bg-base-1/95 shadow-lg border border-content-1/10 overflow-x-auto hide-scrollbars"
+    class={[
+      "flex items-center gap-1 p-1.5 rounded-2xl bg-base-1/95 shadow-lg border border-content-1/10 hide-scrollbars",
+      // min-h-0/min-w-0 let the bar shrink inside the wrapper's max size and
+      // scroll instead of running into the zoom controls.
+      vertical ? "flex-col overflow-y-auto min-h-0" : "flex-row overflow-x-auto min-w-0",
+    ]}
   >
+    <button
+      class={[
+        "shrink-0 grid place-items-center rounded-lg text-content-3 hover:text-content-1 hover:bg-overlay/30 touch-none",
+        moving ? "cursor-grabbing" : "cursor-grab",
+        vertical ? "w-11 h-6" : "w-6 h-11",
+      ]}
+      aria-label="Move toolbar (Enter moves it to the next edge)"
+      title="Drag to dock the toolbar to another edge"
+      onpointerdown={gripDown}
+      onpointermove={gripMove}
+      onpointerup={gripUp}
+      onpointercancel={gripUp}
+      onkeydown={gripKey}
+    >
+      {#if vertical}<IconGripHorizontal size={18} />{:else}<IconGripVertical size={18} />{/if}
+    </button>
     <button
       class={btn}
       disabled={!history?.canUndo}
@@ -258,7 +392,7 @@
     {@const spec = def.size}
     <div
       transition:fade={{ duration: 100 }}
-      class="absolute right-0 top-full mt-2 p-3 w-64 rounded-xl bg-base-1 shadow-lg border border-content-1/10 flex flex-col gap-2"
+      class="absolute {POPOVER[dock]} p-3 w-64 rounded-xl bg-base-1 shadow-lg border border-content-1/10 flex flex-col gap-2"
     >
       <label class="flex flex-row justify-between text-sm text-content-2" for="tool-size">
         <span>{spec.label}</span>

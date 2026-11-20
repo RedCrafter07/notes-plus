@@ -1,5 +1,6 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { popupManager } from "$lib/state/popupManager.svelte";
+import { settingsStore } from "$lib/state/settingsStore.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
 import type { Block, Point } from "$lib/tauri/bindings";
 import {
@@ -24,10 +25,10 @@ import { textEditor } from "./textEditor.svelte";
 
 export type { Tool } from "../tools/registry";
 
-/** Screen pixels of margin around a page when fitting it to the view. */
+/** Screen pixels kept free around a page when fitting it to the view. */
 const FIT_MARGIN = 32;
-/** Extra room at the top and bottom for the floating toolbar and page controls. */
-const FIT_MARGIN_Y = 88;
+/** Room for a floating bar (toolbar, or the page/zoom controls at the bottom). */
+const BAR_MARGIN = 88;
 /** Never zoom past this when fitting a page; huge zoom on a big screen is unpleasant. */
 const MAX_FIT_ZOOM = 1.6;
 /** Screen pixels of a fixed page that always stay on screen while panning. */
@@ -233,8 +234,9 @@ class CanvasManager {
       return;
     }
 
-    const zoomW = (this.width - FIT_MARGIN * 2) / r.width;
-    const zoomH = (this.height - FIT_MARGIN_Y * 2) / r.height;
+    const m = this.insets();
+    const zoomW = (this.width - m.left - m.right) / r.width;
+    const zoomH = (this.height - m.top - m.bottom) / r.height;
     const tall = !isInfinite(page) && r.height > r.width && zoomW < zoomH * 2;
 
     const z = tall
@@ -242,11 +244,26 @@ class CanvasManager {
       : Math.min(zoomW, zoomH, isInfinite(page) ? 1 : MAX_FIT_ZOOM);
     contentManager.zoom = z;
 
-    contentManager.panX = -(r.min.x + r.width / 2);
+    // Centre within the free area, which is off-centre when a bar takes one side.
+    // The content point at screen x is: (x - width/2) / zoom - panX.
+    contentManager.panX = (m.left - m.right) / 2 / z - (r.min.x + r.width / 2);
     contentManager.panY =
-      tall && r.height * z > this.height
-        ? (FIT_MARGIN_Y - this.height / 2) / contentManager.zoom - r.min.y
-        : -(r.min.y + r.height / 2);
+      tall && r.height * z > this.height - m.top - m.bottom
+        ? (m.top - this.height / 2) / z - r.min.y
+        : (m.top - m.bottom) / 2 / z - (r.min.y + r.height / 2);
+  }
+
+  /** Screen space to keep free on each side: the docked toolbar and the view controls. */
+  private insets() {
+    const dock = settingsStore.store.toolbar_dock;
+    const side = (d: typeof dock) => (dock === d ? BAR_MARGIN : FIT_MARGIN);
+    return {
+      top: side("top"),
+      // The zoom/page controls always sit at the bottom; a bottom toolbar sits above them.
+      bottom: dock === "bottom" ? BAR_MARGIN * 2 : BAR_MARGIN,
+      left: side("left"),
+      right: side("right"),
+    };
   }
 
   // ------------------------------------------------------------------ tools

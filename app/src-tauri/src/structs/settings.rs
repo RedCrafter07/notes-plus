@@ -1,6 +1,17 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+/// Which edge of the editor the toolbar is docked to.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ToolbarDock {
+    #[default]
+    Top,
+    Bottom,
+    Left,
+    Right,
+}
+
 #[derive(Clone, Debug, Type, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -17,6 +28,8 @@ pub struct Settings {
     /// Use the operating system's title bar instead of merging the window
     /// controls into the tab bar (e.g. for tiling window managers).
     pub system_title_bar: bool,
+    /// Where the editor toolbar sits; left-handed writers often prefer left.
+    pub toolbar_dock: ToolbarDock,
 }
 
 impl Default for Settings {
@@ -32,6 +45,7 @@ impl Default for Settings {
             disable_tool_switch: false,
             autosave: true,
             system_title_bar: false,
+            toolbar_dock: ToolbarDock::Top,
         }
     }
 }
