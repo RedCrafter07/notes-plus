@@ -1,5 +1,5 @@
 import { popupManager } from "#lib/state/popupManager.svelte.ts";
-import { openPdf, type PdfSource } from "./pdf";
+import { openPdf, type PdfSource } from "./pdf.svelte";
 
 /** The PDF import dialog: open while a source is loaded. */
 class PdfImport {

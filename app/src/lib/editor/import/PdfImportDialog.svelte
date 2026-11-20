@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { IconCheck, IconFileImport, IconLoader2 } from "@tabler/icons-svelte";
   import Overlay from "#lib/components/Overlay.svelte";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
-  import { importPdfPages, type PdfDestination } from "./pdf";
+  import { importPdfPages, type PdfDestination } from "./pdf.svelte";
   import { formatPageRanges, parsePageRanges } from "./pageRanges";
   import { pdfImport } from "./pdfImport.svelte";
 
@@ -28,13 +29,19 @@
 
   // A new document: select everything and render previews one by one, so
   // the first ones appear quickly even for long lecture decks.
+  //
+  // Only `src` may be a dependency here. The setup is untracked: it reads the
+  // state it writes, and a tracked read would re-run this effect forever
+  // (Svelte aborts that with effect_update_depth_exceeded).
   $effect(() => {
     const s = src;
     if (!s) return;
-    thumbs = Array(s.numPages).fill(undefined);
-    setSelection(Array.from({ length: s.numPages }, (_, i) => i + 1));
-    mode = "pages";
-    progress = undefined;
+    untrack(() => {
+      thumbs = Array(s.numPages).fill(undefined);
+      setSelection(Array.from({ length: s.numPages }, (_, i) => i + 1));
+      mode = "pages";
+      progress = undefined;
+    });
 
     let cancelled = false;
     (async () => {
@@ -51,8 +58,9 @@
   });
 
   function setSelection(pages: number[]) {
-    selected = new Set(pages);
-    rangeText = formatPageRanges([...selected].sort((a, b) => a - b));
+    const unique = [...new Set(pages)].sort((a, b) => a - b);
+    selected = new Set(unique);
+    rangeText = formatPageRanges(unique);
     rangeError = false;
   }
 
@@ -144,11 +152,12 @@
           aria-pressed={on}
           aria-label="Page {n}"
         >
-          <div class="w-full aspect-[3/4] rounded-md bg-white grid place-items-center overflow-hidden">
+          <!-- The PDF page keeps its own shape (slides are landscape) on a neutral card. -->
+          <div class="w-full aspect-square rounded-md bg-base-3 grid place-items-center overflow-hidden p-1">
             {#if thumb}
-              <img src={thumb} alt="" class="max-w-full max-h-full object-contain" draggable="false" />
+              <img src={thumb} alt="" class="max-w-full max-h-full object-contain shadow" draggable="false" />
             {:else}
-              <IconLoader2 class="animate-spin text-base-3/40" />
+              <IconLoader2 class="animate-spin text-content-3" />
             {/if}
           </div>
           <span class="text-sm tabular-nums text-content-2">{n}</span>

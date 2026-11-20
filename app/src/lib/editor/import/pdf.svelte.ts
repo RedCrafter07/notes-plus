@@ -115,8 +115,8 @@ export async function importPdfPages(
   dest: PdfDestination,
   onProgress?: (done: number, total: number) => void,
 ): Promise<boolean> {
-  if (pages.length === 0) return false;
   const tab = tabManager.tab;
+  if (pages.length === 0 || !tab) return false;
 
   if (dest.kind === "here") {
     const layer = contentManager.layers[contentManager.activeLayer];
@@ -134,8 +134,14 @@ export async function importPdfPages(
   }
   onProgress?.(pages.length, pages.length);
 
-  // The user may have switched notes while rendering.
-  if (tabManager.tab !== tab) return false;
+  // The note may have been switched or closed while rendering.
+  if (tabManager.tab !== tab) {
+    popupManager.add({
+      type: "warning",
+      message: "The PDF wasn't imported because the note was closed or switched meanwhile.",
+    });
+    return false;
+  }
 
   const label = `Import ${pages.length === 1 ? "PDF page" : "PDF pages"}`;
 

@@ -4,6 +4,8 @@
   import { timeout } from "#lib/util/timeout.ts";
   import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import Modals from "./Modals.svelte";
+  import { popupManager } from "#lib/state/popupManager.svelte.ts";
+  import ErrorPanel from "./ErrorPanel.svelte";
   import NotebookDialogs from "./NotebookDialogs.svelte";
   import ContextMenu from "./ContextMenu.svelte";
   import Tabs from "#lib/components/Tabs.svelte";
@@ -26,6 +28,30 @@
   const { children } = $props();
 
   useAutosave();
+
+  // Errors outside rendering (e.g. a failed async action behind a button)
+  // never reach a <svelte:boundary>. Say so instead of failing silently.
+  onMount(() => {
+    let last = "";
+    let lastAt = 0;
+    const report = (reason: unknown) => {
+      console.error(reason);
+      const message = reason instanceof Error ? reason.message : String(reason);
+      // The same error in a burst (e.g. per pointer move) is shown once.
+      if (message === last && Date.now() - lastAt < 3000) return;
+      last = message;
+      lastAt = Date.now();
+      popupManager.add({ type: "destructive", message: `Something went wrong: ${message}` });
+    };
+    const onRejection = (e: PromiseRejectionEvent) => report(e.reason);
+    const onError = (e: ErrorEvent) => report(e.error ?? e.message);
+    window.addEventListener("unhandledrejection", onRejection);
+    window.addEventListener("error", onError);
+    return () => {
+      window.removeEventListener("unhandledrejection", onRejection);
+      window.removeEventListener("error", onError);
+    };
+  });
 
   // Text is measured with the note font; re-measure once it has loaded.
   onMount(() => {
@@ -146,7 +172,12 @@
   <div class="flex flex-col h-full">
     <Tabs />
     <div class="flex-1 relative h-full overflow-y-auto">
-      {@render children()}
+      <svelte:boundary onerror={(e) => console.error(e)}>
+        {@render children()}
+        {#snippet failed(error, reset)}
+          <ErrorPanel {error} {reset} where="this page" />
+        {/snippet}
+      </svelte:boundary>
       <Popups />
     </div>
   </div>

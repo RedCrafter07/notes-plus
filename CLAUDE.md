@@ -270,6 +270,12 @@ every note below it (`rename_folder`).
   subpath import in `package.json`. `$lib` no longer exists in SvelteKit 3.
 - `resolve()` takes route ids, which include route groups: home is
   `resolve("/(dashboard)")`, not `resolve("/")`.
+- Runes (`$state`, `$state.snapshot`, ...) only in `.svelte` / `.svelte.ts`
+  files. In a plain `.ts` file they type-check and build, then throw
+  `rune_outside_svelte` at runtime; `src/lib/runes.test.ts` guards this.
+- Rendering errors show `ErrorPanel` (a `<svelte:boundary>` in the editor
+  layout and the app shell) instead of silently navigating away; other
+  uncaught errors and rejected promises show a toast (`AppShell`).
 - No `<style>` blocks in components; put shared CSS in `app.css` (Tailwind
   `@theme` / `@layer components`). Component style blocks become virtual CSS
   modules, and a stale webview after a dev-server restart could make Tailwind
