@@ -15,6 +15,7 @@
   import { textEditor } from "./state/textEditor.svelte";
   import { TOOL_IDS, toolDef, type Tool } from "./tools/registry";
   import { insertImageFile, pickFiles } from "./import/image";
+  import { isPdf, pdfImport } from "./import/pdfImport.svelte";
   import type { ToolbarDock } from "#lib/tauri/bindings.ts";
 
   /*
@@ -195,8 +196,11 @@
   }
 
   async function insertImage() {
-    const [file] = await pickFiles("image/*");
-    if (file) await insertImageFile(file);
+    const [file] = await pickFiles("image/*,application/pdf,.pdf");
+    if (!file) return;
+    // A PDF opens the page picker; an image goes straight in.
+    if (isPdf(file)) await pdfImport.start(file);
+    else await insertImageFile(file);
   }
 
   /** Dot size for a size preset, scaled into the 6–22 px range. */
@@ -314,8 +318,8 @@
     <button
       class={btn}
       onclick={insertImage}
-      aria-label="Insert image"
-      title="Insert image"
+      aria-label="Insert image or PDF"
+      title="Insert image or PDF"
     >
       <IconPhotoPlus />
     </button>

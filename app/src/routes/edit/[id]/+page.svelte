@@ -19,6 +19,7 @@
   import { goto } from "$app/navigation";
   import { laserManager } from "#lib/editor/state/laserManager.svelte.ts";
   import PresenterBar from "#lib/present/PresenterBar.svelte";
+  import PdfImportDialog from "#lib/editor/import/PdfImportDialog.svelte";
   import { usePresenterSync } from "#lib/present/sync.svelte.ts";
   import { resolve } from "$app/paths";
 
@@ -164,4 +165,5 @@
 
 <Toolbar />
 <PresenterBar />
+<PdfImportDialog />
 <ViewControls />

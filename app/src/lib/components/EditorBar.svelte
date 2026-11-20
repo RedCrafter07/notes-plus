@@ -18,7 +18,7 @@
   } from "@tabler/icons-svelte";
   import PageThumbnail from "./PageThumbnail.svelte";
   import { pickFiles } from "#lib/editor/import/image.ts";
-  import { importPdf } from "#lib/editor/import/pdf.ts";
+  import { pdfImport } from "#lib/editor/import/pdfImport.svelte.ts";
 
   const iconBtn =
     "w-10 h-10 shrink-0 grid place-items-center rounded-lg text-content-3 hover:text-content-1 hover:bg-overlay/30 active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none";
@@ -27,7 +27,7 @@
 
   async function insertPdf() {
     const [file] = await pickFiles("application/pdf,.pdf");
-    if (file) await importPdf(file);
+    if (file) await pdfImport.start(file);
   }
 </script>
 

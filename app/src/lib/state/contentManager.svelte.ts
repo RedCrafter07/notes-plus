@@ -61,13 +61,17 @@ class ContentManager {
     });
   }
 
-  /** Appends ready-made pages (e.g. from a PDF) and opens the first one. */
-  public appendPages(newPages: Page[], label = "Insert pages") {
+  /**
+   * Inserts ready-made pages (e.g. from a PDF) at index `at` (default: the
+   * end) and opens the first of them. One undo step.
+   */
+  public insertPages(newPages: Page[], at = this.pages.length, label = "Insert pages") {
     if (newPages.length === 0) return;
     tabManager.transact(label, () => {
-      const first = this.pages.length;
-      this.pages = [...this.pages, ...newPages];
-      this.currentPage = first;
+      const pages = this.pages.slice();
+      pages.splice(at, 0, ...newPages);
+      this.pages = pages;
+      this.currentPage = at;
     });
   }
 

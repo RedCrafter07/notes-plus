@@ -168,7 +168,11 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 - [x] **Text blocks.** Text tool, textarea overlay, wrap shared with the canvas.
 - [x] **Images and attachments.** Toolbar or paste; stored as archive assets.
       Missing: resizing (needs selection scaling, see Tier 2).
-- [x] **PDF import + annotation.** pdf.js renders each page as a page background.
+- [x] **PDF import + annotation.** A dialog (`import/PdfImportDialog.svelte`)
+      shows page thumbnails; pick pages by tapping or ranges ("1-3, 7"), then
+      insert them as new pages (PDF page as background; after the current page
+      or at the end) or as images on the current page. From the sidebar or the
+      toolbar's insert button.
 - [x] **Export.** Dedicated page (`routes/export/[id]`, Ctrl+E): all/current
       pages, the lasso selection, or **regions** saved on each page (a
       format such as A4 or free-form; drag to move/resize, drag handle to
