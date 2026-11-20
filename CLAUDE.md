@@ -231,6 +231,15 @@ per setting, the missing format migration, and the `contentManager` ↔
 4. **Assets travel as data URLs over IPC.** Every save sends all attachments
    as base64; fine for lecture PDFs, slow for very large notes.
 
+## File problems
+
+`get_notebooks` returns the folder tree **and** `problems`: files that could
+not be indexed, classified by `common::io::index::FileProblem` (newer version,
+unknown version, damaged, not a note, unreadable). They are listed on the
+dashboard's Problems page (sidebar badge + home banner) with "Show in folder"
+(opener plugin) and "Move to trash" (`trash_note_file`, which only accepts
+`.rnpf` files inside the notebooks folder and uses the system trash).
+
 ## UI/UX issues
 
 - **Dark paper** exists as a preset, but ink colours are not adapted to it and

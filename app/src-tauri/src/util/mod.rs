@@ -34,6 +34,7 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             set_jot_notes,
             export_file,
             export_files,
+            trash_note_file,
             start_presenting,
             stop_presenting,
         ])

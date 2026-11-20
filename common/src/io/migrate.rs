@@ -20,10 +20,10 @@ pub const OLDEST_SUPPORTED_VERSION: u32 = 2;
 pub fn parse_version(raw: &str) -> Result<u32, RnpfError> {
     let version: u32 = raw.trim().parse().map_err(|_| RnpfError::InvalidVersion)?;
 
-    if (OLDEST_SUPPORTED_VERSION..=CURRENT_VERSION).contains(&version) {
-        Ok(version)
-    } else {
-        Err(RnpfError::InvalidVersion)
+    match version {
+        v if v > CURRENT_VERSION => Err(RnpfError::NewerVersion(v)),
+        v if v < OLDEST_SUPPORTED_VERSION => Err(RnpfError::InvalidVersion),
+        v => Ok(v),
     }
 }
 
@@ -126,7 +126,7 @@ mod tests {
         assert_eq!(parse_version("3\n").unwrap(), 3);
         assert_eq!(parse_version("4").unwrap(), 4);
         assert!(parse_version("1").is_err());
-        assert!(parse_version("99").is_err());
+        assert!(matches!(parse_version("99"), Err(RnpfError::NewerVersion(99))));
         assert!(parse_version("abc").is_err());
     }
 

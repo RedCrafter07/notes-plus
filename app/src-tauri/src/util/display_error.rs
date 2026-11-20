@@ -30,9 +30,12 @@ fn get_error_message(e: AppError) -> String {
                 path.display()
             )
         }
-        AppError::Rnpf(RnpfError::InvalidVersion) => {
+        AppError::Rnpf(RnpfError::NewerVersion(_)) => {
             "This note has been made with a newer version of the app. Please check for updates."
                 .into()
+        }
+        AppError::Rnpf(RnpfError::InvalidVersion) => {
+            "This file has a version marker this app doesn't recognise. It may be damaged.".into()
         }
 
         AppError::Rnpf(RnpfError::FileError(ref io)) if io.kind() == ErrorKind::NotFound => {

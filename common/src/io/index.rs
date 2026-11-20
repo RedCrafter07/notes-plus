@@ -42,6 +42,81 @@ pub struct File {
 
 pub type IndexErrorResult = Vec<(String, IndexError)>;
 
+/// What is wrong with a file, in terms a user can act on.
+#[derive(specta::Type, Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProblemKind {
+    /// Made by a newer RedNotes Plus: update the app.
+    NewerVersion,
+    /// Has a version marker this app does not recognise.
+    UnknownVersion,
+    /// A note archive whose contents are missing or broken.
+    Damaged,
+    /// Named .rnpf but not a RedNotes Plus archive at all.
+    NotANote,
+    /// Could not be read (permissions, locked, vanished).
+    Unreadable,
+}
+
+/// A note file that could not be indexed, for the Problems page.
+#[derive(specta::Type, Clone, Debug, Deserialize, Serialize)]
+pub struct FileProblem {
+    pub path: String,
+    /// File name only, for display.
+    pub name: String,
+    pub kind: ProblemKind,
+    /// The underlying error, for the "details" section.
+    pub detail: String,
+}
+
+impl FileProblem {
+    pub fn new(path: &str, error: &IndexError) -> Self {
+        let name = Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| path.to_string());
+
+        Self {
+            path: path.to_string(),
+            name,
+            kind: classify(error),
+            detail: detail(error),
+        }
+    }
+}
+
+fn classify(error: &IndexError) -> ProblemKind {
+    match error {
+        IndexError::ArchiveError(e) => match e {
+            RnpfError::NewerVersion(_) => ProblemKind::NewerVersion,
+            RnpfError::InvalidVersion => ProblemKind::UnknownVersion,
+            RnpfError::ArchiveError(_) => ProblemKind::NotANote,
+            RnpfError::FileError(_) | RnpfError::InvalidPath => ProblemKind::Unreadable,
+            RnpfError::SerializationError(_) | RnpfError::InvalidFile | RnpfError::InvalidAsset => {
+                ProblemKind::Damaged
+            }
+        },
+        IndexError::IoError(_) | IndexError::InvalidExtension | IndexError::Unknown => {
+            ProblemKind::Unreadable
+        }
+    }
+}
+
+/// The error and its causes, e.g. "invalid Zip archive: Could not find EOCD".
+fn detail(error: &IndexError) -> String {
+    let mut out = error.to_string();
+    let mut source = std::error::Error::source(error);
+    while let Some(s) = source {
+        let text = s.to_string();
+        if !out.contains(&text) {
+            out.push_str(": ");
+            out.push_str(&text);
+        }
+        source = s.source();
+    }
+    out
+}
+
 pub fn build_index(path: &Path) -> Result<(Vec<File>, IndexErrorResult), IndexError> {
     // Get files in folder, iterate over files
     if !path.is_dir() {
@@ -126,6 +201,27 @@ pub fn normalize_folder(folder: String) -> String {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn classifies_problems() {
+        let dir = std::env::temp_dir().join(format!("rn-index-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("not-a-zip.rnpf"), b"hello").unwrap();
+        std::fs::write(dir.join("ignored.txt"), b"hello").unwrap();
+
+        let (files, errors) = build_index(&dir).unwrap();
+        assert!(files.is_empty());
+        assert_eq!(errors.len(), 1, "only .rnpf files are indexed");
+
+        let problem = FileProblem::new(&errors[0].0, &errors[0].1);
+        assert_eq!(problem.name, "not-a-zip.rnpf");
+        assert_eq!(problem.kind, ProblemKind::NotANote);
+        assert!(!problem.detail.is_empty());
+
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
     #[test]
     fn test_normalize_folder() {
         exec_normalize_test("/folder//subfolder///".into(), "folder/subfolder");

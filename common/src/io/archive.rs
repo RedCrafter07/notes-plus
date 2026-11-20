@@ -24,6 +24,8 @@ pub enum RnpfError {
     ArchiveError(#[from] zip::result::ZipError),
     #[error("The provided file has an unknown version")]
     InvalidVersion,
+    #[error("The file uses format version {0}, which is newer than this app supports")]
+    NewerVersion(u32),
     #[error("The provided path is not valid UTF-8")]
     InvalidPath,
     #[error("The provided file is invalid")]

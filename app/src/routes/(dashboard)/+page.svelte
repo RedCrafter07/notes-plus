@@ -1,13 +1,16 @@
 <script lang="ts">
   import FileBrowser from "#lib/components/FileBrowser.svelte";
   import NoteCard from "#lib/components/NoteCard.svelte";
-  import { fsStore } from "#lib/state/fsStore.svelte.ts";
+  import { loadNotebooks, problemsStore } from "#lib/state/fsStore.svelte.ts";
   import { jotStore } from "#lib/state/jotStore.svelte.ts";
   import { commands, type File } from "#lib/tauri/bindings.ts";
-  import { FileSystemNavigator, isFolder } from "#lib/util/fileSystem.svelte.ts";
   import { openNotes } from "#lib/util/notes.svelte.ts";
   import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
+  import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import {
+    IconAlertTriangle,
+    IconChevronRight,
     IconClock,
     IconFolder,
     IconPencil,
@@ -26,9 +29,7 @@
       jotStore.store = await commands.listJotNotes();
       recentNotes = await commands.getRecent(6);
 
-      const notebooks = await commands.getNotebooks();
-      if (notebooks && isFolder(notebooks))
-        fsStore.store = new FileSystemNavigator(notebooks);
+      await loadNotebooks();
     })();
 
     return () => {
@@ -113,6 +114,20 @@
   </div>
 
   <div class="flex flex-col gap-4 p-4 rounded-xl bg-base-2">
+    {#if problemsStore.store.length > 0}
+      {@const n = problemsStore.store.length}
+      <button
+        class="flex flex-row gap-3 items-center p-3 rounded-xl border-2 border-destructive/60 bg-destructive/10 text-left hover:bg-destructive/20 active:scale-[0.99] transition-all"
+        onclick={() => goto(resolve("/(dashboard)/problems"))}
+      >
+        <IconAlertTriangle class="text-destructive shrink-0" />
+        <span class="flex-1">
+          <span class="font-semibold">{n} {n === 1 ? "note can't" : "notes can't"} be opened.</span>
+          <span class="text-content-2">See what's wrong and what you can do.</span>
+        </span>
+        <IconChevronRight class="text-content-3 shrink-0" />
+      </button>
+    {/if}
     <h3 class="text-xl flex flex-row gap-2 items-center font-semibold">
       <IconFolder /> Browse files
     </h3>
