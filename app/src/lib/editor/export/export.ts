@@ -1,12 +1,89 @@
+import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { popupManager } from "$lib/state/popupManager.svelte";
-import { commands } from "$lib/tauri/bindings";
-import { renderArea, renderPage } from "../render/page";
+import { tabManager } from "$lib/state/tabManager.svelte";
+import { commands, type Page } from "$lib/tauri/bindings";
+import { boundsFromRect, type ContentBounds } from "$lib/util/canvasBounds";
+import { pageArea, renderArea } from "../render/page";
+import { areaToSvg } from "../render/svg";
 import { buildPdf, type PdfPage } from "./pdfWriter";
+import { nominalSize, regionBounds } from "./regions";
 
-/** Pixels per content unit: 2 ≈ 192 dpi, sharp in print and on screen. */
-const EXPORT_SCALE = 2;
+export type ExportMode = "pages" | "selection" | "regions";
+export type ExportFormat = "pdf" | "png" | "jpg" | "svg";
+
+/** What one output page/file is made of. */
+export interface ExportJob {
+  name: string;
+  page: Page;
+  /** The part of the page to render, in content units. */
+  area: ContentBounds;
+  /** Output size at 1x, in content units (96 per inch). */
+  size: { width: number; height: number };
+  /** Only these blocks (selection export). */
+  only?: Set<string>;
+}
+
+export interface ExportOptions {
+  mode: ExportMode;
+  /** For "pages": every page, or just the open one. */
+  pages: "all" | "current";
+  format: ExportFormat;
+  /** Pixels per content unit for PNG/JPG/PDF. */
+  scale: number;
+  /** Include paper colour, ruling and PDF backgrounds. */
+  paper: boolean;
+}
+
 const UNITS_TO_PT = 72 / 96;
+const SELECTION_MARGIN = 16;
+
+export const FORMAT_INFO: Record<ExportFormat, { label: string; filter: string; mime: string }> = {
+  pdf: { label: "PDF", filter: "PDF document", mime: "application/pdf" },
+  png: { label: "PNG", filter: "PNG image", mime: "image/png" },
+  jpg: { label: "JPG", filter: "JPEG image", mime: "image/jpeg" },
+  svg: { label: "SVG", filter: "SVG image", mime: "image/svg+xml" },
+};
+
+/** Turns the chosen mode into a list of things to render. */
+export function planJobs(opts: Pick<ExportOptions, "mode" | "pages">): ExportJob[] {
+  const pages = contentManager.pages;
+
+  switch (opts.mode) {
+    case "pages": {
+      const indices =
+        opts.pages === "all" ? pages.map((_, i) => i) : [contentManager.currentPage];
+      return indices.flatMap((i) => {
+        const area = pageArea(pages[i]);
+        return area
+          ? [{ name: pages[i].name, page: pages[i], area, size: { width: area.width, height: area.height } }]
+          : [];
+      });
+    }
+    case "selection": {
+      const b = lassoManager.boundingBox;
+      if (!lassoManager.selection || !b || b.width === 0) return [];
+      const m = SELECTION_MARGIN;
+      const area = boundsFromRect(b.x - m, b.y - m, b.width + 2 * m, b.height + 2 * m);
+      return [
+        {
+          name: "Selection",
+          page: contentManager.page,
+          area,
+          size: { width: area.width, height: area.height },
+          only: new Set(lassoManager.selectedIds),
+        },
+      ];
+    }
+    case "regions":
+      return (tabManager.tab?.exportRegions ?? []).flatMap((r) => {
+        const page = pages[r.pageIndex];
+        return page
+          ? [{ name: r.name, page, area: regionBounds(r), size: nominalSize(r) }]
+          : [];
+      });
+  }
+}
 
 function toBase64(bytes: Uint8Array) {
   let s = "";
@@ -22,48 +99,77 @@ async function canvasBytes(canvas: HTMLCanvasElement, type: string, quality?: nu
   return new Uint8Array(await blob.arrayBuffer());
 }
 
-function fileName(ext: string) {
-  const safe = contentManager.title.replace(/[\\/:*?"<>|]+/g, "-").trim() || "Note";
-  return `${safe}.${ext}`;
+function baseName() {
+  return contentManager.title.replace(/[\\/:*?"<>|]+/g, "-").trim() || "Note";
 }
 
-async function save(bytes: Uint8Array, name: string, filter: string, ext: string) {
-  const path = await commands.exportFile(toBase64(bytes), name, filter, ext);
-  if (path) popupManager.add({ type: "success", message: `Exported to ${path}` });
+async function raster(job: ExportJob, o: ExportOptions, opaque: boolean) {
+  return renderArea(job.page, contentManager.assets, job.area, {
+    width: job.size.width * o.scale,
+    height: job.size.height * o.scale,
+    paper: o.paper,
+    // JPEG and PDF have no transparency: without paper, use white.
+    fill: opaque ? "#ffffff" : undefined,
+  });
 }
 
-/** Exports one page as a PNG. */
-export async function exportPagePng(index = contentManager.currentPage) {
-  const page = contentManager.pages[index];
-  const canvas = page && (await renderPage(page, contentManager.assets, { scale: EXPORT_SCALE }));
-  if (!canvas) {
-    popupManager.add({ type: "warning", message: "This page is empty." });
-    return;
+/**
+ * Renders and saves. PDF is always one file (one page per job); images are
+ * one file per job, written into a chosen folder when there are several.
+ * Returns whether anything was written.
+ */
+export async function runExport(o: ExportOptions): Promise<boolean> {
+  const jobs = planJobs(o);
+  if (jobs.length === 0) {
+    popupManager.add({ type: "warning", message: "There is nothing to export." });
+    return false;
   }
-  await save(await canvasBytes(canvas, "image/png"), fileName("png"), "PNG image", "png");
+
+  const ext = o.format;
+  const info = FORMAT_INFO[ext];
+  const base = baseName();
+
+  if (ext === "pdf") {
+    const pages: PdfPage[] = [];
+    for (const job of jobs) {
+      const canvas = await raster(job, o, true);
+      if (!canvas) continue;
+      pages.push({
+        jpeg: await canvasBytes(canvas, "image/jpeg", 0.92),
+        pixelWidth: canvas.width,
+        pixelHeight: canvas.height,
+        width: job.size.width * UNITS_TO_PT,
+        height: job.size.height * UNITS_TO_PT,
+      });
+    }
+    return done(await commands.exportFile(toBase64(buildPdf(pages)), `${base}.pdf`, info.filter, ext));
+  }
+
+  const files: { name: string; data_base64: string }[] = [];
+  for (const [i, job] of jobs.entries()) {
+    let bytes: Uint8Array;
+    if (ext === "svg") {
+      const svg = areaToSvg(job.page, contentManager.assets, job.area, { paper: o.paper, only: job.only });
+      bytes = new TextEncoder().encode(svg);
+    } else {
+      const canvas = await raster(job, o, ext === "jpg");
+      if (!canvas) continue;
+      bytes = await canvasBytes(canvas, info.mime, ext === "jpg" ? 0.92 : undefined);
+    }
+    const suffix = jobs.length > 1 ? ` - ${String(i + 1).padStart(2, "0")} ${job.name}` : "";
+    files.push({ name: `${base}${suffix}.${ext}`, data_base64: toBase64(bytes) });
+  }
+
+  if (files.length === 1)
+    return done(await commands.exportFile(files[0].data_base64, files[0].name, info.filter, ext));
+  return done(await commands.exportFiles(files), files.length);
 }
 
-/** Exports every page (empty infinite pages are skipped) as one PDF. */
-export async function exportPdf() {
-  const pages: PdfPage[] = [];
-
-  for (const page of contentManager.pages) {
-    const area = renderArea(page);
-    const canvas = await renderPage(page, contentManager.assets, { scale: EXPORT_SCALE });
-    if (!area || !canvas) continue;
-
-    pages.push({
-      jpeg: await canvasBytes(canvas, "image/jpeg", 0.92),
-      pixelWidth: canvas.width,
-      pixelHeight: canvas.height,
-      width: area.width * UNITS_TO_PT,
-      height: area.height * UNITS_TO_PT,
+function done(path: string | null, count = 1) {
+  if (path)
+    popupManager.add({
+      type: "success",
+      message: count > 1 ? `Exported ${count} files to ${path}` : `Exported to ${path}`,
     });
-  }
-
-  if (pages.length === 0) {
-    popupManager.add({ type: "warning", message: "There is nothing to export yet." });
-    return;
-  }
-  await save(buildPdf(pages), fileName("pdf"), "PDF document", "pdf");
+  return !!path;
 }

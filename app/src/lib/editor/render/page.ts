@@ -1,5 +1,5 @@
 import type { NoteData, Page } from "$lib/tauri/bindings";
-import { padBounds, type ContentBounds } from "$lib/util/canvasBounds";
+import { boundsFromRect, padBounds, type ContentBounds } from "$lib/util/canvasBounds";
 import { contentBounds, pageRect } from "../pageFormats";
 import { drawBlocks, drawPaper, type Assets } from "./draw";
 import { loadImage } from "./images";
@@ -12,7 +12,7 @@ const CONTENT_MARGIN = 24;
  * drawing plus a margin for an infinite one, or `null` for an empty
  * infinite page.
  */
-export function renderArea(page: Page): ContentBounds | null {
+export function pageArea(page: Page): ContentBounds | null {
   const rect = pageRect(page);
   if (rect) return rect;
   const content = contentBounds(page.layers);
@@ -35,9 +35,68 @@ export interface RenderOptions {
   maxSize?: number;
 }
 
+export interface AreaOptions {
+  /** Output size in pixels; the area is stretched to it (keep the ratio). */
+  width: number;
+  height: number;
+  /** Draw paper colour, ruling and PDF background. Off: transparent. */
+  paper?: boolean;
+  /** Fill colour used when `paper` is off (JPEG/PDF have no transparency). */
+  fill?: string;
+  /** Only draw blocks with these ids (e.g. an exported selection). */
+  only?: Set<string>;
+}
+
 /**
- * Renders a page (paper, background and all visible layers) onto a new
- * canvas. Used for thumbnails, PNG and PDF export, so all three match the
+ * Renders an arbitrary rectangle of a page. Ink is clipped to the sheet on a
+ * fixed-size page, exactly like the editor shows it.
+ */
+export async function renderArea(
+  page: Page,
+  assets: Assets,
+  area: ContentBounds,
+  { width, height, paper = true, fill, only }: AreaOptions,
+): Promise<HTMLCanvasElement | null> {
+  await preload(page, assets);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width));
+  canvas.height = Math.max(1, Math.round(height));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  if (!paper && fill) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  const kx = canvas.width / area.width;
+  const ky = canvas.height / area.height;
+  ctx.scale(kx, ky);
+  ctx.translate(-area.min.x, -area.min.y);
+
+  // On a fixed page there is no paper beyond the sheet's edge.
+  const sheet = pageRect(page);
+  const paperArea = sheet ? intersect(area, sheet) : area;
+  if (paper && paperArea) drawPaper(ctx, page, paperArea, assets, Math.min(kx, ky));
+
+  if (sheet) {
+    ctx.beginPath();
+    ctx.rect(sheet.min.x, sheet.min.y, sheet.width, sheet.height);
+    ctx.clip();
+  }
+
+  for (const l of page.layers) {
+    if (!l.visible) continue;
+    drawBlocks(ctx, only ? l.blocks.filter((b) => only.has(b.id)) : l.blocks, assets);
+  }
+
+  return canvas;
+}
+
+/**
+ * Renders a whole page (paper, background and all visible layers) onto a new
+ * canvas. Used for thumbnails, previews and export, so all of them match the
  * editor exactly.
  */
 export async function renderPage(
@@ -45,26 +104,14 @@ export async function renderPage(
   assets: Assets,
   { scale, maxSize }: RenderOptions = {},
 ): Promise<HTMLCanvasElement | null> {
-  const area = renderArea(page);
+  const area = pageArea(page);
   if (!area) return null;
 
-  await preload(page, assets);
-
   const k = maxSize ? maxSize / Math.max(area.width, area.height) : (scale ?? 1);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(area.width * k));
-  canvas.height = Math.max(1, Math.round(area.height * k));
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-
-  ctx.scale(k, k);
-  ctx.translate(-area.min.x, -area.min.y);
-  drawPaper(ctx, page, area, assets, k);
-  for (const l of page.layers)
-    if (l.visible) drawBlocks(ctx, l.blocks, assets);
-
-  return canvas;
+  return renderArea(page, assets, area, {
+    width: area.width * k,
+    height: area.height * k,
+  });
 }
 
 /** Longest edge of the preview stored in each file, in pixels. */
@@ -83,4 +130,12 @@ export async function notePreview(note: NoteData): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+function intersect(a: ContentBounds, b: ContentBounds): ContentBounds | null {
+  const x0 = Math.max(a.min.x, b.min.x);
+  const y0 = Math.max(a.min.y, b.min.y);
+  const x1 = Math.min(a.max.x, b.max.x);
+  const y1 = Math.min(a.max.y, b.max.y);
+  return x1 > x0 && y1 > y0 ? boundsFromRect(x0, y0, x1 - x0, y1 - y0) : null;
 }

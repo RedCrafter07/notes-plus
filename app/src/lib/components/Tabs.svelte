@@ -8,6 +8,7 @@
   import { tabManager } from "$lib/state/tabManager.svelte";
   import {
     IconDeviceFloppy,
+    IconFileExport,
     IconHome,
     IconNotebook,
     IconNotebookOff,
@@ -141,6 +142,17 @@
     {:else}
       <IconNotebook />
     {/if}
+  </button>
+  <button
+    class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/30 active:scale-90 border-2 border-content-1/10"
+    onclick={() => {
+      if (tabManager.tab)
+        goto(resolve("/export/[id]", { id: tabManager.tab.note.meta.id }));
+    }}
+    aria-label="Export"
+    title="Export (Ctrl+E)"
+  >
+    <IconFileExport />
   </button>
   <button
     class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/30 active:scale-90 border-2 border-content-1/10"

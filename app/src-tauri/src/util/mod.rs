@@ -33,6 +33,7 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             get_notebooks,
             set_jot_notes,
             export_file,
+            export_files,
         ])
         .events(collect_events![
             events::Open,

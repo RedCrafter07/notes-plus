@@ -1,5 +1,7 @@
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
+import { goto } from "$app/navigation";
+import { resolve } from "$app/paths";
 import { handleSave } from "./handleSave.svelte";
 import { canvasManager } from "./state/canvasManager.svelte";
 import { lassoManager } from "./state/lassoManager.svelte";
@@ -37,6 +39,9 @@ export function useShortcuts() {
         } else if (key === "y") {
           e.preventDefault();
           tabManager.redo();
+        } else if (key === "e") {
+          e.preventDefault();
+          goto(resolve("/export/[id]", { id: contentManager.id }));
         } else if (key === "0") {
           e.preventDefault();
           canvasManager.fitPage();
