@@ -3,12 +3,14 @@ import {
   IconHighlight,
   IconLasso,
   IconPencil,
+  IconPointer,
   IconTypography,
 } from "@tabler/icons-svelte";
 import { eraser } from "./eraser";
 import { lasso } from "./lassoHandlers";
 import { highlighter, pen } from "./pen";
 import { text } from "./textHandlers";
+import { laser } from "./laserHandlers";
 import type { ToolHandlers } from "./types";
 import type { Settings } from "$lib/tauri/bindings";
 
@@ -87,6 +89,12 @@ export const TOOLS = {
     palette: "colors",
     defaultColor: "#000000",
     size: { label: "Font size", min: 8, max: 96, default: 18, presets: [14, 18, 28] },
+  },
+  laser: {
+    label: "Laser pointer",
+    action: "Point",
+    icon: IconPointer,
+    handlers: laser,
   },
 } as const satisfies Record<string, ToolDef>;
 

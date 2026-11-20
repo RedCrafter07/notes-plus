@@ -17,6 +17,9 @@
   import { tabManager } from "$lib/state/tabManager.svelte";
   import { insertImageFile } from "$lib/editor/import/image";
   import { goto } from "$app/navigation";
+  import { laserManager } from "$lib/editor/state/laserManager.svelte";
+  import PresenterBar from "$lib/present/PresenterBar.svelte";
+  import { usePresenterSync } from "$lib/present/sync.svelte";
   import { resolve } from "$app/paths";
 
   let cursorX = $state(0);
@@ -86,6 +89,7 @@
   });
 
   useShortcuts();
+  usePresenterSync();
 </script>
 
 <div
@@ -145,6 +149,13 @@
       clip-path={clip ? "url(#page-clip)" : undefined}
     />
     <LassoSelection />
+    {#each laserManager.strokes as s (s.id)}
+      <path
+        d={inputToPath(s.points, 6 / contentManager.zoom, false)}
+        class="fill-destructive"
+        style="opacity: {s.opacity}; filter: drop-shadow(0 0 4px var(--destructive));"
+      />
+    {/each}
   </svg>
   <TextEditorOverlay />
   <ToolCursor visible={cursorVisible} x={cursorX} y={cursorY} />
@@ -152,4 +163,5 @@
 </div>
 
 <Toolbar />
+<PresenterBar />
 <ViewControls />

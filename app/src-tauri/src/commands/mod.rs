@@ -3,6 +3,7 @@ mod export;
 mod jot_down;
 mod lifecycle;
 mod notes;
+mod present;
 mod settings;
 
 pub use data::*;
@@ -10,4 +11,5 @@ pub use export::*;
 pub use jot_down::*;
 pub use lifecycle::*;
 pub use notes::*;
+pub use present::*;
 pub use settings::*;

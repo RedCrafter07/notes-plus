@@ -8,9 +8,12 @@
   import { tabManager } from "$lib/state/tabManager.svelte";
   import { settingsStore } from "$lib/state/settingsStore.svelte";
   import WindowControls from "./WindowControls.svelte";
+  import { presenter } from "$lib/present/presenter.svelte";
   import {
     IconDeviceFloppy,
     IconFileExport,
+    IconPresentation,
+    IconPresentationOff,
     IconHome,
     IconNotebook,
     IconNotebookOff,
@@ -164,6 +167,23 @@
     title="Export (Ctrl+E)"
   >
     <IconFileExport />
+  </button>
+  <button
+    class={[
+      "aspect-square h-full transition-all cursor-pointer flex items-center justify-center rounded-xl sticky left-0 active:scale-90 border-2",
+      presenter.active
+        ? "bg-destructive/20 text-destructive border-destructive/50 hover:bg-destructive/30"
+        : "text-content-2 hover:text-content-1 bg-overlay/5 hover:bg-overlay/30 border-content-1/10",
+    ]}
+    onclick={async () => {
+      if (!presenter.active && tabManager.tab)
+        await goto(resolve("/edit/[id]", { id: tabManager.tab.note.meta.id }));
+      await presenter.toggle();
+    }}
+    aria-label={presenter.active ? "Stop presenting" : "Present on a second screen"}
+    title={presenter.active ? "Stop presenting (F5)" : "Present on a second screen (F5)"}
+  >
+    {#if presenter.active}<IconPresentationOff />{:else}<IconPresentation />{/if}
   </button>
   <button
     class="aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 bg-overlay/5 hover:bg-overlay/30 active:scale-90 border-2 border-content-1/10"

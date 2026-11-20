@@ -18,3 +18,7 @@ pub struct DialogEvent(pub DialogData);
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 pub struct DragDropFileEvent(pub u32);
+
+/// The audience window was closed (by Escape, the window manager, or Stop).
+#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
+pub struct PresentEnded;

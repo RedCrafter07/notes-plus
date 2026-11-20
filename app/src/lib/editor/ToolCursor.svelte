@@ -46,6 +46,8 @@
       ? `background-color: ${canvasManager.color};`
       : tool === 'lasso'
         ? 'background-color: #99ccff;'
-        : ''}"
+        : tool === 'laser'
+          ? 'background-color: var(--destructive); opacity: 0.9;'
+          : ''}"
   ></div>
 {/if}

@@ -6,6 +6,7 @@ import { handleSave } from "./handleSave.svelte";
 import { canvasManager } from "./state/canvasManager.svelte";
 import { lassoManager } from "./state/lassoManager.svelte";
 import type { Tool } from "./tools/registry";
+import { presenter } from "$lib/present/presenter.svelte";
 
 /** Single-key tool shortcuts (only when not typing). */
 const TOOL_KEYS: Record<string, Tool> = {
@@ -50,6 +51,12 @@ export function useShortcuts() {
       }
 
       if (isTyping(e) || e.altKey || e.metaKey) return;
+
+      if (e.key === "F5") {
+        e.preventDefault(); // also stops the webview from reloading
+        await presenter.toggle();
+        return;
+      }
 
       if (e.key === "PageDown") {
         e.preventDefault();

@@ -142,7 +142,11 @@ Replace the `ondblclick`-to-edit interaction (bad with a stylus) with long-press
 or an explicit edit affordance. Add while in there: **thickness, eraser size,
 and undo/redo buttons**.
 
-Done: `Toolbar.svelte` (top centre) + `ViewControls.svelte` (zoom, pages).
+Done: `Toolbar.svelte` + `ViewControls.svelte` (zoom, pages). The toolbar docks
+to any edge (`toolbar_dock` setting, drag the grip); it snaps rather than
+floating freely on purpose. The tab bar doubles as the window title bar
+(`decorations: false`, `data-tauri-drag-region`, `WindowControls.svelte`),
+with a `system_title_bar` setting to bring back the OS bar.
 Do not maintain both shapes. If a radial menu returns later, it belongs as a
 long-press context menu at the pen tip, not as a second primary toolbar.
 
@@ -183,6 +187,20 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 - [ ] Selection transforms: move, scale, rotate, cross-page/cross-note paste
 - [ ] Snapping, straight-line snap, stroke stabilization
 - [ ] Hold-to-switch tools (barrel button erases, reverts on release)
+
+### Presenter mode
+
+F5 or the tab-bar button opens an `audience` window (`routes/present`) full
+screen on a second display, or as a normal window to share in a video call.
+OS *mirroring* cannot show different content on desktop, hence a separate
+window on an *extended* display. The audience window renders only the page:
+the root layout skips the app shell when the window label is `audience`. The
+editor streams messages (`lib/present/protocol.ts`, coalesced per frame):
+page per committed edit, new assets once, view, live in-progress ink, laser.
+Fit/Follow, Freeze and Blank live in `PresenterBar`. The laser tool is never
+saved. On Wayland the compositor decides where the window opens.
+Later: iPad/Android external displays need a native plugin (UIScene external
+display role / Android `Presentation`).
 
 ### Tier 3 — beyond class
 

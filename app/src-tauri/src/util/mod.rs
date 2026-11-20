@@ -34,12 +34,15 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             set_jot_notes,
             export_file,
             export_files,
+            start_presenting,
+            stop_presenting,
         ])
         .events(collect_events![
             events::Open,
             events::SettingsUpdate,
             events::DialogEvent,
-            events::DragDropFileEvent
+            events::DragDropFileEvent,
+            events::PresentEnded
         ])
         .typ::<common::structs::data::NoteData>()
         .typ::<common::structs::defaults::Defaults>()

@@ -55,11 +55,13 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(builder.invoke_handler())
-        .on_window_event(|window, event| {
-            if let WindowEvent::DragDrop(event) = event {
-                let handle = window.app_handle();
-                handle_drag_drop(handle, event);
-            };
+        .on_window_event(|window, event| match event {
+            WindowEvent::DragDrop(event) => handle_drag_drop(window.app_handle(), event),
+            WindowEvent::Destroyed if window.label() == commands::AUDIENCE => {
+                use tauri_specta::Event;
+                events::PresentEnded.emit(window.app_handle()).ok();
+            }
+            _ => {}
         })
         .setup(move |app| {
             app_handle::init(app.handle().clone());

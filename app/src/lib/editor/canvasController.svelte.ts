@@ -148,7 +148,7 @@ export function canvasController(
 
     // Coalesced events give the full pen sample rate; only drawing needs it.
     const events =
-      tool === "pen" || tool === "highlighter"
+      tool === "pen" || tool === "highlighter" || tool === "laser"
         ? (e.getCoalescedEvents?.() ?? [e])
         : [e];
     for (const s of events.length ? events : [e]) callHandler(tool, "move", s);
