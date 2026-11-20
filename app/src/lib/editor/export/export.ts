@@ -1,7 +1,6 @@
 import { lassoManager } from "$lib/editor/state/lassoManager.svelte";
 import { contentManager } from "$lib/state/contentManager.svelte";
 import { popupManager } from "$lib/state/popupManager.svelte";
-import { tabManager } from "$lib/state/tabManager.svelte";
 import { commands, type Page } from "$lib/tauri/bindings";
 import { boundsFromRect, type ContentBounds } from "$lib/util/canvasBounds";
 import { pageArea, renderArea } from "../render/page";
@@ -76,12 +75,15 @@ export function planJobs(opts: Pick<ExportOptions, "mode" | "pages">): ExportJob
       ];
     }
     case "regions":
-      return (tabManager.tab?.exportRegions ?? []).flatMap((r) => {
-        const page = pages[r.pageIndex];
-        return page
-          ? [{ name: r.name, page, area: regionBounds(r), size: nominalSize(r) }]
-          : [];
-      });
+      // Export order: page order, then each page's own region order.
+      return pages.flatMap((page) =>
+        page.regions.map((r) => ({
+          name: r.name,
+          page,
+          area: regionBounds(r),
+          size: nominalSize(r),
+        })),
+      );
   }
 }
 

@@ -1,6 +1,5 @@
 import type { NoteData } from "$lib/tauri/bindings";
 import { HistoryManager } from "./historyManager.svelte";
-import type { ExportRegion } from "$lib/editor/export/regions";
 
 /** What was saved: compared against the live state to decide "unsaved". */
 export interface SaveToken {
@@ -12,8 +11,6 @@ export class Tab {
   note = $state<NoteData>()!;
   path = $state<string>();
   history = new HistoryManager();
-  /** Export regions drawn for this note; kept while the tab is open. */
-  exportRegions = $state<ExportRegion[]>([]);
   /** True while a save of this tab is in flight. */
   saving = false;
   /** Counts edits history does not track (title, folder). */

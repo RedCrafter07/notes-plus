@@ -53,6 +53,7 @@ export async function importPdf(file: File) {
         pattern: null,
         background_color: "#ffffff",
         background_asset: asset,
+        regions: [],
         layers: [
           { id: crypto.randomUUID(), name: "Layer 1", blocks: [], visible: true, locked: false },
         ],

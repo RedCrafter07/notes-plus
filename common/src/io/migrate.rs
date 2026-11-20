@@ -13,7 +13,7 @@ use serde_json::{Map, Value, json};
 
 use crate::io::archive::RnpfError;
 
-pub const CURRENT_VERSION: u32 = 3;
+pub const CURRENT_VERSION: u32 = 4;
 /// The oldest version that can still be upgraded.
 pub const OLDEST_SUPPORTED_VERSION: u32 = 2;
 
@@ -34,6 +34,7 @@ pub fn migrate_content(mut content: Value, from: u32) -> Result<Value, RnpfError
     while version < CURRENT_VERSION {
         content = match version {
             2 => v2_to_v3(content)?,
+            3 => v3_to_v4(content)?,
             _ => return Err(RnpfError::InvalidVersion),
         };
         version += 1;
@@ -75,6 +76,23 @@ fn v2_to_v3(mut content: Value) -> Result<Value, RnpfError> {
     Ok(content)
 }
 
+/// v3 -> v4: pages gain `regions` (export regions, none yet).
+fn v3_to_v4(mut content: Value) -> Result<Value, RnpfError> {
+    let pages = content
+        .get_mut("pages")
+        .and_then(Value::as_array_mut)
+        .ok_or(RnpfError::InvalidFile)?;
+
+    for page in pages {
+        page.as_object_mut()
+            .ok_or(RnpfError::InvalidFile)?
+            .entry("regions")
+            .or_insert(json!([]));
+    }
+
+    Ok(content)
+}
+
 fn retag_block(block: Value) -> Result<Value, RnpfError> {
     let Value::Object(outer) = block else {
         return Err(RnpfError::InvalidFile);
@@ -106,6 +124,7 @@ mod tests {
     fn parses_versions() {
         assert_eq!(parse_version("2").unwrap(), 2);
         assert_eq!(parse_version("3\n").unwrap(), 3);
+        assert_eq!(parse_version("4").unwrap(), 4);
         assert!(parse_version("1").is_err());
         assert!(parse_version("99").is_err());
         assert!(parse_version("abc").is_err());
@@ -140,6 +159,7 @@ mod tests {
         });
 
         let migrated = migrate_content(v2, 2).unwrap();
+        assert_eq!(migrated["pages"][0]["regions"], json!([]), "v2 goes through v3 -> v4");
         let content: Content = serde_json::from_value(migrated).unwrap();
 
         let page = &content.pages[0];

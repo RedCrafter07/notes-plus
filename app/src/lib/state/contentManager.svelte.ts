@@ -1,4 +1,4 @@
-import type { Layer, Page } from "$lib/tauri/bindings";
+import type { ExportRegion, Layer, Page } from "$lib/tauri/bindings";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { settingsStore } from "./settingsStore.svelte";
 import { tabManager } from "./tabManager.svelte";
@@ -39,8 +39,9 @@ class ContentManager {
     const base = source ?? $state.snapshot(defaultsStore.store.page);
     return {
       ...$state.snapshot(base),
-      // An imported PDF background belongs to its page only.
+      // An imported PDF background and export regions belong to their page only.
       background_asset: null,
+      regions: [],
       layers: [{ ...$state.snapshot(defaultsStore.store.layer), id: crypto.randomUUID(), blocks: [] }],
       name,
     };
@@ -84,6 +85,7 @@ class ContentManager {
           id: crypto.randomUUID(),
           blocks: l.blocks.map((b) => ({ ...$state.snapshot(b), id: crypto.randomUUID() })),
         })),
+        regions: src.regions.map((r) => ({ ...$state.snapshot(r), id: crypto.randomUUID() })),
       };
       const pages = this.pages.slice();
       pages.splice(i + 1, 0, copy);
@@ -123,6 +125,14 @@ class ContentManager {
       this.pages = this.pages.map((p, j) =>
         i === "all" || i === j ? { ...p, ...props } : p,
       );
+    });
+  }
+
+  /** Replaces a page's export regions (one undo step). */
+  public setRegions(i: number, regions: ExportRegion[], label = "Edit export regions") {
+    if (!this.pages[i]) return;
+    tabManager.transact(label, () => {
+      this.pages = this.pages.map((p, j) => (j === i ? { ...p, regions } : p));
     });
   }
 

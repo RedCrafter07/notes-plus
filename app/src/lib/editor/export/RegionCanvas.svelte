@@ -1,15 +1,16 @@
 <script lang="ts">
   import { contentManager } from "$lib/state/contentManager.svelte";
-  import { tabManager } from "$lib/state/tabManager.svelte";
   import { padBounds, unionBounds, type ContentBounds } from "$lib/util/canvasBounds";
   import { pageArea } from "../render/page";
   import AreaImage from "./AreaImage.svelte";
-  import { regionBounds, regionFormat, type ExportRegion } from "./regions";
+  import { formatLabel, isFree, regionBounds, type ExportRegion } from "./regions";
 
   /*
    * The page with its export regions on top. Drag a region to move it, drag
-   * its corner to resize it (the format's ratio is kept). The view fits the
-   * page plus all regions, and is frozen while dragging so nothing jumps.
+   * its corner to resize it (a fixed format keeps its ratio, "free" does
+   * not). The view fits the page plus all regions and is frozen while
+   * dragging so nothing jumps. A drag edits a local draft and is committed
+   * on release, so it is one undo step.
    */
   let {
     pageIndex,
@@ -20,11 +21,9 @@
   let boxH = $state(0);
   const dpr = typeof window === "undefined" ? 1 : window.devicePixelRatio;
 
-  const tab = $derived(tabManager.tab);
   const page = $derived(contentManager.pages[pageIndex]);
-  const regions = $derived(
-    (tab?.exportRegions ?? []).filter((r) => r.pageIndex === pageIndex),
-  );
+  let draft = $state<ExportRegion[]>();
+  const regions = $derived(draft ?? page?.regions ?? []);
 
   function fitExtent(): ContentBounds {
     let ext = page ? pageArea(page) : null;
@@ -45,8 +44,7 @@
   });
 
   function update(id: string, patch: Partial<ExportRegion>) {
-    if (!tab) return;
-    tab.exportRegions = tab.exportRegions.map((r) => (r.id === id ? { ...r, ...patch } : r));
+    draft = regions.map((r) => (r.id === id ? { ...r, ...patch } : r));
   }
 
   let drag:
@@ -67,6 +65,8 @@
     const dy = (e.clientY - drag.sy) / k;
     const s = drag.start;
     if (drag.kind === "move") update(drag.id, { x: s.x + dx, y: s.y + dy });
+    else if (isFree(s))
+      update(drag.id, { width: Math.max(40, s.width + dx), height: Math.max(40, s.height + dy) });
     else {
       const width = Math.max(80, s.width + dx);
       update(drag.id, { width, height: (width * s.height) / s.width });
@@ -74,6 +74,8 @@
   }
 
   function endDrag() {
+    if (draft) contentManager.setRegions(pageIndex, draft, drag?.kind === "resize" ? "Resize region" : "Move region");
+    draft = undefined;
     drag = undefined;
     frozen = undefined;
   }
@@ -99,7 +101,7 @@
       <div
         role="button"
         tabindex="0"
-        aria-label="{r.name}, {regionFormat(r).label}"
+        aria-label="{r.name}, {formatLabel(r)}"
         aria-pressed={active}
         class={[
           "absolute border-[3px] cursor-move transition-colors",

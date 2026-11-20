@@ -12,6 +12,7 @@ const page: Page = {
   pattern_color: "#dddddd",
   background_color: "#ffffff",
   background_asset: null,
+  regions: [],
   layers: [
     {
       id: "l",

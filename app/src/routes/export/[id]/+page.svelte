@@ -5,6 +5,7 @@
   import PageThumbnail from "$lib/components/PageThumbnail.svelte";
   import AreaImage from "$lib/editor/export/AreaImage.svelte";
   import RegionCanvas from "$lib/editor/export/RegionCanvas.svelte";
+  import RegionList from "$lib/editor/export/RegionList.svelte";
   import {
     FORMAT_INFO,
     planJobs,
@@ -14,12 +15,15 @@
   } from "$lib/editor/export/export";
   import {
     coverContent,
+    FIXED_FORMATS,
+    isFree,
     move,
     nextRegion,
     nominalSize,
     REGION_FORMATS,
-    regionFormat,
     reshape,
+    resetScale,
+    type ExportRegion,
   } from "$lib/editor/export/regions";
   import { blockBounds } from "$lib/editor/blocks";
   import { contentBounds, isInfinite, pageRect } from "$lib/editor/pageFormats";
@@ -32,8 +36,6 @@
     IconCheck,
     IconChevronLeft,
     IconChevronRight,
-    IconChevronsLeft,
-    IconChevronsRight,
     IconLayoutGrid,
     IconLoader2,
     IconPlus,
@@ -54,11 +56,16 @@
     if (!tabManager.tab) goto(resolve("/"));
   });
 
+  const totalRegions = $derived(
+    contentManager.pages.reduce((n, p) => n + p.regions.length, 0),
+  );
+
   // Start in the mode that most likely matches what you came for.
   let mode = $state<ExportMode>(
     lassoManager.selection
       ? "selection"
-      : isInfinite(contentManager.page) || (tabManager.tab?.exportRegions.length ?? 0) > 0
+      : isInfinite(contentManager.page) ||
+          contentManager.pages.some((p) => p.regions.length > 0)
         ? "regions"
         : "pages",
   );
@@ -69,17 +76,17 @@
   let busy = $state(false);
 
   let previewPage = $state(contentManager.currentPage);
-  let selected = $state<string | undefined>(tabManager.tab?.exportRegions[0]?.id);
+  const page = $derived(contentManager.pages[previewPage]);
+  /** Regions on the previewed page, in export order. */
+  const regions = $derived(page?.regions ?? []);
+  let selected = $state<string | undefined>(contentManager.page.regions[0]?.id);
 
   const jobs = $derived(planJobs({ mode, pages }));
-  const regions = $derived(tab?.exportRegions ?? []);
   const region = $derived(regions.find((r) => r.id === selected));
-  const regionIndex = $derived(regions.findIndex((r) => r.id === selected));
-
-  // Follow the selected region to its page.
-  $effect(() => {
-    if (region) previewPage = region.pageIndex;
-  });
+  /** Regions on earlier pages, so the list numbers match the export order. */
+  const regionOffset = $derived(
+    contentManager.pages.slice(0, previewPage).reduce((n, p) => n + p.regions.length, 0),
+  );
 
   const MODES: { id: ExportMode; label: string }[] = [
     { id: "pages", label: "Pages" },
@@ -87,21 +94,22 @@
     { id: "regions", label: "Regions" },
   ];
 
+  /** Every region change is one undoable page edit. */
+  function setRegions(next: ExportRegion[], label?: string) {
+    contentManager.setRegions(previewPage, next, label);
+  }
+
   function anchor(): ContentBounds | null {
-    const page = contentManager.pages[previewPage];
     return page ? (pageRect(page) ?? contentBounds(page.layers)) : null;
   }
 
   function addRegion() {
-    if (!tab) return;
-    const r = nextRegion(tab.exportRegions, previewPage, anchor());
-    tab.exportRegions = [...tab.exportRegions, r];
+    const r = nextRegion(regions, anchor(), totalRegions + 1);
+    setRegions([...regions, r], "Add export region");
     selected = r.id;
   }
 
   function cover() {
-    if (!tab) return;
-    const page = contentManager.pages[previewPage];
     const content = page && contentBounds(page.layers);
     if (!content) return;
     const blocks = page.layers
@@ -109,34 +117,23 @@
       .flatMap((l) => l.blocks)
       .map(blockBounds)
       .filter((b): b is ContentBounds => b !== null);
-    const fmt = region ?? { formatId: "a4", orientation: "portrait" as const };
-    const tiles = coverContent(
-      content,
-      blocks,
-      previewPage,
-      fmt.formatId,
-      fmt.orientation,
-      tab.exportRegions.length + 1,
-    );
-    tab.exportRegions = [...tab.exportRegions, ...tiles];
+    const fmt = region ?? { format: "a4", orientation: "portrait" as const };
+    const tiles = coverContent(content, blocks, fmt.format, fmt.orientation, totalRegions + 1);
+    setRegions([...regions, ...tiles], "Cover content with regions");
     selected = tiles[0]?.id ?? selected;
   }
 
-  function patchRegion(fn: (r: NonNullable<typeof region>) => NonNullable<typeof region>) {
-    if (!tab || !region) return;
-    tab.exportRegions = tab.exportRegions.map((r) => (r.id === region.id ? fn(r) : r));
-  }
-
-  function reorder(to: number) {
-    if (!tab || regionIndex === -1) return;
-    tab.exportRegions = move(tab.exportRegions, regionIndex, to);
+  function patchRegion(fn: (r: ExportRegion) => ExportRegion, label?: string) {
+    if (!region) return;
+    const id = region.id;
+    setRegions(regions.map((r) => (r.id === id ? fn(r) : r)), label);
   }
 
   function removeRegion(id: string) {
-    if (!tab) return;
-    const i = tab.exportRegions.findIndex((r) => r.id === id);
-    tab.exportRegions = tab.exportRegions.filter((r) => r.id !== id);
-    if (selected === id) selected = tab.exportRegions[Math.min(i, tab.exportRegions.length - 1)]?.id;
+    const i = regions.findIndex((r) => r.id === id);
+    const next = regions.filter((r) => r.id !== id);
+    setRegions(next, "Remove export region");
+    if (selected === id) selected = next[Math.min(i, next.length - 1)]?.id;
   }
 
   async function doExport() {
@@ -236,36 +233,19 @@
         <section class={card}>
           <div class="flex flex-row items-center justify-between">
             <h2 class="font-semibold text-content-2">Regions</h2>
-            <span class="text-sm text-content-3">Each region becomes one page</span>
+            <span class="text-sm text-content-3">
+              {totalRegions > regions.length ? `${totalRegions} in this note · ` : ""}Each becomes one page
+            </span>
           </div>
 
           {#if regions.length > 0}
-            <ol class="flex flex-col gap-2">
-              {#each regions as r, i (r.id)}
-                {@const active = r.id === selected}
-                <li
-                  class={[
-                    "flex flex-row items-center rounded-xl border-2 transition-all",
-                    active ? "border-info bg-info/10" : "border-content-1/10 bg-base-1",
-                  ]}
-                >
-                  <button class="flex-1 min-w-0 flex flex-row items-center gap-3 p-3 text-left" onclick={() => (selected = r.id)}>
-                    <span class="w-6 text-content-3 tabular-nums">{i + 1}</span>
-                    <span class="flex-1 truncate font-semibold">{r.name}</span>
-                    <span class="text-sm text-content-3">
-                      {regionFormat(r).label}{contentManager.pages.length > 1 ? ` · p. ${r.pageIndex + 1}` : ""}
-                    </span>
-                  </button>
-                  <button
-                    class="w-11 h-11 grid place-items-center text-content-3 hover:text-destructive transition-all"
-                    onclick={() => removeRegion(r.id)}
-                    aria-label="Remove {r.name}"
-                  >
-                    <IconTrash size={18} />
-                  </button>
-                </li>
-              {/each}
-            </ol>
+            <RegionList
+              {regions}
+              bind:selected
+              offset={regionOffset}
+              onreorder={(from, to) => setRegions(move(regions, from, to), "Reorder export regions")}
+              onremove={removeRegion}
+            />
           {:else}
             <p class="text-sm text-content-3">
               Add a region and drag it over the part you want, or let Cover
@@ -291,7 +271,7 @@
               aria-label="Region name"
               onchange={(e) => {
                 const name = e.currentTarget.value.trim();
-                if (name) patchRegion((r) => ({ ...r, name }));
+                if (name) patchRegion((r) => ({ ...r, name }), "Rename export region");
               }}
             />
             <div class="flex flex-row gap-2">
@@ -299,11 +279,11 @@
                 class="flex-1 min-w-0 h-11 pl-3 pr-9 rounded-xl appearance-none bg-base-3 text-content-1 border-2 border-content-1/10 focus:outline-none focus:border-info bg-no-repeat bg-[length:1.1rem] bg-[right_0.6rem_center]"
                 style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a6adc8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E&quot;);"
                 aria-label="Region format"
-                value={region.formatId}
+                value={region.format}
                 onchange={(e) => {
                   const id = e.currentTarget.value;
-                  const f = REGION_FORMATS.find((f) => f.id === id);
-                  patchRegion((r) => reshape(r, id, f?.prefers ?? r.orientation));
+                  const f = FIXED_FORMATS.find((f) => f.id === id);
+                  patchRegion((r) => reshape(r, id, f?.prefers ?? r.orientation), "Change region format");
                 }}
               >
                 {#each REGION_FORMATS as f (f.id)}
@@ -313,8 +293,8 @@
               {#each [["portrait", IconRectangleVertical], ["landscape", IconRectangle]] as const as [o, Icon] (o)}
                 <button
                   class={iconToggle(region.orientation === o)}
-                  disabled={region.formatId === "square"}
-                  onclick={() => patchRegion((r) => reshape(r, r.formatId, o))}
+                  disabled={region.format === "square" || isFree(region)}
+                  onclick={() => patchRegion((r) => reshape(r, r.format, o), "Change region orientation")}
                   aria-label={o}
                   aria-pressed={region.orientation === o}
                   title={o === "portrait" ? "Portrait" : "Landscape"}
@@ -323,36 +303,24 @@
                 </button>
               {/each}
             </div>
-            <div class="flex flex-row items-center gap-2">
-              <span class="flex-1 text-sm text-content-3">
-                Content at {Math.round((nominalSize(region).width / region.width) * 100)}% of its size on the canvas
-              </span>
-              <button
-                class="h-9 px-3 rounded-lg text-sm text-content-2 hover:bg-overlay/30 transition-all"
-                onclick={() =>
-                  patchRegion((r) => {
-                    const n = nominalSize(r);
-                    return { ...r, width: n.width, height: n.height };
-                  })}
-              >
-                Reset to 100%
-              </button>
-            </div>
-            <div class="flex flex-row items-center gap-2">
-              <span class="flex-1 font-semibold text-content-2">Order</span>
-              <button class={iconBtn} disabled={regionIndex <= 0} onclick={() => reorder(0)} aria-label="Move to first" title="First">
-                <IconChevronsLeft />
-              </button>
-              <button class={iconBtn} disabled={regionIndex <= 0} onclick={() => reorder(regionIndex - 1)} aria-label="Move earlier" title="Earlier">
-                <IconChevronLeft />
-              </button>
-              <button class={iconBtn} disabled={regionIndex >= regions.length - 1} onclick={() => reorder(regionIndex + 1)} aria-label="Move later" title="Later">
-                <IconChevronRight />
-              </button>
-              <button class={iconBtn} disabled={regionIndex >= regions.length - 1} onclick={() => reorder(regions.length - 1)} aria-label="Move to last" title="Last">
-                <IconChevronsRight />
-              </button>
-            </div>
+            {#if isFree(region)}
+              <p class="text-sm text-content-3">
+                Free shape: drag the corner to any size. It exports at exactly
+                that size.
+              </p>
+            {:else}
+              <div class="flex flex-row items-center gap-2">
+                <span class="flex-1 text-sm text-content-3">
+                  Content at {Math.round((nominalSize(region).width / region.width) * 100)}% of its size on the canvas
+                </span>
+                <button
+                  class="h-9 px-3 rounded-lg text-sm text-content-2 hover:bg-overlay/30 transition-all"
+                  onclick={() => patchRegion(resetScale, "Reset region size")}
+                >
+                  Reset to 100%
+                </button>
+              </div>
+            {/if}
           </section>
         {/if}
       {/if}

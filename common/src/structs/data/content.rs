@@ -107,6 +107,28 @@ impl Default for Layer {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "lowercase")]
+pub enum Orientation {
+    Portrait,
+    Landscape,
+}
+
+/// A rectangle on a page that is exported as one output page, e.g. "this part
+/// of my infinite canvas as A4". `format` is a page format id ("a4", "letter",
+/// "16:9", ...) whose ratio the rectangle keeps, or "free" for any ratio.
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct ExportRegion {
+    pub id: String,
+    pub name: String,
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub format: String,
+    pub orientation: Orientation,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Page {
     pub layers: Vec<Layer>,
@@ -120,6 +142,8 @@ pub struct Page {
     /// An image drawn under the page content, e.g. an imported PDF page.
     /// Key into `NoteData::assets`.
     pub background_asset: Option<String>,
+    /// Export regions on this page, in export order.
+    pub regions: Vec<ExportRegion>,
 }
 
 /// A4 at 96 CSS pixels per inch (210 x 297 mm).
@@ -146,6 +170,7 @@ impl Page {
             pattern_color,
             background_color,
             background_asset: None,
+            regions: Vec::new(),
         }
     }
 
@@ -167,6 +192,7 @@ impl Default for Page {
             pattern_color: String::from("#dddddd"),
             background_color: String::from("#ffffff"),
             background_asset: None,
+            regions: Vec::new(),
         }
     }
 }

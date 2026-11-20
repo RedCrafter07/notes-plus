@@ -19,6 +19,7 @@ const defaultPage: Page = {
   width: 794,
   height: 1123,
   background_asset: null,
+  regions: [],
   layers: [defaultLayer],
 };
 export const defaultNote: NoteData = {

@@ -42,7 +42,8 @@ NoteData { meta, content, state }
   Meta    -> id, title, folder, tags, created_at, edited_at
   Content -> pages: Vec<Page>
     Page  -> layers, width, height, pattern, pattern_scale, colors, name,
-             background_asset (imported PDF page)
+             background_asset (imported PDF page),
+             regions: Vec<ExportRegion> (export order; format id or "free")
              default is A4 (794 x 1123 units, 96 units per inch);
              width/height of -1.0 means INFINITE
     Layer -> id, blocks, visible, locked, name
@@ -59,7 +60,7 @@ A zip archive (`common/src/io/archive.rs`) containing `meta`, `data`, `state`,
 `version`, `assets/index` + `assets/<id>` (raw attachment bytes), and an
 optional `preview` (PNG of the first page, rewritten on every save, read by the
 file browser; absent in older files, which show an icon). Current
-version is **3**. `common/src/io/migrate.rs` upgrades older `data` JSON step by
+version is **4**. `common/src/io/migrate.rs` upgrades older `data` JSON step by
 step before deserializing; to change the format, bump `CURRENT_VERSION` and add
 a `vN_to_vN+1`. Unreferenced assets are dropped only at load/save time, never on
 delete, so undo can restore a block whose asset was "removed".
@@ -162,9 +163,9 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
       Missing: resizing (needs selection scaling, see Tier 2).
 - [x] **PDF import + annotation.** pdf.js renders each page as a page background.
 - [x] **Export.** Dedicated page (`routes/export/[id]`, Ctrl+E): all/current
-      pages, the lasso selection, or **regions** drawn on the canvas (each a
-      format such as A4, resizable, reorderable; "Cover content" tiles the
-      drawing). PDF, PNG, JPG, SVG; resolution and "include paper" options.
+      pages, the lasso selection, or **regions** saved on each page (a
+      format such as A4 or free-form; drag to move/resize, drag handle to
+      reorder, all undoable; "Cover content" tiles the drawing). PDF, PNG, JPG, SVG; resolution and "include paper" options.
       PDF is raster (JPEG); SVG is vector.
 - [x] **Touch-only operation.** Undo/redo buttons and 2-/3-finger taps.
 - [x] **Highlighter.** `Stroke.opacity`. Drawn over ink; a multiply blend would
@@ -206,9 +207,7 @@ per setting, the missing format migration, and the `contentManager` ↔
 3. **Text layout is measured with canvas `measureText`** and the editing
    `<textarea>` wraps with the browser's own algorithm; they agree closely but
    not perfectly for unusual text.
-4. **Export regions live in memory only** (`Tab.exportRegions`); they are lost
-   when the tab closes. Persisting them in the note needs a format revision.
-5. **Assets travel as data URLs over IPC.** Every save sends all attachments
+4. **Assets travel as data URLs over IPC.** Every save sends all attachments
    as base64; fine for lecture PDFs, slow for very large notes.
 
 ## UI/UX issues
