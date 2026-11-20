@@ -1,6 +1,7 @@
 use std::{io::ErrorKind, path::Path};
 
 use serde::{Deserialize, Serialize};
+use serde_with::{DisplayFromStr, serde_as};
 use thiserror::Error;
 
 use crate::{
@@ -20,12 +21,20 @@ pub enum IndexError {
     Unknown,
 }
 
+/// Timestamps travel as strings, like `Meta`'s, so the JSON matches the
+/// TypeScript type (`string`): u64 can exceed JavaScript's safe integers.
+/// They used to be sent as numbers while typed as strings.
+#[serde_as]
 #[derive(specta::Type, Clone, Debug, Deserialize, Serialize)]
 pub struct File {
     pub title: String,
     pub folder: Option<String>,
     pub path: String,
+    #[serde_as(as = "DisplayFromStr")]
+    #[specta(type = String)]
     pub created_at: u64,
+    #[serde_as(as = "DisplayFromStr")]
+    #[specta(type = String)]
     pub edited_at: u64,
     /// First page as a PNG data URL, if the file carries one.
     pub preview: Option<String>,

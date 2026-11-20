@@ -9,9 +9,13 @@ use crate::io::index::normalize_folder;
 #[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Meta {
+    // u64 seconds can exceed JS's safe integer range in principle, so they
+    // travel as strings (serde) and are typed as strings (specta).
     #[serde_as(as = "DisplayFromStr")]
+    #[specta(type = String)]
     pub created_at: u64,
     #[serde_as(as = "DisplayFromStr")]
+    #[specta(type = String)]
     pub edited_at: u64,
     pub id: String,
     pub folder: Option<String>,
