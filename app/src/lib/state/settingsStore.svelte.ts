@@ -11,6 +11,7 @@ export const settingsStore = new Store<Settings>({
   shift_swaps_scroll_axes: true,
   disable_tool_switch: false,
   autosave: true,
+  system_title_bar: false,
 });
 
 /**

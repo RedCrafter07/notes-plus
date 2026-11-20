@@ -14,6 +14,9 @@ pub struct Settings {
     pub disable_tool_switch: bool,
     /// Save open notes automatically a moment after each change.
     pub autosave: bool,
+    /// Use the operating system's title bar instead of merging the window
+    /// controls into the tab bar (e.g. for tiling window managers).
+    pub system_title_bar: bool,
 }
 
 impl Default for Settings {
@@ -28,6 +31,7 @@ impl Default for Settings {
             shift_swaps_scroll_axes: true,
             disable_tool_switch: false,
             autosave: true,
+            system_title_bar: false,
         }
     }
 }

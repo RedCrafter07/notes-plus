@@ -6,6 +6,8 @@
   import { editorComponents } from "$lib/state/editorComponents.svelte";
   import { overlayManager } from "$lib/state/overlayManager.svelte";
   import { tabManager } from "$lib/state/tabManager.svelte";
+  import { settingsStore } from "$lib/state/settingsStore.svelte";
+  import WindowControls from "./WindowControls.svelte";
   import {
     IconDeviceFloppy,
     IconFileExport,
@@ -28,21 +30,29 @@
     if (t) t.scrollIntoView({ behavior: "instant" });
   });
 
+  /** Tabs share the bar with the window controls unless the OS draws them. */
+  const merged = $derived(!settingsStore.store.system_title_bar);
+  const hasTabs = $derived(tabManager.tabs.length > 0);
+
   function updateTab(index: number) {
     lassoManager.reset();
     tabManager.activeTab = index;
   }
 </script>
 
+<!--
+  data-tauri-drag-region makes empty parts of the bar move the window (and
+  double-click maximise) when the title bar is merged. It only applies to the
+  element itself, not its children, so buttons and tabs keep working.
+-->
 <div
+  data-tauri-drag-region={merged ? true : undefined}
   class={[
-    "flex gap-2 flex-row w-full bg-base-2 overflow-hidden px-2 transition-all",
-    {
-      "h-14 py-2": tabManager.tabs.length > 0,
-      "h-0 py-0": tabManager.tabs.length === 0,
-    },
+    "flex gap-2 flex-row w-full bg-base-2 overflow-hidden px-2 transition-all shrink-0",
+    hasTabs || merged ? "h-14 py-2" : "h-0 py-0",
   ]}
 >
+  {#if hasTabs}
   <button
     class={[
       "aspect-square h-full transition-all cursor-pointer flex items-center justify-center text-content-2 hover:text-content-1 rounded-xl sticky left-0 active:scale-90 border-2",
@@ -63,7 +73,8 @@
   </button>
   <div
     id="tab-bar"
-    class="flex gap-2 flex-row w-full h-full bg-base-2 overflow-y-hidden transition-all overflow-x-auto relative"
+    data-tauri-drag-region={merged ? true : undefined}
+    class="flex gap-2 flex-row flex-1 min-w-0 h-full bg-base-2 overflow-y-hidden transition-all overflow-x-auto relative"
     onwheel={(e) => {
       const tabBarElement = e.currentTarget;
       if (!tabBarElement) return;
@@ -76,7 +87,7 @@
       {@const active = tabManager.activeTab === i}
       <div
         class={[
-          "h-full flex-1 transition-all rounded-xl p-2 flex flex-row gap-2 min-w-max z-0 group border-2 items-center font-semibold group",
+          "h-full shrink-0 max-w-72 transition-all rounded-xl p-2 flex flex-row gap-2 z-0 group border-2 items-center font-semibold group",
           {
             "bg-overlay/5 hover:bg-overlay/30 text-content-2 hover:text-content-1 border-content-1/10":
               !active,
@@ -88,7 +99,7 @@
         use:assignTab={tab.note.meta.id}
       >
         <button
-          class="flex-1 flex items-center w-full h-full min-w-max"
+          class="flex-1 flex items-center w-full h-full min-w-0"
           onpointerdown={(e) => {
             if (e.button !== 1) return;
             e.preventDefault();
@@ -101,7 +112,7 @@
             );
           }}
         >
-          <p class="min-w-max">
+          <p class="truncate" title={tab.note.meta.title}>
             {`${tab.note.meta.title}${tab.unsaved ? " *" : ""}`}
           </p>
         </button>
@@ -164,4 +175,14 @@
   >
     <IconSettings />
   </button>
+  {/if}
+  {#if merged}
+    <!-- Always-free strip to grab the window, even when tabs fill the bar. -->
+    <div
+      data-tauri-drag-region
+      class={["h-full shrink-0", hasTabs ? "w-14" : "flex-1"]}
+      aria-hidden="true"
+    ></div>
+    <WindowControls />
+  {/if}
 </div>

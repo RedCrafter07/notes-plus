@@ -48,9 +48,21 @@
     });
 
     await timeout(50);
-    await commands.ready();
+    // Settings first: the title bar style must be applied before the window
+    // becomes visible (ready() shows it), or it would visibly switch.
     settingsStore.store = await commands.getSettings();
+    await getCurrentWindow().setDecorations(settingsStore.store.system_title_bar);
+    await commands.ready();
     defaultsStore.store = await commands.getDefaults();
+  });
+
+  // Follow the title bar setting when it is changed at runtime.
+  let decorated: boolean | undefined;
+  $effect(() => {
+    const want = settingsStore.store.system_title_bar;
+    if (decorated !== undefined && want !== decorated)
+      getCurrentWindow().setDecorations(want);
+    decorated = want;
   });
 
   $effect(() => {
