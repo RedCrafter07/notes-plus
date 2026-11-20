@@ -39,7 +39,7 @@
 
   // Without an open tab there is nothing to edit (e.g. after a reload).
   $effect(() => {
-    if (!tabManager.tab) goto(resolve("/"));
+    if (!tabManager.tab) goto(resolve("/(dashboard)"));
   });
 
   // One effect for all canvas repaints: it tracks what is drawn and asks the

@@ -68,7 +68,7 @@
     ]}
     onclick={() => {
       updateTab(-1);
-      goto(resolve("/"));
+      goto(resolve("/(dashboard)"));
     }}
     aria-label="Home"
   >

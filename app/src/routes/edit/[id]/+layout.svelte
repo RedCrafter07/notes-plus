@@ -11,7 +11,7 @@
     <svelte:boundary
       onerror={(e) => {
         console.error(e);
-        goto(resolve("/"));
+        goto(resolve("/(dashboard)"));
       }}
     >
       {@render children()}

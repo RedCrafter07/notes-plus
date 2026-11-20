@@ -54,7 +54,7 @@ class TabManager {
       this.#activeTab = newIndex;
     }
 
-    if (this.#activeTab === -1) goto(resolve("/"));
+    if (this.#activeTab === -1) goto(resolve("/(dashboard)"));
   }
 
   get activeTab() {

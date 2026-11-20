@@ -39,7 +39,7 @@
       <button
         class="flex flex-row gap-2 items-center"
         onclick={() => {
-          goto(resolve("/"));
+          goto(resolve("/(dashboard)"));
         }}
       >
         <IconHome />
@@ -73,7 +73,7 @@
       <button
         class="flex flex-row gap-2 items-center mt-auto"
         onclick={() => {
-          goto(resolve("/settings"));
+          goto(resolve("/(dashboard)/settings"));
         }}
       >
         <IconSettings />

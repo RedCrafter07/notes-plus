@@ -53,7 +53,7 @@
   const tab = $derived(tabManager.tab);
 
   $effect(() => {
-    if (!tabManager.tab) goto(resolve("/"));
+    if (!tabManager.tab) goto(resolve("/(dashboard)"));
   });
 
   const totalRegions = $derived(
