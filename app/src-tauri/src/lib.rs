@@ -13,15 +13,11 @@ use crate::util::{app_handle, handle_drag_drop};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    #[cfg(target_os = "linux")]
-    {
-        if std::env::var("WAYLAND_DISPLAY").is_ok() {
-            // SAFETY: this program is single-threaded up to this point
-            unsafe {
-                std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
-            }
-        }
-    }
+    // Linux: WebKitGTK's DMA-BUF renderer is left on. It used to be forced
+    // off on Wayland (a common workaround for blank windows with old NVIDIA
+    // drivers), but that also disables GPU compositing, which silently drops
+    // CSS backdrop blur. Anyone who still needs it can launch the app with
+    // WEBKIT_DISABLE_DMABUF_RENDERER=1, WebKit's own switch (see README).
 
     let builder = util::get_builder();
     #[cfg(debug_assertions)] // <- Only export on non-release builds

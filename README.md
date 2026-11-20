@@ -29,6 +29,16 @@ a simple, intuitive yet powerful note-taking software.
 
 If you want to try out RedNotes Plus (which is currently in its minimal viable product state), feel free to do so in the release section! The application you'll find there is meant to illustrate the direction in which the software is going.
 
+### Linux: blank or flickering window
+
+Some older NVIDIA drivers don't work with WebKitGTK's GPU renderer. If the
+window stays blank or flickers, start the app with that renderer turned off
+(blur effects in the UI are then not shown):
+
+```bash
+WEBKIT_DISABLE_DMABUF_RENDERER=1 rednotes-plus
+```
+
 ## Planned features/TODO
 
 - [ ] Limited canvas
