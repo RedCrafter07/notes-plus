@@ -30,7 +30,9 @@
     `${btnBase} ${active ? "bg-primary text-base-1" : btnIdle}`;
 
   const def = $derived(toolDef(canvasManager.tool));
-  const colors = $derived(settingsStore.store.colors ?? []);
+  /** The active tool's swatches (pen/text share one set, highlighter has its own). */
+  const palette = $derived(def.palette);
+  const colors = $derived(palette ? (settingsStore.store[palette] ?? []) : []);
   const history = $derived(tabManager.tab?.history);
 
   /** Index of the swatch open in the edit popup, or null when closed. */
@@ -40,6 +42,9 @@
   function selectTool(t: Tool) {
     canvasManager.tool = t;
     sizeOpen = false;
+    // The palette changes with the tool, so an open swatch editor would
+    // point at the wrong list.
+    if (editingIndex !== null) closeEditor();
   }
 
   function setColor(c: string) {
@@ -61,12 +66,14 @@
   });
 
   async function persistColors() {
-    await updateSettings({ colors: $state.snapshot(settingsStore.store.colors) });
+    if (!palette) return;
+    await updateSettings({ [palette]: $state.snapshot(settingsStore.store[palette]) });
   }
 
   function addColor() {
-    settingsStore.store.colors.push(canvasManager.color || "#000000");
-    editingIndex = settingsStore.store.colors.length - 1;
+    if (!palette) return;
+    settingsStore.store[palette].push(canvasManager.color || "#000000");
+    editingIndex = settingsStore.store[palette].length - 1;
   }
 
   function closeEditor() {
@@ -75,8 +82,8 @@
   }
 
   function deleteColor() {
-    if (editingIndex === null) return;
-    settingsStore.store.colors.splice(editingIndex, 1);
+    if (editingIndex === null || !palette) return;
+    settingsStore.store[palette].splice(editingIndex, 1);
     editingIndex = null;
     persistColors();
   }
@@ -179,7 +186,7 @@
       <IconPhotoPlus />
     </button>
 
-    {#if def.colored}
+    {#if palette}
       {@render sep()}
       {#each colors as color, i (`${i}-${color}`)}
         {@const active = color === canvasManager.color}
@@ -271,10 +278,10 @@
   {/if}
 </div>
 
-{#if editingIndex !== null}
+{#if editingIndex !== null && palette}
   {@const idx = editingIndex}
   <ColorEditPopup
-    bind:value={settingsStore.store.colors[idx]}
+    bind:value={settingsStore.store[palette][idx]}
     canDelete={colors.length > 1}
     onClose={closeEditor}
     onDelete={deleteColor}

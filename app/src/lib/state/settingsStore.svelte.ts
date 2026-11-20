@@ -7,6 +7,7 @@ export const settingsStore = new Store<Settings>({
   sidebar_collapsed: false,
   use_last_page_settings: true,
   colors: ["#000000", "#f22e2e", "#55ea41"],
+  highlighter_colors: ["#ffe600", "#7ae25b", "#4cd6ff", "#ff6fb5", "#ff9f40"],
   shift_swaps_scroll_axes: true,
   disable_tool_switch: false,
   autosave: true,

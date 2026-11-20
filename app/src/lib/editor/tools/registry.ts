@@ -10,6 +10,10 @@ import { lasso } from "./lassoHandlers";
 import { highlighter, pen } from "./pen";
 import { text } from "./textHandlers";
 import type { ToolHandlers } from "./types";
+import type { Settings } from "$lib/tauri/bindings";
+
+/** Which list of swatches a tool uses; each is a key of `Settings`. */
+export type Palette = keyof Pick<Settings, "colors" | "highlighter_colors">;
 
 /*
  * The one list of tools. Adding a tool means adding an entry here; the `Tool`
@@ -32,8 +36,10 @@ export interface ToolDef {
   action: string;
   icon: typeof IconPencil;
   handlers: ToolHandlers;
-  /** Whether the colour swatches apply to this tool. */
-  colored: boolean;
+  /** The swatches this tool offers; none means the tool has no colour. */
+  palette?: Palette;
+  /** Colour the tool starts with. */
+  defaultColor?: string;
   size?: SizeSpec;
   /** Opacity of strokes drawn with this tool. */
   opacity?: number;
@@ -45,7 +51,8 @@ export const TOOLS = {
     action: "Draw",
     icon: IconPencil,
     handlers: pen,
-    colored: true,
+    palette: "colors",
+    defaultColor: "#000000",
     opacity: 1,
     size: { label: "Thickness", min: 1, max: 40, default: 4, presets: [2, 4, 8] },
   },
@@ -54,7 +61,8 @@ export const TOOLS = {
     action: "Highlight",
     icon: IconHighlight,
     handlers: highlighter,
-    colored: true,
+    palette: "highlighter_colors",
+    defaultColor: "#ffe600",
     opacity: 0.35,
     size: { label: "Thickness", min: 6, max: 80, default: 20, presets: [12, 20, 32] },
   },
@@ -63,7 +71,6 @@ export const TOOLS = {
     action: "Erase",
     icon: IconEraser,
     handlers: eraser,
-    colored: false,
     size: { label: "Eraser size", min: 4, max: 120, default: 24, presets: [10, 24, 60] },
   },
   lasso: {
@@ -71,14 +78,14 @@ export const TOOLS = {
     action: "Select",
     icon: IconLasso,
     handlers: lasso,
-    colored: false,
   },
   text: {
     label: "Text",
     action: "Edit text",
     icon: IconTypography,
     handlers: text,
-    colored: true,
+    palette: "colors",
+    defaultColor: "#000000",
     size: { label: "Font size", min: 8, max: 96, default: 18, presets: [14, 18, 28] },
   },
 } as const satisfies Record<string, ToolDef>;
@@ -89,6 +96,15 @@ export const TOOL_IDS = Object.keys(TOOLS) as Tool[];
 
 export function toolDef(t: Tool): ToolDef {
   return TOOLS[t];
+}
+
+export function defaultColors(): Partial<Record<Tool, string>> {
+  const out: Partial<Record<Tool, string>> = {};
+  for (const id of TOOL_IDS) {
+    const c = toolDef(id).defaultColor;
+    if (c) out[id] = c;
+  }
+  return out;
 }
 
 export function defaultSizes(): Record<Tool, number> {

@@ -12,7 +12,12 @@ import { blockBounds, newId, pruneBlockCaches } from "../blocks";
 import { isInfinite, pageExtent, pageRect } from "../pageFormats";
 import { drawBlocks } from "../render/draw";
 import { onPaint, requestRedraw } from "../render/scheduler";
-import { defaultSizes, toolDef, type Tool } from "../tools/registry";
+import {
+  defaultColors,
+  defaultSizes,
+  toolDef,
+  type Tool,
+} from "../tools/registry";
 import { erase } from "../tools/erase";
 import { lassoManager } from "./lassoManager.svelte";
 import { textEditor } from "./textEditor.svelte";
@@ -33,7 +38,8 @@ class CanvasManager {
   lockTool = $state(false);
   /** When on, stroke width is in page units and grows with zoom (like paper). */
   zoomLock = $state(true);
-  color = $state("#000000");
+  /** Selected colour per tool, so pen and highlighter each keep their own. */
+  colors = $state(defaultColors());
   /** Per-tool size: stroke width, eraser radius or font size. */
   sizes = $state<Record<Tool, number>>(defaultSizes());
 
@@ -259,6 +265,15 @@ class CanvasManager {
 
       this.#tool = tool;
     });
+  }
+
+  /** Colour of the active tool. */
+  get color() {
+    return this.colors[this.#tool] ?? "#000000";
+  }
+
+  set color(c: string) {
+    this.colors[this.#tool] = c;
   }
 
   /** Size of the active tool (stroke width, eraser radius or font size). */
