@@ -103,6 +103,23 @@ impl Rnpf {
         Ok(())
     }
 
+    /// Rewrites a note with changed metadata (title, folder), keeping its
+    /// content, assets and preview. Uses the same atomic temp-file write as a
+    /// save. `edited_at` is left alone: renaming or moving a note doesn't make
+    /// it "recently edited".
+    pub fn update_meta(path: &Path, change: impl FnOnce(&mut Meta)) -> Result<(), RnpfError> {
+        let (mut data, preview) = {
+            // Scoped so the file is closed before it is replaced (Windows
+            // refuses to replace a file that is still open).
+            let archive = Self::new(path)?;
+            (archive.build_data()?, archive.get_preview())
+        };
+
+        change(&mut data.meta);
+        data.meta.normalize_folder();
+        Self::create_from_data(path, data, preview.as_deref())
+    }
+
     pub fn build_data(&self) -> Result<NoteData, RnpfError> {
         let mut data = NoteData {
             content: self.get_data()?,
@@ -304,6 +321,18 @@ mod tests {
 
         assert_eq!(loaded.assets.len(), 1);
         assert_eq!(loaded.assets["used"], "data:image/png;base64,aGk=");
+
+        Rnpf::update_meta(&path, |m| {
+            m.title = "Renamed".into();
+            m.folder = Some("/Uni//Physics/".into());
+        })
+        .unwrap();
+        let archive = Rnpf::new(&path).unwrap();
+        let updated = archive.build_data().unwrap();
+        assert_eq!(updated.meta.title, "Renamed");
+        assert_eq!(updated.meta.folder.as_deref(), Some("Uni/Physics"), "normalised");
+        assert_eq!(updated.assets.len(), 1, "content kept");
+        assert!(archive.get_preview().is_some(), "preview kept");
 
         std::fs::remove_dir_all(dir).unwrap();
     }

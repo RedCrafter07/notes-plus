@@ -35,6 +35,10 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             export_file,
             export_files,
             trash_note_file,
+            rename_note,
+            move_note,
+            duplicate_note,
+            rename_folder,
             start_presenting,
             stop_presenting,
         ])

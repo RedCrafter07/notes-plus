@@ -4,6 +4,8 @@
   import { timeout } from "#lib/util/timeout.ts";
   import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import Modals from "./Modals.svelte";
+  import NotebookDialogs from "./NotebookDialogs.svelte";
+  import ContextMenu from "./ContextMenu.svelte";
   import Tabs from "#lib/components/Tabs.svelte";
   import { tabManager } from "#lib/state/tabManager.svelte.ts";
   import { newNote, openNotes } from "#lib/util/notes.svelte.ts";
@@ -139,6 +141,8 @@
 <div class="h-screen bg-base-3 text-content-1">
   <DropOverlay />
   <Modals />
+  <NotebookDialogs />
+  <ContextMenu />
   <div class="flex flex-col h-full">
     <Tabs />
     <div class="flex-1 relative h-full overflow-y-auto">

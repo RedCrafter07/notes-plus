@@ -240,6 +240,18 @@ dashboard's Problems page (sidebar badge + home banner) with "Show in folder"
 (opener plugin) and "Move to trash" (`trash_note_file`, which only accepts
 `.rnpf` files inside the notebooks folder and uses the system trash).
 
+## Notebook management
+
+Notebooks have a context menu (`use:contextMenu` action: right-click, or a
+long press with pen/touch; plus a ⋯ button) with Open, Rename, Move to folder,
+Duplicate, Show in file manager and Move to trash; folders have Open and
+Rename. Commands live in `commands/library.rs` and rewrite metadata with
+`Rnpf::update_meta`, after checking the path is a note in the notebooks
+folder. A notebook that is **open in a tab** is changed in the tab and saved
+from there instead, or the tab's next save would undo the change. Folders
+exist only as `Meta.folder` of the notes in them, so renaming a folder rewrites
+every note below it (`rename_folder`).
+
 ## UI/UX issues
 
 - **Dark paper** exists as a preset, but ink colours are not adapted to it and

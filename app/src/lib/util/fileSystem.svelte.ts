@@ -89,3 +89,9 @@ export function isFile(entry: EntryType): entry is { File: File } {
 export function isFolder(entry: EntryType): entry is { Folder: FolderEntry } {
   return "Folder" in entry;
 }
+
+/** Mirrors `rebase` in the Rust `rename_folder`: "Uni/Physics" from "Uni" to "School" is "School/Physics". */
+export function rebaseFolder(folder: string, from: string, to: string): string | null {
+  if (folder === from) return to;
+  return folder.startsWith(from + "/") ? to + folder.slice(from.length) : null;
+}

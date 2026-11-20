@@ -1,10 +1,10 @@
 <script lang="ts">
   import FileBrowser from "#lib/components/FileBrowser.svelte";
   import NoteCard from "#lib/components/NoteCard.svelte";
-  import { loadNotebooks, problemsStore } from "#lib/state/fsStore.svelte.ts";
+  import { loadNotebooks, problemsStore, recentStore } from "#lib/state/fsStore.svelte.ts";
   import { jotStore } from "#lib/state/jotStore.svelte.ts";
-  import { commands, type File } from "#lib/tauri/bindings.ts";
-  import { openNotes } from "#lib/util/notes.svelte.ts";
+  import { commands } from "#lib/tauri/bindings.ts";
+  import { openNotebook } from "#lib/library/actions.svelte.ts";
   import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -17,17 +17,12 @@
     IconPlus,
   } from "@tabler/icons-svelte";
 
-  let recentNotes = $state<File[]>([]);
-
-  async function openRecent(path: string) {
-    openNotes(await commands.openNotes([path]));
-  }
+  const recentNotes = $derived(recentStore.store);
   let jotNoteInputs = $state<HTMLInputElement[]>([]);
 
   $effect(() => {
     (async () => {
       jotStore.store = await commands.listJotNotes();
-      recentNotes = await commands.getRecent(6);
 
       await loadNotebooks();
     })();
@@ -48,7 +43,7 @@
     {#if recentNotes.length > 0}
       <div class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
         {#each recentNotes as note (note.path)}
-          <NoteCard file={note} onclick={() => openRecent(note.path)} />
+          <NoteCard file={note} onclick={() => openNotebook(note)} />
         {/each}
       </div>
     {:else}

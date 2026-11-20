@@ -18,7 +18,7 @@ pub struct Notebooks {
     pub problems: Vec<FileProblem>,
 }
 
-fn notebooks_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
+pub(crate) fn notebooks_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
     app.path().app_data_dir().ok().map(|p| p.join("notebooks"))
 }
 
@@ -117,7 +117,7 @@ pub fn trash_note_file(app: tauri::AppHandle, path: String) -> bool {
 
 /// The canonical path if `path` is an existing `.rnpf` file inside `dir`
 /// (symlinks and `..` resolved before comparing), otherwise `None`.
-fn checked_note_path(dir: &Path, path: &Path) -> Option<PathBuf> {
+pub(crate) fn checked_note_path(dir: &Path, path: &Path) -> Option<PathBuf> {
     let dir = dir.canonicalize().ok()?;
     let file = path.canonicalize().ok()?;
     let is_note = file
