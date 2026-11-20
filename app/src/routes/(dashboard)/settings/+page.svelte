@@ -13,7 +13,7 @@
       <Switch
         id="stylus-tool-switch"
         label="Stylus tool switching"
-        description="Lets your stylus change the active tool with its eraser tip or side buttons. Turn this off if your stylus has no such buttons, or if it keeps switching tools unintentionally."
+        description="The eraser end of your stylus erases while it touches the page, and the side button picks the lasso until nothing is selected. The tip always uses the tool chosen in the toolbar. Turn this off if your stylus has no such buttons, or if it switches unintentionally."
         checked={!settingsStore.store.disable_tool_switch}
         onChange={(v) => updateSettings({ disable_tool_switch: !v })}
       />

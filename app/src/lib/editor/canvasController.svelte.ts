@@ -3,7 +3,7 @@ import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
 import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { toolDef, type Tool } from "./tools/registry";
 import type { ToolHandlers } from "./tools/types";
-import { toolFromButtons } from "./toolFromButtons.svelte";
+import { penOverride } from "./penButtons";
 
 const ZOOM_STEP = 1.1;
 
@@ -108,9 +108,13 @@ export function canvasController(
     // focus to <body> and immediately blur a text box this tap just opened.
     e.preventDefault();
 
+    let held: Tool | undefined;
     if (e.pointerType === "pen") {
-      const tool = toolFromButtons(e.buttons);
-      if (tool) canvasManager.tool = tool;
+      const o = penOverride(e.buttons, canvasManager.tool, {
+        disabled: canvasManager.lockTool || settingsStore.store.disable_tool_switch,
+      });
+      if (o?.mode === "sticky") canvasManager.switchTemporarily(o.tool);
+      else if (o?.mode === "hold") held = o.tool;
       // A pen landing cancels any pan/pinch the palm may have started.
       activeTouch.clear();
       tap = undefined;
@@ -118,7 +122,9 @@ export function canvasController(
 
     element.setPointerCapture(e.pointerId);
     inkPointer = e.pointerId;
-    activeTool = canvasManager.tool;
+    // A held tool (eraser end) is used for this gesture only.
+    activeTool = held ?? canvasManager.tool;
+    canvasManager.heldTool = held;
 
     tabManager.tab?.history.begin(toolDef(activeTool).action);
     callHandler(activeTool, "down", e);
@@ -134,6 +140,9 @@ export function canvasController(
 
     callHandler(tool, "up", e);
     tabManager.tab?.history.commit();
+
+    canvasManager.heldTool = undefined;
+    canvasManager.returnFromTemporaryTool();
   };
 
   const onPointerMove = (e: PointerEvent) => {
@@ -142,7 +151,7 @@ export function canvasController(
     updateCursor(true, e.clientX - elementRect.left, e.clientY - elementRect.top);
 
     if (e.pointerId !== inkPointer) return;
-    if (toolFromButtons(e.buttons) === undefined) return;
+    if (e.buttons === 0) return; // hovering
 
     const tool = activeTool ?? canvasManager.tool;
 

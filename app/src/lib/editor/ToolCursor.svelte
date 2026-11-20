@@ -13,7 +13,7 @@
     y: number;
   } = $props();
 
-  const tool = $derived(canvasManager.tool);
+  const tool = $derived(canvasManager.effectiveTool);
 
   /** Diameter on screen, matching what the tool will actually touch. */
   let cursorWidth = $derived.by(() => {

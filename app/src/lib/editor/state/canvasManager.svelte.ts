@@ -39,6 +39,11 @@ class CanvasManager {
   lockTool = $state(false);
   /** When on, stroke width is in page units and grows with zoom (like paper). */
   zoomLock = $state(true);
+  /** A tool used only while a pen button is held (the eraser end). */
+  heldTool = $state<Tool>();
+  /** The tool to go back to after a barrel-button lasso. */
+  #returnTo: Tool | undefined;
+
   /** Selected colour per tool, so pen and highlighter each keep their own. */
   colors = $state(defaultColors());
   /** Per-tool size: stroke width, eraser radius or font size. */
@@ -272,8 +277,33 @@ class CanvasManager {
     return this.#tool;
   }
 
+  /** The tool the next input uses: a held pen button wins over the selection. */
+  get effectiveTool() {
+    return this.heldTool ?? this.#tool;
+  }
+
+  /** Switches tools until `returnFromTemporaryTool` decides to switch back. */
+  switchTemporarily(tool: Tool) {
+    const previous = this.#tool;
+    this.tool = tool;
+    this.#returnTo = previous;
+  }
+
+  /**
+   * After each gesture: a lasso picked with the barrel button stays while
+   * something is selected (it is dragged with the tip), then hands back to
+   * the tool that was in use before.
+   */
+  returnFromTemporaryTool() {
+    if (!this.#returnTo || this.#tool !== "lasso" || lassoManager.selection) return;
+    this.tool = this.#returnTo;
+  }
+
   set tool(tool: Tool) {
     if (this.#tool === tool) return;
+
+    // Any explicit choice ends a temporary switch.
+    this.#returnTo = undefined;
 
     tabManager.transact("Switch tool", () => {
       if (this.#tool === "lasso") lassoManager.reset();
