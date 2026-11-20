@@ -69,7 +69,7 @@
     bind:clientWidth={w}
     bind:clientHeight={h}
     transition:scale={{ duration: 120, start: 0.95, easing: quintOut }}
-    class="fixed z-[61] min-w-52 max-w-80 p-1.5 rounded-xl bg-base-2 border border-content-1/10 shadow-2xl flex flex-col origin-top-left"
+    class="fixed z-[61] min-w-52 max-w-80 p-1.5 rounded-xl bg-base-2/85 backdrop-blur-md border border-content-1/10 shadow-2xl flex flex-col origin-top-left"
     style="left: {left}px; top: {top}px;"
     role="menu"
     tabindex="-1"

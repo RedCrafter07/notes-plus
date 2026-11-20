@@ -26,7 +26,7 @@
 
 <!-- Zoom: always visible, so "where did my page go" always has an answer. -->
 <div
-  class="absolute bottom-3 left-3 z-20 flex flex-row items-center gap-0.5 p-1 rounded-2xl bg-base-1/95 shadow-lg border border-content-1/10"
+  class="absolute bottom-3 left-3 z-20 flex flex-row items-center gap-0.5 p-1 rounded-2xl bg-base-1/80 backdrop-blur-md shadow-lg border border-content-1/10"
 >
   <button class={btn} onclick={() => zoomBy(1 / 1.25)} aria-label="Zoom out" title="Zoom out">
     <IconMinus size={20} />
@@ -53,7 +53,7 @@
 
 <!-- Pages: previous / where am I / next (or add, on the last page). -->
 <div
-  class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex flex-row items-center gap-0.5 p-1 rounded-2xl bg-base-1/95 shadow-lg border border-content-1/10"
+  class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex flex-row items-center gap-0.5 p-1 rounded-2xl bg-base-1/80 backdrop-blur-md shadow-lg border border-content-1/10"
 >
   <button
     class={btn}

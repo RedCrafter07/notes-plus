@@ -58,7 +58,7 @@
     transition:fade={{ duration: 100 }}
     bind:clientHeight={height}
     bind:clientWidth={width}
-    class="absolute p-2 rounded-xl bg-base-1 shadow-lg pointer-events-auto flex flex-row gap-1 items-center z-10"
+    class="absolute p-2 rounded-xl bg-base-1/80 backdrop-blur-md shadow-lg pointer-events-auto flex flex-row gap-1 items-center z-10"
     style="top: {topOffset}px; left: {leftOffset}px"
     role="group"
   >

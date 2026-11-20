@@ -259,7 +259,7 @@
 >
   <div
     class={[
-      "flex items-center gap-1 p-1.5 rounded-2xl bg-base-1/95 shadow-lg border border-content-1/10 hide-scrollbars",
+      "flex items-center gap-1 p-1.5 rounded-2xl bg-base-1/80 backdrop-blur-md shadow-lg border border-content-1/10 hide-scrollbars",
       // min-h-0/min-w-0 let the bar shrink inside the wrapper's max size and
       // scroll instead of running into the zoom controls.
       vertical ? "flex-col overflow-y-auto min-h-0" : "flex-row overflow-x-auto min-w-0",
@@ -396,7 +396,7 @@
     {@const spec = def.size}
     <div
       transition:fade={{ duration: 100 }}
-      class="absolute {POPOVER[dock]} p-3 w-64 rounded-xl bg-base-1 shadow-lg border border-content-1/10 flex flex-col gap-2"
+      class="absolute {POPOVER[dock]} p-3 w-64 rounded-xl bg-base-1/85 backdrop-blur-md shadow-lg border border-content-1/10 flex flex-col gap-2"
     >
       <label class="flex flex-row justify-between text-sm text-content-2" for="tool-size">
         <span>{spec.label}</span>

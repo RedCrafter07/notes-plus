@@ -21,7 +21,7 @@
 
 {#if presenter.active}
   <div
-    class="absolute bottom-3 right-3 z-20 flex flex-row items-center gap-1 p-1 rounded-2xl bg-base-1/95 shadow-lg border border-content-1/10"
+    class="absolute bottom-3 right-3 z-20 flex flex-row items-center gap-1 p-1 rounded-2xl bg-base-1/80 backdrop-blur-md shadow-lg border border-content-1/10"
     role="toolbar"
     aria-label="Presenter controls"
   >
