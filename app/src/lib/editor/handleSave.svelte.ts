@@ -3,6 +3,7 @@ import { popupManager } from "$lib/state/popupManager.svelte";
 import type { Tab } from "$lib/state/tab.svelte";
 import { tabManager } from "$lib/state/tabManager.svelte";
 import { commands } from "$lib/tauri/bindings";
+import { notePreview } from "./render/page";
 
 /**
  * Saves a tab to its file, or into app storage if it has none yet.
@@ -16,12 +17,13 @@ export async function saveTab(tab: Tab, { silent = false } = {}): Promise<boolea
   try {
     const token = tab.saveToken();
     const note = $state.snapshot(tab.note);
+    const preview = await notePreview(note);
 
     let ok: boolean;
     if (tab.path) {
-      ok = await commands.saveNote(note, tab.path);
+      ok = await commands.saveNote(note, tab.path, preview);
     } else {
-      const path = await commands.saveNoteToStorage(note);
+      const path = await commands.saveNoteToStorage(note, preview);
       if (path) tab.path = path;
       ok = !!path;
     }
@@ -52,7 +54,8 @@ export async function handleSave(saveAs: boolean) {
   contentManager.id = id;
 
   const token = tab.saveToken();
-  const path = await commands.saveNoteDialog($state.snapshot(tab.note));
+  const note = $state.snapshot(tab.note);
+  const path = await commands.saveNoteDialog(note, await notePreview(note));
 
   if (path) {
     tab.path = path;

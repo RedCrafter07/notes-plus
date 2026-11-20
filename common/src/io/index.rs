@@ -27,6 +27,8 @@ pub struct File {
     pub path: String,
     pub created_at: u64,
     pub edited_at: u64,
+    /// First page as a PNG data URL, if the file carries one.
+    pub preview: Option<String>,
 }
 
 pub type IndexErrorResult = Vec<(String, IndexError)>;
@@ -83,7 +85,8 @@ pub fn index_file(path: &Path) -> Result<File, IndexError> {
     }
 
     // Get data from file by opening the data file in the archive
-    let meta = Rnpf::new(path)?.get_meta()?;
+    let archive = Rnpf::new(path)?;
+    let meta = archive.get_meta()?;
 
     // Redefine data as the actual data, or error otherwise
     let path_str = if let Some(path) = path.to_str() {
@@ -98,6 +101,7 @@ pub fn index_file(path: &Path) -> Result<File, IndexError> {
         folder: meta.folder,
         created_at: meta.created_at,
         edited_at: meta.edited_at,
+        preview: archive.get_preview(),
     })
 }
 

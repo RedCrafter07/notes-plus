@@ -92,10 +92,10 @@ pub fn new_note() -> NoteData {
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_note(note_data: NoteData, path: String) -> bool {
+pub fn save_note(note_data: NoteData, path: String, preview: Option<String>) -> bool {
     let path = Path::new(&path);
 
-    match save(path, note_data) {
+    match save(path, note_data, preview) {
         Ok(_) => true,
         Err(e) => {
             eprintln!("An error occurred while saving a note: {e}");
@@ -122,7 +122,11 @@ fn sanitize_note_id(id: &str) -> Option<&str> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Option<String> {
+pub fn save_note_to_storage(
+    app: tauri::AppHandle,
+    note_data: NoteData,
+    preview: Option<String>,
+) -> Option<String> {
     let path = match app.path().app_data_dir() {
         Ok(p) => p.join("notebooks"),
         Err(e) => {
@@ -145,7 +149,7 @@ pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Optio
     let file_name = format!("{}.rnpf", safe_id);
     let full_path = path.join(file_name);
 
-    if let Err(e) = save(&full_path, note_data) {
+    if let Err(e) = save(&full_path, note_data, preview) {
         display_error(e.into());
         return None;
     };
@@ -155,7 +159,11 @@ pub fn save_note_to_storage(app: tauri::AppHandle, note_data: NoteData) -> Optio
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<String> {
+pub fn save_note_dialog(
+    app: tauri::AppHandle,
+    note_data: NoteData,
+    preview: Option<String>,
+) -> Option<String> {
     let path = app
         .dialog()
         .file()
@@ -170,7 +178,7 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<St
             return None;
         }
     };
-    if let Err(e) = save(path, note_data) {
+    if let Err(e) = save(path, note_data, preview) {
         display_error(e.into());
         return None;
     };
@@ -178,6 +186,7 @@ pub fn save_note_dialog(app: tauri::AppHandle, note_data: NoteData) -> Option<St
     Some(path.to_string_lossy().into())
 }
 
-fn save(path: &Path, note_data: NoteData) -> Result<(), RnpfError> {
-    Rnpf::create_from_data(path, note_data)
+/// `preview` is a PNG data URL of the first page, shown by the file browser.
+fn save(path: &Path, note_data: NoteData, preview: Option<String>) -> Result<(), RnpfError> {
+    Rnpf::create_from_data(path, note_data, preview.as_deref())
 }

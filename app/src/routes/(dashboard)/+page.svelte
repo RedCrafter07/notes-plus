@@ -1,5 +1,6 @@
 <script lang="ts">
   import FileBrowser from "$lib/components/FileBrowser.svelte";
+  import NoteCard from "$lib/components/NoteCard.svelte";
   import { fsStore } from "$lib/state/fsStore.svelte";
   import { jotStore } from "$lib/state/jotStore.svelte";
   import { commands, type File } from "$lib/tauri/bindings";
@@ -9,17 +10,11 @@
   import {
     IconClock,
     IconFolder,
-    IconNotebook,
     IconPencil,
     IconPlus,
   } from "@tabler/icons-svelte";
 
   let recentNotes = $state<File[]>([]);
-
-  const dateFormat = new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
 
   async function openRecent(path: string) {
     openNotes(await commands.openNotes([path]));
@@ -50,21 +45,9 @@
       <IconClock /> Recent files
     </h3>
     {#if recentNotes.length > 0}
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-2">
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
         {#each recentNotes as note (note.path)}
-          <button
-            class="flex flex-row gap-3 items-center p-3 rounded-xl bg-base-1 hover:bg-overlay/30 active:scale-95 transition-all text-left"
-            onclick={() => openRecent(note.path)}
-          >
-            <IconNotebook class="shrink-0 text-primary" />
-            <span class="flex flex-col min-w-0">
-              <span class="font-semibold truncate">{note.title}</span>
-              <span class="text-sm text-content-3 truncate">
-                {dateFormat.format(new Date(Number(note.edited_at) * 1000))}
-                {#if note.folder}· {note.folder}{/if}
-              </span>
-            </span>
-          </button>
+          <NoteCard file={note} onclick={() => openRecent(note.path)} />
         {/each}
       </div>
     {:else}

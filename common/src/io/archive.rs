@@ -41,13 +41,18 @@ pub enum RnpfError {
 /// state            State as JSON
 /// assets/index     { asset id: mime type } as JSON
 /// assets/<id>      raw bytes of each attachment
+/// preview          optional PNG of the first page, for file browsers
 /// ```
+///
+/// `preview` is not part of the note's data: it is regenerated on every
+/// save, and a file without one is still valid (the explorer shows an icon).
 pub struct Rnpf {
     file: File,
     version: u32,
 }
 
 const ASSET_INDEX: &str = "assets/index";
+const PREVIEW: &str = "preview";
 
 impl Rnpf {
     pub fn new(path: &Path) -> Result<Self, RnpfError> {
@@ -57,7 +62,13 @@ impl Rnpf {
         Ok(Self { file, version })
     }
 
-    pub fn create_from_data(path: &Path, note_data: NoteData) -> Result<(), RnpfError> {
+    /// Writes a note atomically (temp file + rename). `preview` is the
+    /// first page as a `data:image/png;base64,...` URL, if available.
+    pub fn create_from_data(
+        path: &Path,
+        note_data: NoteData,
+        preview: Option<&str>,
+    ) -> Result<(), RnpfError> {
         let tmp_path = tmp_path_for(path);
         let file = File::options()
             .write(true)
@@ -70,6 +81,13 @@ impl Rnpf {
         Self::write_vec(&mut zip, "data", &note_data.content)?;
         Self::write_vec(&mut zip, "state", &note_data.state)?;
         Self::write_assets(&mut zip, &note_data)?;
+        if let Some(url) = preview {
+            let (_, bytes) = decode_data_url(url)?;
+            let options =
+                SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+            zip.start_file(PREVIEW, options)?;
+            zip.write_all(&bytes)?;
+        }
         Self::write_version(&mut zip)?;
 
         zip.finish()?;
@@ -100,6 +118,14 @@ impl Rnpf {
         let migrated = migrate_content(raw, self.version)?;
 
         Ok(serde_json::from_value(migrated)?)
+    }
+
+    /// The stored first-page preview as a PNG data URL, if the file has one.
+    pub fn get_preview(&self) -> Option<String> {
+        let mut zip = ZipArchive::new(&self.file).ok()?;
+        let mut bytes = Vec::new();
+        zip.by_name(PREVIEW).ok()?.read_to_end(&mut bytes).ok()?;
+        Some(format!("data:image/png;base64,{}", BASE64.encode(&bytes)))
     }
 
     /// Reads every attachment back into a `data:` URL.
@@ -269,8 +295,10 @@ mod tests {
         note.assets.insert("used".into(), "data:image/png;base64,aGk=".into());
         note.assets.insert("unused".into(), "data:image/png;base64,aGk=".into());
 
-        Rnpf::create_from_data(&path, note).unwrap();
-        let loaded = Rnpf::new(&path).unwrap().build_data().unwrap();
+        Rnpf::create_from_data(&path, note, Some("data:image/png;base64,aGk=")).unwrap();
+        let archive = Rnpf::new(&path).unwrap();
+        assert_eq!(archive.get_preview().as_deref(), Some("data:image/png;base64,aGk="));
+        let loaded = archive.build_data().unwrap();
 
         assert_eq!(loaded.assets.len(), 1);
         assert_eq!(loaded.assets["used"], "data:image/png;base64,aGk=");

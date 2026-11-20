@@ -1,4 +1,4 @@
-import type { Page } from "$lib/tauri/bindings";
+import type { NoteData, Page } from "$lib/tauri/bindings";
 import { padBounds, type ContentBounds } from "$lib/util/canvasBounds";
 import { contentBounds, pageRect } from "../pageFormats";
 import { drawBlocks, drawPaper, type Assets } from "./draw";
@@ -65,4 +65,22 @@ export async function renderPage(
     if (l.visible) drawBlocks(ctx, l.blocks, assets);
 
   return canvas;
+}
+
+/** Longest edge of the preview stored in each file, in pixels. */
+const PREVIEW_SIZE = 360;
+
+/**
+ * A PNG data URL of the note's first page, stored in the file so the explorer
+ * can show it without opening the note. `null` for an empty infinite page.
+ * Never throws: a missing preview must not stop a save.
+ */
+export async function notePreview(note: NoteData): Promise<string | null> {
+  try {
+    const page = note.content.pages[0];
+    const canvas = page && (await renderPage(page, note.assets, { maxSize: PREVIEW_SIZE }));
+    return canvas ? canvas.toDataURL("image/png") : null;
+  } catch {
+    return null;
+  }
 }
