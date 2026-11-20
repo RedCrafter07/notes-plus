@@ -41,7 +41,7 @@
         stroke-width="8"
         stroke-dasharray="12 12"
         vector-effect="non-scaling-stroke"
-        class="ants"
+        class="animate-ants"
       />
     </svg>
     <p
@@ -52,15 +52,3 @@
     </p>
   </div>
 {/if}
-
-<style>
-  .ants {
-    animation: ants 0.6s linear infinite;
-  }
-  @keyframes ants {
-    to {
-      /* offset by one full dash+gap period (12 + 12) for a seamless loop */
-      stroke-dashoffset: -24;
-    }
-  }
-</style>

@@ -28,12 +28,15 @@ Never hand-edit `bindings.ts`. Change the Rust type, then regenerate.
 
 ## Architecture
 
-Cargo workspace with two crates plus a SvelteKit frontend:
+Cargo workspace with two crates plus a SvelteKit 3 frontend:
 
 - **`common/`** — the data model and file I/O. UI-independent on purpose; this is
   what makes a future renderer swap cheap.
 - **`app/src-tauri/`** — Tauri commands, settings, window/lifecycle, drag-drop.
-- **`app/src/`** — SvelteKit (static adapter) frontend.
+- **`app/src/`** — SvelteKit (static adapter) frontend. There is no
+  `svelte.config.js`: the adapter and preprocessor are options of the
+  `sveltekit()` plugin in `vite.config.ts`, and `tsconfig.json` extends the
+  generated `$app/tsconfig`.
 
 ### Data model (`common/src/structs/data/`)
 
@@ -236,6 +239,18 @@ per setting, the missing format migration, and the `contentManager` ↔
   image-heavy pages this could become noticeable.
 
 ## Conventions
+
+- Import library code via `#lib/...` **with the file extension**
+  (`#lib/tauri/bindings.ts`, `#lib/state/tabManager.svelte.ts`); it is a Node
+  subpath import in `package.json`. `$lib` no longer exists in SvelteKit 3.
+- `resolve()` takes route ids, which include route groups: home is
+  `resolve("/(dashboard)")`, not `resolve("/")`.
+- No `<style>` blocks in components; put shared CSS in `app.css` (Tailwind
+  `@theme` / `@layer components`). Component style blocks become virtual CSS
+  modules, and a stale webview after a dev-server restart could make Tailwind
+  parse a whole `.svelte` file as CSS ("Invalid declaration").
+- `specta`/`tauri-specta` are pinned to their current release candidates on
+  purpose: newer ones type every `f32` as `number | null`.
 
 - Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`) — not stores.
 - Tailwind v4 with semantic tokens (`bg-base-1`, `text-content-2`, `fill-primary`),

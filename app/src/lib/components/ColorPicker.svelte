@@ -125,7 +125,7 @@
     <span class="text-sm text-content-2">Hue</span>
     <input
       type="range"
-      class="range"
+      class="color-range"
       min="0"
       max="360"
       step="1"
@@ -141,7 +141,7 @@
     <span class="text-sm text-content-2">Saturation</span>
     <input
       type="range"
-      class="range"
+      class="color-range"
       min="0"
       max="1"
       step="0.001"
@@ -157,7 +157,7 @@
     <span class="text-sm text-content-2">Value</span>
     <input
       type="range"
-      class="range"
+      class="color-range"
       min="0"
       max="1"
       step="0.001"
@@ -186,53 +186,3 @@
     />
   </div>
 </div>
-
-<style>
-  .sv-area {
-    touch-action: none;
-    cursor: crosshair;
-  }
-
-  .sv-thumb {
-    position: absolute;
-    width: 14px;
-    height: 14px;
-    border-radius: 9999px;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-  }
-
-  .range {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 12px;
-    border-radius: 9999px;
-    cursor: pointer;
-    outline: none;
-  }
-
-  .range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 9999px;
-    background: var(--content-1);
-    border: 2px solid var(--base-1);
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-  }
-
-  .range::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border-radius: 9999px;
-    background: var(--content-1);
-    border: 2px solid var(--base-1);
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-  }
-</style>
