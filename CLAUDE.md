@@ -68,6 +68,14 @@ step before deserializing; to change the format, bump `CURRENT_VERSION` and add
 a `vN_to_vN+1`. Unreferenced assets are dropped only at load/save time, never on
 delete, so undo can restore a block whose asset was "removed".
 
+Saves send only **new** attachments. Each `Tab` keeps `storedAssets` (what
+its file holds); `handleSave` sends the note with the other assets left out,
+and `Rnpf::create_from_data(.., source)` copies those from the old file as
+raw zip entries (no base64, no recompression). An asset that is used but
+neither sent nor in the source fails the save (`MissingAsset`) rather than
+vanishing; after a failed save the tab sends everything again. Loading still
+sends every asset to the frontend once, as data URLs.
+
 ### Frontend state (`app/src/lib/state/`)
 
 Singleton classes using Svelte 5 runes:
@@ -232,8 +240,10 @@ per setting, the missing format migration, and the `contentManager` ↔
 3. **Text layout is measured with canvas `measureText`** and the editing
    `<textarea>` wraps with the browser's own algorithm; they agree closely but
    not perfectly for unusual text.
-4. **Assets travel as data URLs over IPC.** Every save sends all attachments
-   as base64; fine for lecture PDFs, slow for very large notes.
+4. **Assets are held in the webview as data URLs.** Opening a note sends
+   every attachment over IPC as base64 once, and they stay in memory as
+   strings (saves no longer resend them). A custom protocol or blob URLs
+   would cut opening time and memory for very large notes.
 
 ## File problems
 

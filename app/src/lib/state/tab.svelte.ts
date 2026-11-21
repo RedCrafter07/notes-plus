@@ -13,6 +13,11 @@ export class Tab {
   history = new HistoryManager();
   /** True while a save of this tab is in flight. */
   saving = false;
+  /**
+   * Attachments the file at `path` already holds. Saves send only the
+   * others; the backend copies these from the file. Not reactive on purpose.
+   */
+  storedAssets = new Set<string>();
   /** Counts edits history does not track (title, folder). */
   #edits = $state(0);
   #savedEdits = $state(0);
@@ -20,6 +25,8 @@ export class Tab {
   constructor(data: NoteData, path?: string) {
     this.note = data;
     this.path = path;
+    // A loaded note's assets are exactly what its file holds.
+    if (path) this.storedAssets = new Set(Object.keys(data.assets));
   }
 
   get unsaved() {

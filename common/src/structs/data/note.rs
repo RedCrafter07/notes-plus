@@ -12,6 +12,10 @@ pub struct NoteData {
     pub state: State,
     /// Binary attachments (images, PDF page renders) as `data:` URLs, keyed by
     /// asset id. Stored as raw files under `assets/` inside the archive.
+    ///
+    /// Loading fills it completely. Saving only needs the attachments the
+    /// target file doesn't hold yet: the others are copied from it, so they
+    /// don't cross IPC as base64 on every autosave.
     pub assets: BTreeMap<String, String>,
 }
 

@@ -90,12 +90,14 @@ pub fn new_note() -> NoteData {
     NoteData::default()
 }
 
+/// Saves over an existing file. `note_data.assets` only needs the
+/// attachments that file doesn't hold yet; the rest are copied from it.
 #[tauri::command]
 #[specta::specta]
 pub fn save_note(note_data: NoteData, path: String, preview: Option<String>) -> bool {
     let path = Path::new(&path);
 
-    match save(path, note_data, preview) {
+    match save(path, &note_data, preview, Some(path)) {
         Ok(_) => true,
         Err(e) => {
             eprintln!("An error occurred while saving a note: {e}");
@@ -149,7 +151,8 @@ pub fn save_note_to_storage(
     let file_name = format!("{}.rnpf", safe_id);
     let full_path = path.join(file_name);
 
-    if let Err(e) = save(&full_path, note_data, preview) {
+    // A note without a file yet: every attachment is in `note_data`.
+    if let Err(e) = save(&full_path, &note_data, preview, None) {
         display_error(e.into());
         return None;
     };
@@ -157,12 +160,15 @@ pub fn save_note_to_storage(
     Some(full_path.to_str()?.to_string())
 }
 
+/// Save As. `source` is the note's current file, if it has one: attachments
+/// missing from `note_data.assets` are copied from there.
 #[tauri::command]
 #[specta::specta]
 pub fn save_note_dialog(
     app: tauri::AppHandle,
     note_data: NoteData,
     preview: Option<String>,
+    source: Option<String>,
 ) -> Option<String> {
     let path = app
         .dialog()
@@ -178,7 +184,7 @@ pub fn save_note_dialog(
             return None;
         }
     };
-    if let Err(e) = save(path, note_data, preview) {
+    if let Err(e) = save(path, &note_data, preview, source.as_deref().map(Path::new)) {
         display_error(e.into());
         return None;
     };
@@ -187,6 +193,11 @@ pub fn save_note_dialog(
 }
 
 /// `preview` is a PNG data URL of the first page, shown by the file browser.
-fn save(path: &Path, note_data: NoteData, preview: Option<String>) -> Result<(), RnpfError> {
-    Rnpf::create_from_data(path, note_data, preview.as_deref())
+fn save(
+    path: &Path,
+    note_data: &NoteData,
+    preview: Option<String>,
+    source: Option<&Path>,
+) -> Result<(), RnpfError> {
+    Rnpf::create_from_data(path, note_data, preview.as_deref(), source)
 }

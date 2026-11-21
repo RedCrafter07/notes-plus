@@ -1,4 +1,4 @@
-import type { Block, Point } from "#lib/tauri/bindings.ts";
+import type { Block, Page, Point } from "#lib/tauri/bindings.ts";
 import {
   boundsIntersect,
   getStrokeBounds,
@@ -56,6 +56,36 @@ export function pruneBlockCaches(live: Set<string>) {
 /** Forgets cached text bounds, e.g. once the real font has loaded. */
 export function clearTextBounds() {
   boundsCache.clear();
+}
+
+/** The attachment a block shows, if any (a key into `NoteData.assets`). */
+export function blockAsset(b: Block): string | null {
+  switch (b.type) {
+    case "Image":
+      return b.asset;
+    case "Stroke":
+    case "Text":
+      return null;
+    default:
+      return assertNever(b);
+  }
+}
+
+/**
+ * Every attachment the pages refer to: PDF backgrounds and image blocks.
+ * Mirrors `NoteData::used_assets` in Rust, which decides what a save keeps.
+ */
+export function usedAssets(pages: Page[]): Set<string> {
+  const used = new Set<string>();
+  for (const page of pages) {
+    if (page.background_asset) used.add(page.background_asset);
+    for (const layer of page.layers)
+      for (const b of layer.blocks) {
+        const a = blockAsset(b);
+        if (a) used.add(a);
+      }
+  }
+  return used;
 }
 
 function computeBounds(b: Block): ContentBounds | null {

@@ -92,9 +92,10 @@ fn classify(error: &IndexError) -> ProblemKind {
             RnpfError::InvalidVersion => ProblemKind::UnknownVersion,
             RnpfError::ArchiveError(_) => ProblemKind::NotANote,
             RnpfError::FileError(_) | RnpfError::InvalidPath => ProblemKind::Unreadable,
-            RnpfError::SerializationError(_) | RnpfError::InvalidFile | RnpfError::InvalidAsset => {
-                ProblemKind::Damaged
-            }
+            RnpfError::SerializationError(_)
+            | RnpfError::InvalidFile
+            | RnpfError::InvalidAsset
+            | RnpfError::MissingAsset(_) => ProblemKind::Damaged,
         },
         IndexError::IoError(_) | IndexError::InvalidExtension | IndexError::Unknown => {
             ProblemKind::Unreadable
