@@ -41,7 +41,6 @@ export const defaultNote: NoteData = {
     pan_y: 0,
     zoom: 1.0,
   },
-  assets: {},
 };
 
 export const EMPTY_NOTE = import.meta.env.DEV
@@ -70,6 +69,5 @@ export const defaultsStore = new Store<Defaults>({
       pan_y: 0,
       zoom: 1.0,
     },
-    assets: {},
   },
 });

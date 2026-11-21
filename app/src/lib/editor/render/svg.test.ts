@@ -41,27 +41,27 @@ describe("areaToSvg", () => {
   const area = boundsFromRect(0, 0, 100, 200);
 
   test("sizes the document to the area and clips to the sheet", () => {
-    const svg = areaToSvg(page, {}, area);
+    const svg = areaToSvg(page, () => undefined, area);
     expect(svg).toContain('width="100" height="200" viewBox="0 0 100 200"');
     expect(svg).toContain('clip-path="url(#sheet)"');
     expect(svg).toContain('fill="url(#paper)"');
   });
 
   test("keeps highlighter opacity and escapes text", () => {
-    const svg = areaToSvg(page, {}, area);
+    const svg = areaToSvg(page, () => undefined, area);
     expect(svg).toContain('fill-opacity="0.35"');
     expect(svg).toContain("a &lt; b &amp; c");
   });
 
   test("without paper and filtered to a selection", () => {
-    const svg = areaToSvg(page, {}, area, { paper: false, only: new Set(["t"]) });
+    const svg = areaToSvg(page, () => undefined, area, { paper: false, only: new Set(["t"]) });
     expect(svg).not.toContain("url(#paper)");
     expect(svg).not.toContain("<path");
     expect(svg).toContain("<text");
   });
 
   test("is well-formed XML", () => {
-    const svg = areaToSvg(page, {}, area);
+    const svg = areaToSvg(page, () => undefined, area);
     const opens = (svg.match(/<(svg|g|text|defs|pattern|clipPath)\b/g) ?? []).length;
     const closes = (svg.match(/<\/(svg|g|text|defs|pattern|clipPath)>/g) ?? []).length;
     expect(opens).toBe(closes);

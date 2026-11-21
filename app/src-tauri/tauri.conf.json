@@ -27,9 +27,9 @@
     "security": {
       "csp": {
         "default-src": "'self' customprotocol: asset:",
-        "connect-src": "ipc: http://ipc.localhost",
+        "connect-src": "ipc: http://ipc.localhost rnasset: http://rnasset.localhost",
         "font-src": "'self' asset: http://asset.localhost blob: data:",
-        "img-src": "'self' asset: http://asset.localhost blob: data:",
+        "img-src": "'self' asset: http://asset.localhost rnasset: http://rnasset.localhost blob: data:",
         "style-src": "'unsafe-inline' 'self'"
       }
     }

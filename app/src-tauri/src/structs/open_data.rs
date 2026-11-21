@@ -6,4 +6,7 @@ use specta::Type;
 pub struct OpenData {
     pub note_data: NoteData,
     pub path: String,
+    /// The note's attachment session: its attachments are served at
+    /// `rnasset://localhost/<assets>/<asset id>`, and saves name it.
+    pub assets: String,
 }

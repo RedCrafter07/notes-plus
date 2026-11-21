@@ -2,12 +2,22 @@ import { requestRedraw } from "./scheduler";
 
 /*
  * Decoded <img> elements for note assets, keyed by asset id. Asset ids are
- * UUIDs and an id's data never changes, so the cache never needs invalidating;
- * it is only trimmed when it grows large.
+ * UUIDs and an id's data never changes, so entries never go stale.
+ *
+ * A decoded slide is width × height × 4 bytes (about 6 MB for a 1700 × 960
+ * render), so the cache keeps only the most recently used ones. Evicting is
+ * cheap: the image is reloaded from its URL (served from the note's file)
+ * when it is needed again. Map order is insertion order, so re-inserting on
+ * use keeps the least recently used entry first.
  */
 
 const images = new Map<string, HTMLImageElement>();
-const LIMIT = 200;
+const LIMIT = 48;
+
+function touch(id: string, img: HTMLImageElement) {
+  images.delete(id);
+  images.set(id, img);
+}
 
 /**
  * Returns the decoded image if it is ready, otherwise starts loading it and
@@ -20,9 +30,14 @@ export function getImage(
   if (!src) return undefined;
 
   let img = images.get(id);
-  if (!img) {
-    if (images.size > LIMIT) images.clear();
+  if (img) {
+    touch(id, img);
+  } else {
+    while (images.size >= LIMIT) images.delete(images.keys().next().value!);
     img = new Image();
+    // Served from another origin (the rnasset scheme); without CORS the
+    // canvases drawing it could no longer be exported.
+    img.crossOrigin = "anonymous";
     img.onload = () => requestRedraw();
     img.src = src;
     images.set(id, img);

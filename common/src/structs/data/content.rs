@@ -30,7 +30,7 @@ pub struct TextBlock {
     pub color: String,
 }
 
-/// An image placed on the page. `asset` is a key into `NoteData::assets`.
+/// An image placed on the page. `asset` is an attachment id (`assets/<id>` in the archive).
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ImageBlock {
     pub id: String,
@@ -140,7 +140,7 @@ pub struct Page {
     pub pattern_color: String,
     pub name: String,
     /// An image drawn under the page content, e.g. an imported PDF page.
-    /// Key into `NoteData::assets`.
+    /// Attachment id (`assets/<id>` in the archive).
     pub background_asset: Option<String>,
     /// Export regions on this page, in export order.
     pub regions: Vec<ExportRegion>,

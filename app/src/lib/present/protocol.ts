@@ -20,10 +20,11 @@ export interface LaserStroke {
 }
 
 export type PresentMessage =
-  /** The page being shown. Sent whenever it changes (per committed edit). */
-  | { kind: "page"; page: Page }
-  /** Image data the audience has not received yet, by asset id. */
-  | { kind: "assets"; assets: Record<string, string> }
+  /**
+   * The page being shown. Sent whenever it changes (per committed edit).
+   * `assets` is the note's attachment session, for loading its images.
+   */
+  | { kind: "page"; page: Page; assets: string }
   /** The editor's visible area, for "follow" mode. */
   | { kind: "view"; zoom: number; panX: number; panY: number; width: number; height: number }
   /** The stroke being drawn right now (empty points when none). */

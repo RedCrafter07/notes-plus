@@ -65,6 +65,10 @@ export async function insertImageFile(file: File) {
     return;
   }
 
+  const tab = tabManager.tab;
+  const asset = await contentManager.addAsset(image.src, tab);
+  if (!asset || tabManager.tab !== tab) return;
+
   const view = canvasManager.viewBounds();
   const page = pageRect(contentManager.page);
   const area = page ?? view;
@@ -78,7 +82,6 @@ export async function insertImageFile(file: File) {
 
   const id = newId();
   tabManager.transact("Insert image", () => {
-    const asset = contentManager.addAsset(image.src);
     layer.blocks = [
       ...layer.blocks,
       { type: "Image", id, asset, x: cx - width / 2, y: cy - height / 2, width, height },

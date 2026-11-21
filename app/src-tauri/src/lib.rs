@@ -1,5 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
+mod assets;
 mod commands;
 mod events;
 mod structs;
@@ -51,6 +52,20 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(builder.invoke_handler())
+        // Note attachments, read on demand; see `assets.rs`.
+        .register_asynchronous_uri_scheme_protocol(assets::SCHEME, |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
+            std::thread::spawn(move || {
+                let response = match app.try_state::<assets::AssetStore>() {
+                    Some(store) => store.respond(&request),
+                    None => tauri::http::Response::builder()
+                        .status(tauri::http::StatusCode::SERVICE_UNAVAILABLE)
+                        .body(Vec::new())
+                        .unwrap_or_default(),
+                };
+                responder.respond(response);
+            });
+        })
         .on_window_event(|window, event| match event {
             WindowEvent::DragDrop(event) => handle_drag_drop(window.app_handle(), event),
             WindowEvent::Destroyed if window.label() == commands::AUDIENCE => {
@@ -64,6 +79,8 @@ pub fn run() {
 
             // This is also required if you want to use events
             builder.mount_events(app);
+
+            app.manage(assets::AssetStore::new(app.path().app_cache_dir()?.join("assets")));
 
             let store = app.store("data.json")?;
             // init jot notes in store

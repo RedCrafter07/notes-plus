@@ -3,7 +3,7 @@ use std::{
     ffi::OsString,
     fs::{File, rename},
     io::{Read, Seek, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 use thiserror::Error;
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
@@ -32,7 +32,7 @@ pub enum RnpfError {
     InvalidFile,
     #[error("An attachment in the note is not a valid data URL")]
     InvalidAsset,
-    #[error("The attachment {0} is used by the note, but was neither sent nor found in the file")]
+    #[error("The attachment {0} is used by the note, but could not be found")]
     MissingAsset(String),
 }
 
@@ -51,11 +51,10 @@ pub enum RnpfError {
 /// `preview` is not part of the note's data: it is regenerated on every
 /// save, and a file without one is still valid (the explorer shows an icon).
 ///
-/// Attachments can be large (a semester of lecture PDFs), so a write does
-/// not need all of them in memory: `NoteData::assets` carries only the ones
-/// that are new, and the rest are copied byte for byte, still compressed as
-/// they are, from an existing archive (`source`), usually the file being
-/// replaced. See `create_from_data`.
+/// Attachments can be large (a semester of lecture PDFs), so they are never
+/// all loaded at once: `asset` reads one, and a write copies them from loose
+/// files or, byte for byte and still compressed as they are, from an existing
+/// archive. See `AssetSources`.
 pub struct Rnpf {
     file: File,
     version: u32,
@@ -63,6 +62,40 @@ pub struct Rnpf {
 
 const ASSET_INDEX: &str = "assets/index";
 const PREVIEW: &str = "preview";
+
+/// An attachment kept as a loose file (e.g. one not saved into a note yet).
+#[derive(Debug, Clone)]
+pub struct AssetFile {
+    pub mime: String,
+    pub path: PathBuf,
+}
+
+/// Where `create_from_data` finds the bytes of the attachments a note uses.
+/// `files` is checked first, then `archive`.
+#[derive(Clone, Copy)]
+pub struct AssetSources<'a> {
+    pub files: &'a BTreeMap<String, AssetFile>,
+    /// An existing archive (often the file being replaced) to copy from.
+    pub archive: Option<&'a Path>,
+}
+
+const NO_FILES: &BTreeMap<String, AssetFile> = &BTreeMap::new();
+
+impl<'a> AssetSources<'a> {
+    /// No attachments at all: for notes that don't use any.
+    pub const NONE: AssetSources<'static> = AssetSources {
+        files: NO_FILES,
+        archive: None,
+    };
+
+    /// Everything from one archive, e.g. when rewriting a note's metadata.
+    pub fn archive(path: &'a Path) -> Self {
+        Self {
+            files: NO_FILES,
+            archive: Some(path),
+        }
+    }
+}
 
 impl Rnpf {
     pub fn new(path: &Path) -> Result<Self, RnpfError> {
@@ -75,22 +108,21 @@ impl Rnpf {
     /// Writes a note atomically (temp file + rename). `preview` is the
     /// first page as a `data:image/png;base64,...` URL, if available.
     ///
-    /// Every attachment the note uses comes from `note_data.assets` if it is
-    /// there, and is otherwise copied from the archive at `source` (which may
-    /// be `path` itself). One that is in neither is an error, not a silent
-    /// loss.
+    /// Every attachment the note uses is taken from `assets`; one that is in
+    /// none of its sources is an error, not a silent loss. Unused ones are
+    /// left out: this is where attachments get garbage-collected.
     pub fn create_from_data(
         path: &Path,
         note_data: &NoteData,
         preview: Option<&str>,
-        source: Option<&Path>,
+        assets: AssetSources,
     ) -> Result<(), RnpfError> {
         let tmp_path = tmp_path_for(path);
         let result = (|| -> Result<(), RnpfError> {
             // Scoped so both files are closed before the rename (Windows
             // refuses to replace a file that is still open).
-            let mut source = match source {
-                Some(p) if p.exists() => Some(SourceAssets::open(p)?),
+            let mut source = match assets.archive {
+                Some(p) if p.exists() => Some(SourceArchive::open(p)?),
                 _ => None,
             };
             let file = File::options()
@@ -103,7 +135,7 @@ impl Rnpf {
             Self::write_vec(&mut zip, "meta", &note_data.meta)?;
             Self::write_vec(&mut zip, "data", &note_data.content)?;
             Self::write_vec(&mut zip, "state", &note_data.state)?;
-            Self::write_assets(&mut zip, note_data, source.as_mut())?;
+            Self::write_assets(&mut zip, note_data, assets.files, source.as_mut())?;
             if let Some(url) = preview {
                 let (_, bytes) = decode_data_url(url)?;
                 let options =
@@ -134,33 +166,20 @@ impl Rnpf {
             // Scoped so the file is closed before it is replaced (Windows
             // refuses to replace a file that is still open).
             let archive = Self::new(path)?;
-            (archive.build_data_without_assets()?, archive.get_preview())
+            (archive.build_data()?, archive.get_preview())
         };
 
         change(&mut data.meta);
         data.meta.normalize_folder();
-        Self::create_from_data(path, &data, preview.as_deref(), Some(path))
+        Self::create_from_data(path, &data, preview.as_deref(), AssetSources::archive(path))
     }
 
+    /// The note's data, without attachments (see `asset_index` and `asset`).
     pub fn build_data(&self) -> Result<NoteData, RnpfError> {
-        let mut data = NoteData {
-            assets: self.get_assets()?,
-            ..self.build_data_without_assets()?
-        };
-        data.normalize();
-
-        Ok(data)
-    }
-
-    /// The note with an empty `assets` map, for rewriting the file with
-    /// `create_from_data(.., source: Some(this file))` without decoding
-    /// every attachment.
-    pub fn build_data_without_assets(&self) -> Result<NoteData, RnpfError> {
         let mut data = NoteData {
             content: self.get_data()?,
             meta: self.get_meta()?,
             state: self.get_state()?,
-            assets: BTreeMap::new(),
         };
         data.normalize();
 
@@ -182,35 +201,29 @@ impl Rnpf {
         Some(format!("data:image/png;base64,{}", BASE64.encode(&bytes)))
     }
 
-    /// Reads every attachment back into a `data:` URL.
-    pub fn get_assets(&self) -> Result<BTreeMap<String, String>, RnpfError> {
+    /// `{ asset id: mime type }` for every attachment listed in the file.
+    pub fn asset_index(&self) -> Result<BTreeMap<String, String>, RnpfError> {
         if self.version < 3 {
             return Ok(BTreeMap::new());
         }
-
-        let index: BTreeMap<String, String> = match self.read_data(ASSET_INDEX) {
-            Ok(i) => i,
-            Err(RnpfError::InvalidFile) => return Ok(BTreeMap::new()),
-            Err(e) => return Err(e),
-        };
-
-        let mut zip = ZipArchive::new(&self.file)?;
-        let mut assets = BTreeMap::new();
-
-        for (id, mime) in index {
-            let mut bytes = Vec::new();
-            match zip.by_name(&format!("assets/{id}")) {
-                Ok(mut f) => f.read_to_end(&mut bytes)?,
-                // A missing asset should not make the whole note unreadable.
-                Err(ZipError::FileNotFound) => continue,
-                Err(e) => return Err(e.into()),
-            };
-
-            assets.insert(id, format!("data:{mime};base64,{}", BASE64.encode(&bytes)));
+        match self.read_data(ASSET_INDEX) {
+            Err(RnpfError::InvalidFile) => Ok(BTreeMap::new()),
+            other => other,
         }
-
-        Ok(assets)
     }
+
+    /// One attachment's bytes, or `None` if the file doesn't have it.
+    pub fn asset(&self, id: &str) -> Result<Option<Vec<u8>>, RnpfError> {
+        let mut zip = ZipArchive::new(&self.file)?;
+        let mut bytes = Vec::new();
+        match zip.by_name(&format!("assets/{id}")) {
+            Ok(mut f) => f.read_to_end(&mut bytes)?,
+            Err(ZipError::FileNotFound) => return Ok(None),
+            Err(e) => return Err(e.into()),
+        };
+        Ok(Some(bytes))
+    }
+
     pub fn get_meta(&self) -> Result<Meta, RnpfError> {
         self.read_data("meta")
     }
@@ -247,12 +260,11 @@ impl Rnpf {
         Ok(())
     }
 
-    /// Only assets that are still referenced are written. This is the one place
-    /// unused attachments get garbage-collected.
     fn write_assets<W: Write + Seek>(
         zip: &mut ZipWriter<W>,
         note_data: &NoteData,
-        mut source: Option<&mut SourceAssets>,
+        files: &BTreeMap<String, AssetFile>,
+        mut source: Option<&mut SourceArchive>,
     ) -> Result<(), RnpfError> {
         let mut index = BTreeMap::new();
         // Images are already compressed; zstd would only cost time.
@@ -261,11 +273,10 @@ impl Rnpf {
         for id in note_data.used_assets() {
             let name = format!("assets/{id}");
 
-            if let Some(url) = note_data.assets.get(&id) {
-                let (mime, bytes) = decode_data_url(url)?;
+            if let Some(file) = files.get(&id) {
                 zip.start_file(&name, options)?;
-                zip.write_all(&bytes)?;
-                index.insert(id, mime.to_string());
+                std::io::copy(&mut File::open(&file.path)?, zip)?;
+                index.insert(id, file.mime.clone());
                 continue;
             }
 
@@ -308,24 +319,16 @@ impl Rnpf {
 }
 
 /// The attachments of an existing archive, for copying into a new one.
-struct SourceAssets {
+struct SourceArchive {
     zip: ZipArchive<File>,
     /// asset id -> mime type
     index: BTreeMap<String, String>,
 }
 
-impl SourceAssets {
+impl SourceArchive {
     fn open(path: &Path) -> Result<Self, RnpfError> {
         let rnpf = Rnpf::new(path)?;
-        let index = if rnpf.version < 3 {
-            BTreeMap::new()
-        } else {
-            match rnpf.read_data(ASSET_INDEX) {
-                Ok(i) => i,
-                Err(RnpfError::InvalidFile) => BTreeMap::new(),
-                Err(e) => return Err(e),
-            }
-        };
+        let index = rnpf.asset_index()?;
         Ok(Self {
             zip: ZipArchive::new(rnpf.file)?,
             index,
@@ -334,7 +337,7 @@ impl SourceAssets {
 }
 
 /// Splits `data:<mime>;base64,<payload>` into its mime type and decoded bytes.
-fn decode_data_url(url: &str) -> Result<(&str, Vec<u8>), RnpfError> {
+pub fn decode_data_url(url: &str) -> Result<(&str, Vec<u8>), RnpfError> {
     let rest = url.strip_prefix("data:").ok_or(RnpfError::InvalidAsset)?;
     let (header, payload) = rest.split_once(',').ok_or(RnpfError::InvalidAsset)?;
     let mime = header
@@ -374,49 +377,6 @@ mod tests {
         assert!(decode_data_url("data:image/png,hi").is_err());
     }
 
-    #[test]
-    fn round_trips_assets_and_drops_unused_ones() {
-        let dir = std::env::temp_dir().join(format!("rnpf-test-{}", uuid::Uuid::new_v4()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join("note.rnpf");
-
-        let mut note = NoteData::default();
-        note.content.pages[0].layers[0]
-            .blocks
-            .push(Block::Image(ImageBlock {
-                id: "img".into(),
-                x: 0.0,
-                y: 0.0,
-                width: 10.0,
-                height: 10.0,
-                asset: "used".into(),
-            }));
-        note.assets.insert("used".into(), "data:image/png;base64,aGk=".into());
-        note.assets.insert("unused".into(), "data:image/png;base64,aGk=".into());
-
-        Rnpf::create_from_data(&path, &note, Some("data:image/png;base64,aGk="), None).unwrap();
-        let archive = Rnpf::new(&path).unwrap();
-        assert_eq!(archive.get_preview().as_deref(), Some("data:image/png;base64,aGk="));
-        let loaded = archive.build_data().unwrap();
-
-        assert_eq!(loaded.assets.len(), 1);
-        assert_eq!(loaded.assets["used"], "data:image/png;base64,aGk=");
-
-        Rnpf::update_meta(&path, |m| {
-            m.title = "Renamed".into();
-            m.folder = Some("/Uni//Physics/".into());
-        })
-        .unwrap();
-        let archive = Rnpf::new(&path).unwrap();
-        let updated = archive.build_data().unwrap();
-        assert_eq!(updated.meta.title, "Renamed");
-        assert_eq!(updated.meta.folder.as_deref(), Some("Uni/Physics"), "normalised");
-        assert_eq!(updated.assets.len(), 1, "content kept");
-        assert!(archive.get_preview().is_some(), "preview kept");
-
-        std::fs::remove_dir_all(dir).unwrap();
-    }
-
     fn note_with_images(ids: &[&str]) -> NoteData {
         let mut note = NoteData::default();
         for id in ids {
@@ -434,42 +394,91 @@ mod tests {
         note
     }
 
+    struct TempDir(PathBuf);
+    impl TempDir {
+        fn new() -> Self {
+            let dir = std::env::temp_dir().join(format!("rnpf-test-{}", uuid::Uuid::new_v4()));
+            std::fs::create_dir_all(&dir).unwrap();
+            Self(dir)
+        }
+        fn file(&self, name: &str, bytes: &[u8], mime: &str) -> (String, AssetFile) {
+            let path = self.0.join(name);
+            std::fs::write(&path, bytes).unwrap();
+            (name.into(), AssetFile { mime: mime.into(), path })
+        }
+    }
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
     #[test]
-    fn copies_unsent_assets_from_the_source_file() {
-        let dir = std::env::temp_dir().join(format!("rnpf-test-{}", uuid::Uuid::new_v4()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join("note.rnpf");
+    fn writes_used_assets_and_drops_unused_ones() {
+        let dir = TempDir::new();
+        let path = dir.0.join("note.rnpf");
+        let files = BTreeMap::from([
+            dir.file("used", b"hi", "image/png"),
+            dir.file("unused", b"yo", "image/png"),
+        ]);
 
-        // First save: everything is new, so everything is sent.
-        let mut note = note_with_images(&["a"]);
-        note.assets.insert("a".into(), "data:image/png;base64,aGk=".into());
-        Rnpf::create_from_data(&path, &note, None, None).unwrap();
-
-        // Autosave: only the new attachment is sent, "a" comes from the file.
-        let mut note = note_with_images(&["a", "b"]);
-        note.assets.insert("b".into(), "data:image/jpeg;base64,eW8=".into());
-        Rnpf::create_from_data(&path, &note, None, Some(&path)).unwrap();
-
-        let loaded = Rnpf::new(&path).unwrap().build_data().unwrap();
-        assert_eq!(loaded.assets["a"], "data:image/png;base64,aGk=", "copied");
-        assert_eq!(loaded.assets["b"], "data:image/jpeg;base64,eW8=", "sent");
-
-        // Save As: nothing sent, everything copied from the old file.
-        let other = dir.join("copy.rnpf");
-        Rnpf::create_from_data(&other, &note_with_images(&["a", "b"]), None, Some(&path))
+        let note = note_with_images(&["used"]);
+        let sources = AssetSources { files: &files, archive: None };
+        Rnpf::create_from_data(&path, &note, Some("data:image/png;base64,aGk="), sources)
             .unwrap();
-        let copied = Rnpf::new(&other).unwrap().build_data().unwrap();
-        assert_eq!(copied.assets, loaded.assets);
 
-        // Used, but neither sent nor in the source: refuse rather than lose it.
-        let err = Rnpf::create_from_data(&path, &note_with_images(&["a", "c"]), None, Some(&path))
+        let archive = Rnpf::new(&path).unwrap();
+        assert_eq!(archive.get_preview().as_deref(), Some("data:image/png;base64,aGk="));
+        assert_eq!(archive.asset_index().unwrap().len(), 1);
+        assert_eq!(archive.asset("used").unwrap().as_deref(), Some(&b"hi"[..]));
+        assert_eq!(archive.asset("unused").unwrap(), None);
+
+        Rnpf::update_meta(&path, |m| {
+            m.title = "Renamed".into();
+            m.folder = Some("/Uni//Physics/".into());
+        })
+        .unwrap();
+        let archive = Rnpf::new(&path).unwrap();
+        let updated = archive.build_data().unwrap();
+        assert_eq!(updated.meta.title, "Renamed");
+        assert_eq!(updated.meta.folder.as_deref(), Some("Uni/Physics"), "normalised");
+        assert_eq!(archive.asset("used").unwrap().as_deref(), Some(&b"hi"[..]), "kept");
+        assert!(archive.get_preview().is_some(), "preview kept");
+    }
+
+    #[test]
+    fn copies_assets_from_the_source_archive() {
+        let dir = TempDir::new();
+        let path = dir.0.join("note.rnpf");
+
+        let files = BTreeMap::from([dir.file("a", b"hi", "image/png")]);
+        let sources = AssetSources { files: &files, archive: None };
+        Rnpf::create_from_data(&path, &note_with_images(&["a"]), None, sources).unwrap();
+
+        // A later save: "b" is new (a loose file), "a" comes from the archive.
+        let files = BTreeMap::from([dir.file("b", b"yo", "image/jpeg")]);
+        let sources = AssetSources { files: &files, archive: Some(&path) };
+        Rnpf::create_from_data(&path, &note_with_images(&["a", "b"]), None, sources).unwrap();
+
+        let archive = Rnpf::new(&path).unwrap();
+        assert_eq!(archive.asset("a").unwrap().as_deref(), Some(&b"hi"[..]), "copied");
+        assert_eq!(archive.asset("b").unwrap().as_deref(), Some(&b"yo"[..]), "from file");
+        assert_eq!(archive.asset_index().unwrap()["b"], "image/jpeg");
+
+        // Used, but in none of the sources: refuse rather than lose it.
+        let note = note_with_images(&["a", "c"]);
+        let err = Rnpf::create_from_data(&path, &note, None, AssetSources::archive(&path))
             .unwrap_err();
         assert!(matches!(err, RnpfError::MissingAsset(id) if id == "c"));
-        let untouched = Rnpf::new(&path).unwrap().build_data().unwrap();
-        assert_eq!(untouched.assets.len(), 2, "a failed save leaves the file as it was");
-        let leftovers = std::fs::read_dir(&dir).unwrap().count();
-        assert_eq!(leftovers, 2, "no temp file left behind");
-
-        std::fs::remove_dir_all(dir).unwrap();
+        assert_eq!(
+            Rnpf::new(&path).unwrap().asset_index().unwrap().len(),
+            2,
+            "a failed save leaves the file as it was"
+        );
+        let leftovers = std::fs::read_dir(&dir.0)
+            .unwrap()
+            .filter(|e| e.as_ref().unwrap().file_name().to_string_lossy().contains(".tmp-"))
+            .count();
+        assert_eq!(leftovers, 0, "no temp file left behind");
     }
 }

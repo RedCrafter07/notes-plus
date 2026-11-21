@@ -46,7 +46,7 @@ function blockSvg(b: Block, assets: Assets): string {
       );
     }
     case "Image": {
-      const src = assets[b.asset];
+      const src = assets(b.asset);
       if (!src) return "";
       return `<image href="${src}" x="${n(b.x)}" y="${n(b.y)}" width="${n(b.width)}" height="${n(b.height)}" preserveAspectRatio="none"/>`;
     }
@@ -60,7 +60,7 @@ function paperSvg(page: Page, area: ContentBounds, assets: Assets): string {
     `<rect x="${n(area.min.x)}" y="${n(area.min.y)}" width="${n(area.width)}" height="${n(area.height)}" fill="${esc(page.background_color)}"/>`,
   ];
 
-  const bg = page.background_asset && assets[page.background_asset];
+  const bg = page.background_asset && assets(page.background_asset);
   if (bg && page.width > 0)
     parts.push(`<image href="${bg}" x="0" y="0" width="${page.width}" height="${page.height}" preserveAspectRatio="none"/>`);
 

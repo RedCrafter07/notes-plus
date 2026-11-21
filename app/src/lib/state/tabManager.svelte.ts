@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation";
 import { resolve } from "$app/paths";
-import type { NoteData } from "#lib/tauri/bindings.ts";
+import { commands, type NoteData } from "#lib/tauri/bindings.ts";
 import { contentManager } from "./contentManager.svelte";
 import { EMPTY_NOTE } from "./defaultsStore.svelte";
 import { overlayManager } from "./overlayManager.svelte";
@@ -11,12 +11,15 @@ class TabManager {
   #tabs = $state<Tab[]>([]);
   #activeTab = $state(-1);
 
-  add(noteData: NoteData, setActive: boolean = false, path?: string) {
+  /** `assets` is the attachment session of a note opened from a file. */
+  add(noteData: NoteData, setActive: boolean = false, path?: string, assets?: string) {
     const tabByID = this.#tabs.findIndex(
       (t) => t.note.meta.id === noteData.meta.id,
     );
 
     if (tabByID !== -1) {
+      // The open tab keeps its own session; this one is not needed.
+      if (assets) commands.closeAssetSession(assets);
       if (setActive) {
         this.activeTab = tabByID;
         goto(resolve("/edit/[id]", { id: noteData.meta.id }));
@@ -28,7 +31,7 @@ class TabManager {
       return;
     }
 
-    const l = this.#tabs.push(new Tab(noteData, path));
+    const l = this.#tabs.push(new Tab(noteData, path, assets));
 
     if (setActive) {
       this.activeTab = l - 1;
@@ -47,7 +50,8 @@ class TabManager {
       this.#activeTab--;
     }
 
-    this.#tabs.splice(index, 1);
+    const [closed] = this.#tabs.splice(index, 1);
+    if (closed) commands.closeAssetSession(closed.assets);
 
     if (wasActive) {
       const newIndex = Math.min(index, this.#tabs.length - 1);

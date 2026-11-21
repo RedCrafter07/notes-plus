@@ -54,7 +54,8 @@ NoteData { meta, content, state }
              TS: ({ type: "Stroke" } & Stroke) | ... -- every variant has `id`
     Stroke-> id, points (x, y, pressure), color, thickness, opacity
   State   -> zoom, pan_x, pan_y, current_page, current_layer  (persisted per note)
-  assets  -> { asset id: data URL }, referenced by Image blocks and pages
+  attachments are not in NoteData: blocks/pages hold an asset id, and the
+  bytes stay in the archive or the cache (see "Attachments" below)
 ```
 
 ### File format: `.rnpf`
@@ -65,16 +66,29 @@ optional `preview` (PNG of the first page, rewritten on every save, read by the
 file browser; absent in older files, which show an icon). Current
 version is **4**. `common/src/io/migrate.rs` upgrades older `data` JSON step by
 step before deserializing; to change the format, bump `CURRENT_VERSION` and add
-a `vN_to_vN+1`. Unreferenced assets are dropped only at load/save time, never on
-delete, so undo can restore a block whose asset was "removed".
+a `vN_to_vN+1`.
 
-Saves send only **new** attachments. Each `Tab` keeps `storedAssets` (what
-its file holds); `handleSave` sends the note with the other assets left out,
-and `Rnpf::create_from_data(.., source)` copies those from the old file as
-raw zip entries (no base64, no recompression). An asset that is used but
-neither sent nor in the source fails the save (`MissingAsset`) rather than
-vanishing; after a failed save the tab sends everything again. Loading still
-sends every asset to the frontend once, as data URLs.
+### Attachments (`app/src-tauri/src/assets.rs`, `lib/editor/assets.ts`)
+
+Images and PDF page renders never travel to the frontend as data and are
+never all in memory. Each open tab has an **asset session** (`Tab.assets`,
+from `OpenData.assets` or a fresh UUID for a new note). The webviews load an
+attachment from `rnasset://localhost/<session>/<id>` (`http://rnasset.localhost/`
+on Windows/Android; `sessionAssets()` builds it), which `AssetStore` answers
+from the note's file, or from a cache file in `<app cache>/assets/<session>/`
+for new attachments (`addAsset` sends one once, as a data URL) and for ones a
+save dropped. Saves send no attachment data: `AssetStore::save` writes them
+from the cache and copies the rest from the old file as raw zip entries
+(`AssetSources`). An attachment used but found nowhere fails the save
+(`MissingAsset`) instead of vanishing.
+
+Unused attachments leave the file at save time, never on delete, and the
+session keeps a cache copy, so undo can restore a block whose asset was
+"removed". Closing a tab deletes its cache; the cache is also emptied at
+startup. Responses carry `Access-Control-Allow-Origin: *` and images load with
+`crossOrigin = "anonymous"`, or canvases drawing them could not be exported.
+SVG export embeds attachments as data URLs (`assetDataUrl`). The decoded
+image cache (`render/images.ts`) keeps the 48 most recently used.
 
 ### Frontend state (`app/src/lib/state/`)
 
@@ -211,7 +225,8 @@ OS *mirroring* cannot show different content on desktop, hence a separate
 window on an *extended* display. The audience window renders only the page:
 the root layout skips the app shell when the window label is `audience`. The
 editor streams messages (`lib/present/protocol.ts`, coalesced per frame):
-page per committed edit, new assets once, view, live in-progress ink, laser.
+page per committed edit (with the asset session, so images load by URL),
+view, live in-progress ink, laser.
 Fit/Follow, Freeze and Blank live in `PresenterBar`. The laser tool is never
 saved. On Wayland the compositor decides where the window opens.
 Later: iPad/Android external displays need a native plugin (UIScene external
@@ -240,10 +255,9 @@ per setting, the missing format migration, and the `contentManager` ↔
 3. **Text layout is measured with canvas `measureText`** and the editing
    `<textarea>` wraps with the browser's own algorithm; they agree closely but
    not perfectly for unusual text.
-4. **Assets are held in the webview as data URLs.** Opening a note sends
-   every attachment over IPC as base64 once, and they stay in memory as
-   strings (saves no longer resend them). A custom protocol or blob URLs
-   would cut opening time and memory for very large notes.
+4. **Every page is still kept in the frontend** as JSON (strokes, text,
+   asset ids). Attachments are not, but a note with thousands of strokes per
+   page is loaded and saved whole.
 
 ## File problems
 

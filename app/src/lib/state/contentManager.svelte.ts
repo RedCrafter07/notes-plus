@@ -1,4 +1,5 @@
-import type { ExportRegion, Layer, Page } from "#lib/tauri/bindings.ts";
+import { sessionAssets } from "#lib/editor/assets.ts";
+import { commands, type ExportRegion, type Layer, type Page } from "#lib/tauri/bindings.ts";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { settingsStore } from "./settingsStore.svelte";
 import { tabManager } from "./tabManager.svelte";
@@ -256,15 +257,21 @@ class ContentManager {
     this.#note.content.pages = pages;
   }
 
+  /** Asset id -> URL, for the active tab's attachments. */
   get assets() {
-    return this.#note.assets;
+    return sessionAssets(tabManager.tab?.assets ?? "none");
   }
 
-  /** Stores binary data (as a data URL) and returns its asset id. */
-  addAsset(dataUrl: string) {
+  /**
+   * Hands new binary data (as a data URL) to the backend once and returns its
+   * asset id; from then on it is loaded by URL (see `editor/assets.ts`).
+   * `null` if it could not be stored (the backend has said why). Pass the
+   * tab explicitly from async flows that may outlive a tab switch.
+   */
+  async addAsset(dataUrl: string, tab = tabManager.tab): Promise<string | null> {
+    if (!tab) return null;
     const id = crypto.randomUUID();
-    this.#note.assets[id] = dataUrl;
-    return id;
+    return (await commands.addAsset(tab.assets, id, dataUrl)) ? id : null;
   }
 
   get zoom() {

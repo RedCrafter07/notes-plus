@@ -29,7 +29,7 @@
   {/each}
 {:else if b.type === "Image"}
   <image
-    href={contentManager.assets[b.asset]}
+    href={contentManager.assets(b.asset)}
     x={b.x}
     y={b.y}
     width={b.width}

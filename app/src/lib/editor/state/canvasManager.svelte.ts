@@ -89,7 +89,6 @@ class CanvasManager {
     void this.dpr;
     void lassoManager.selectedIds;
     void textEditor.hiddenId;
-    void tabManager.note.assets;
     requestRedraw();
   }
 
@@ -102,7 +101,7 @@ class CanvasManager {
 
   private paint() {
     const page = contentManager.page;
-    const assets = tabManager.note.assets;
+    const assets = contentManager.assets;
     const view = this.viewBounds();
     const clip = pageRect(page);
 

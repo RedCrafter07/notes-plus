@@ -14,19 +14,19 @@ export class Tab {
   /** True while a save of this tab is in flight. */
   saving = false;
   /**
-   * Attachments the file at `path` already holds. Saves send only the
-   * others; the backend copies these from the file. Not reactive on purpose.
+   * The note's attachment session in the backend (see `assets.rs`): its
+   * images are served at URLs containing it, and saves name it. A new note
+   * gets a fresh id; the backend creates the session on first use.
    */
-  storedAssets = new Set<string>();
+  readonly assets: string;
   /** Counts edits history does not track (title, folder). */
   #edits = $state(0);
   #savedEdits = $state(0);
 
-  constructor(data: NoteData, path?: string) {
+  constructor(data: NoteData, path?: string, assets: string = crypto.randomUUID()) {
     this.note = data;
     this.path = path;
-    // A loaded note's assets are exactly what its file holds.
-    if (path) this.storedAssets = new Set(Object.keys(data.assets));
+    this.assets = assets;
   }
 
   get unsaved() {

@@ -21,7 +21,7 @@
   /** One screen pixel, in content units. */
   const px = $derived(1 / zoom);
   const background = $derived(
-    page.background_asset ? contentManager.assets[page.background_asset] : undefined,
+    page.background_asset ? contentManager.assets(page.background_asset) : undefined,
   );
   const screen = $derived(
     rect

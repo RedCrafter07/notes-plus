@@ -3,6 +3,8 @@ import { contentManager } from "#lib/state/contentManager.svelte.ts";
 import { popupManager } from "#lib/state/popupManager.svelte.ts";
 import { commands, type Page } from "#lib/tauri/bindings.ts";
 import { boundsFromRect, type ContentBounds } from "#lib/util/canvasBounds.ts";
+import { assetDataUrl, type Assets } from "../assets";
+import { usedAssets } from "../blocks";
 import { pageArea, renderArea } from "../render/page";
 import { areaToSvg } from "../render/svg";
 import { buildPdf, type PdfPage } from "./pdfWriter";
@@ -105,6 +107,22 @@ function baseName() {
   return contentManager.title.replace(/[\\/:*?"<>|]+/g, "-").trim() || "Note";
 }
 
+/**
+ * The page's attachments as data URLs, so an SVG file stands on its own
+ * (inside the app they are `rnasset:` URLs, meaningless anywhere else).
+ */
+async function embeddedAssets(page: Page): Promise<Assets> {
+  const urls = contentManager.assets;
+  const data = new Map<string, string>();
+  await Promise.all(
+    [...usedAssets([page])].map(async (id) => {
+      const url = await assetDataUrl(urls(id));
+      if (url) data.set(id, url);
+    }),
+  );
+  return (id) => data.get(id);
+}
+
 async function raster(job: ExportJob, o: ExportOptions, opaque: boolean) {
   return renderArea(job.page, contentManager.assets, job.area, {
     width: job.size.width * o.scale,
@@ -151,7 +169,8 @@ export async function runExport(o: ExportOptions): Promise<boolean> {
   for (const [i, job] of jobs.entries()) {
     let bytes: Uint8Array;
     if (ext === "svg") {
-      const svg = areaToSvg(job.page, contentManager.assets, job.area, { paper: o.paper, only: job.only });
+      const assets = await embeddedAssets(job.page);
+      const svg = areaToSvg(job.page, assets, job.area, { paper: o.paper, only: job.only });
       bytes = new TextEncoder().encode(svg);
     } else {
       const canvas = await raster(job, o, ext === "jpg");

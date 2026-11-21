@@ -1,13 +1,12 @@
 use std::path::{Path, PathBuf};
 
-use common::io::archive::Rnpf;
 use tauri::AppHandle;
 use tauri_specta::Event;
 use thiserror::Error;
 
 use crate::{
     events::Open,
-    structs::{OpenData, Result},
+    structs::Result,
 };
 
 #[derive(Debug, Error)]
@@ -38,18 +37,11 @@ pub(crate) fn handle_args(
         base.join(args_path)
     };
 
-    let archive = Rnpf::new(&path)?;
-    let note = archive.build_data()?;
+    if path.to_str().is_none() {
+        return Err(ArgsError::InvalidPath(path.clone()).into());
+    }
 
-    let path_string = path
-        .to_str()
-        .ok_or_else(|| ArgsError::InvalidPath(path.clone()))?;
-
-    Open(OpenData {
-        note_data: note,
-        path: path_string.into(),
-    })
-    .emit(app)?;
+    Open(crate::commands::open_single(&path)?).emit(app)?;
 
     Ok(())
 }

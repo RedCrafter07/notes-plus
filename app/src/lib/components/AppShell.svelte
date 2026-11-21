@@ -157,7 +157,7 @@
   }
 
   function openNote(data: OpenData) {
-    tabManager.add(data.note_data, true, data.path);
+    tabManager.add(data.note_data, true, data.path, data.assets);
   }
 </script>
 

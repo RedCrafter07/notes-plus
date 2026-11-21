@@ -25,7 +25,7 @@ async function preload(page: Page, assets: Assets) {
   if (page.background_asset) ids.add(page.background_asset);
   for (const l of page.layers)
     for (const b of l.blocks) if (b.type === "Image") ids.add(b.asset);
-  await Promise.all([...ids].map((id) => loadImage(id, assets[id])));
+  await Promise.all([...ids].map((id) => loadImage(id, assets(id))));
 }
 
 export interface RenderOptions {
@@ -122,10 +122,10 @@ const PREVIEW_SIZE = 360;
  * can show it without opening the note. `null` for an empty infinite page.
  * Never throws: a missing preview must not stop a save.
  */
-export async function notePreview(note: NoteData): Promise<string | null> {
+export async function notePreview(note: NoteData, assets: Assets): Promise<string | null> {
   try {
     const page = note.content.pages[0];
-    const canvas = page && (await renderPage(page, note.assets, { maxSize: PREVIEW_SIZE }));
+    const canvas = page && (await renderPage(page, assets, { maxSize: PREVIEW_SIZE }));
     return canvas ? canvas.toDataURL("image/png") : null;
   } catch {
     return null;

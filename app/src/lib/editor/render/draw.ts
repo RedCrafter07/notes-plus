@@ -12,7 +12,8 @@ import { strokePath } from "./strokes";
  * see is what you export.
  */
 
-export type Assets = Partial<Record<string, string>>;
+export type { Assets } from "../assets";
+import type { Assets } from "../assets";
 
 export function drawBlock(
   ctx: CanvasRenderingContext2D,
@@ -38,7 +39,7 @@ export function drawBlock(
       return;
     }
     case "Image": {
-      const img = getImage(b.asset, assets[b.asset]);
+      const img = getImage(b.asset, assets(b.asset));
       if (img) ctx.drawImage(img, b.x, b.y, b.width, b.height);
       return;
     }
@@ -77,7 +78,7 @@ export function drawPaper(
   ctx.fillRect(area.min.x, area.min.y, area.width, area.height);
 
   if (page.background_asset && page.width > 0) {
-    const img = getImage(page.background_asset, assets[page.background_asset]);
+    const img = getImage(page.background_asset, assets(page.background_asset));
     if (img) ctx.drawImage(img, 0, 0, page.width, page.height);
   }
 

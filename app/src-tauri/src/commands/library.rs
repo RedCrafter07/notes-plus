@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 
 use common::{
     io::{
-        archive::{Rnpf, RnpfError},
+        archive::{AssetSources, Rnpf, RnpfError},
         index::{build_index, normalize_folder},
     },
     structs::data::Meta,
@@ -76,7 +76,7 @@ pub fn duplicate_note(app: tauri::AppHandle, path: String) -> Option<String> {
     let result = (|| -> Result<PathBuf, RnpfError> {
         let archive = Rnpf::new(&file)?;
         // Attachments are copied straight from the original file below.
-        let mut data = archive.build_data_without_assets()?;
+        let mut data = archive.build_data()?;
         let preview = archive.get_preview();
         drop(archive);
 
@@ -88,7 +88,7 @@ pub fn duplicate_note(app: tauri::AppHandle, path: String) -> Option<String> {
         };
 
         let target = dir.join(format!("{}.rnpf", data.meta.id));
-        Rnpf::create_from_data(&target, &data, preview.as_deref(), Some(&file))?;
+        Rnpf::create_from_data(&target, &data, preview.as_deref(), AssetSources::archive(&file))?;
         Ok(target)
     })();
 

@@ -9,9 +9,11 @@ use tauri_plugin_dialog::DialogExt;
 use tauri_specta::Event;
 
 use crate::{
+    assets::AssetStore,
     events::Open,
     structs::{AppError, OpenData, ResultExt},
     util::{
+        app_handle,
         dialog::{DialogType, show_dialog, show_error},
         display_error, display_error_with_path,
     },
@@ -73,15 +75,41 @@ fn open_paths(paths: &[PathBuf]) -> Vec<OpenData> {
         .collect()
 }
 
-fn open_single(path: &Path) -> Result<OpenData, RnpfError> {
+/// Reads a note and opens an attachment session for it. Attachments stay in
+/// the file and are served on demand; see `assets.rs`.
+pub(crate) fn open_single(path: &Path) -> Result<OpenData, RnpfError> {
     let archive = Rnpf::new(path)?;
     let data = archive.build_data()?;
     let path_str = path.to_str().ok_or(RnpfError::InvalidPath)?.to_string();
+    let assets = app_handle::get().state::<AssetStore>().open(path, &archive)?;
 
     Ok(OpenData {
         path: path_str,
         note_data: data,
+        assets,
     })
+}
+
+/// Stores a new attachment (an image or a rendered PDF page) for a note.
+/// Sent once, when it is added; from then on it is served by URL and saved
+/// from the cache. `id` is chosen by the frontend.
+#[tauri::command]
+#[specta::specta]
+pub fn add_asset(app: tauri::AppHandle, session: String, id: String, data_url: String) -> bool {
+    match app.state::<AssetStore>().add(&session, &id, &data_url) {
+        Ok(()) => true,
+        Err(e) => {
+            display_error(e.into());
+            false
+        }
+    }
+}
+
+/// Forgets a closed tab's attachments, deleting any unsaved ones.
+#[tauri::command]
+#[specta::specta]
+pub fn close_asset_session(app: tauri::AppHandle, session: String) {
+    app.state::<AssetStore>().close(&session);
 }
 
 #[tauri::command]
@@ -90,14 +118,20 @@ pub fn new_note() -> NoteData {
     NoteData::default()
 }
 
-/// Saves over an existing file. `note_data.assets` only needs the
-/// attachments that file doesn't hold yet; the rest are copied from it.
+/// Saves over an existing file. Attachments come from the session (`assets`),
+/// not from the frontend.
 #[tauri::command]
 #[specta::specta]
-pub fn save_note(note_data: NoteData, path: String, preview: Option<String>) -> bool {
+pub fn save_note(
+    app: tauri::AppHandle,
+    assets: String,
+    note_data: NoteData,
+    path: String,
+    preview: Option<String>,
+) -> bool {
     let path = Path::new(&path);
 
-    match save(path, &note_data, preview, Some(path)) {
+    match save(&app, &assets, path, &note_data, preview) {
         Ok(_) => true,
         Err(e) => {
             eprintln!("An error occurred while saving a note: {e}");
@@ -126,6 +160,7 @@ fn sanitize_note_id(id: &str) -> Option<&str> {
 #[specta::specta]
 pub fn save_note_to_storage(
     app: tauri::AppHandle,
+    assets: String,
     note_data: NoteData,
     preview: Option<String>,
 ) -> Option<String> {
@@ -151,8 +186,7 @@ pub fn save_note_to_storage(
     let file_name = format!("{}.rnpf", safe_id);
     let full_path = path.join(file_name);
 
-    // A note without a file yet: every attachment is in `note_data`.
-    if let Err(e) = save(&full_path, &note_data, preview, None) {
+    if let Err(e) = save(&app, &assets, &full_path, &note_data, preview) {
         display_error(e.into());
         return None;
     };
@@ -160,15 +194,15 @@ pub fn save_note_to_storage(
     Some(full_path.to_str()?.to_string())
 }
 
-/// Save As. `source` is the note's current file, if it has one: attachments
-/// missing from `note_data.assets` are copied from there.
+/// Save As. The session's attachments are copied from its current file and
+/// cache into the new one, which becomes the session's file.
 #[tauri::command]
 #[specta::specta]
 pub fn save_note_dialog(
     app: tauri::AppHandle,
+    assets: String,
     note_data: NoteData,
     preview: Option<String>,
-    source: Option<String>,
 ) -> Option<String> {
     let path = app
         .dialog()
@@ -184,7 +218,7 @@ pub fn save_note_dialog(
             return None;
         }
     };
-    if let Err(e) = save(path, &note_data, preview, source.as_deref().map(Path::new)) {
+    if let Err(e) = save(&app, &assets, path, &note_data, preview) {
         display_error(e.into());
         return None;
     };
@@ -194,10 +228,12 @@ pub fn save_note_dialog(
 
 /// `preview` is a PNG data URL of the first page, shown by the file browser.
 fn save(
+    app: &AppHandle,
+    session: &str,
     path: &Path,
     note_data: &NoteData,
     preview: Option<String>,
-    source: Option<&Path>,
 ) -> Result<(), RnpfError> {
-    Rnpf::create_from_data(path, note_data, preview.as_deref(), source)
+    app.state::<AssetStore>()
+        .save(session, path, note_data, preview.as_deref())
 }

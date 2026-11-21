@@ -5,6 +5,8 @@
   import { pageRect } from "#lib/editor/pageFormats.ts";
   import { drawBlocks, drawPaper } from "#lib/editor/render/draw.ts";
   import { loadImage } from "#lib/editor/render/images.ts";
+  import { sessionAssets, type Assets } from "#lib/editor/assets.ts";
+  import { usedAssets } from "#lib/editor/blocks.ts";
   import { pageArea } from "#lib/editor/render/page.ts";
   import { inputToPath } from "#lib/editor/svg.ts";
   import {
@@ -28,7 +30,7 @@
 
   let canvas = $state<HTMLCanvasElement>();
   let page: Page | undefined;
-  const assets: Record<string, string> = {};
+  let assets: Assets = () => undefined;
   let view = { zoom: 1, panX: 0, panY: 0, width: 1, height: 1 };
   let ink: { points: Point[]; color: string; thickness: number; opacity: number } | undefined;
   let laser: LaserStroke[] = [];
@@ -117,14 +119,15 @@
 
   function receive(msg: PresentMessage) {
     switch (msg.kind) {
-      case "page":
+      case "page": {
         page = msg.page;
+        const urls = (assets = sessionAssets(msg.assets));
+        // The editor's scheduler doesn't run here, so repaint once the
+        // page's images are decoded.
+        const ids = [...usedAssets([msg.page])];
+        if (ids.length) Promise.all(ids.map((id) => loadImage(id, urls(id)))).then(redraw);
         break;
-      case "assets":
-        Object.assign(assets, msg.assets);
-        // Decode before the next paint so images do not pop in a frame late.
-        Promise.all(Object.entries(msg.assets).map(([id, src]) => loadImage(id, src))).then(redraw);
-        break;
+      }
       case "view":
         view = msg;
         break;

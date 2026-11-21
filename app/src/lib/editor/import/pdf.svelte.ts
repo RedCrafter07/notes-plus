@@ -127,10 +127,15 @@ export async function importPdfPages(
   }
 
   // Render everything first, so the insert itself is one quick, atomic step.
-  const rendered: { n: number; dataUrl: string; width: number; height: number }[] = [];
+  // Each page goes to the backend as soon as it is rendered, so the renders
+  // don't pile up in memory.
+  const rendered: { n: number; asset: string; width: number; height: number }[] = [];
   for (const [i, n] of pages.entries()) {
     onProgress?.(i, pages.length);
-    rendered.push({ n, ...(await render(src.doc, n, PT_TO_UNITS * RENDER_SCALE)) });
+    const { dataUrl, width, height } = await render(src.doc, n, PT_TO_UNITS * RENDER_SCALE);
+    const asset = await contentManager.addAsset(dataUrl, tab);
+    if (!asset) return false;
+    rendered.push({ n, asset, width, height });
   }
   onProgress?.(pages.length, pages.length);
 
@@ -154,7 +159,7 @@ export async function importPdfPages(
       height: r.height,
       pattern: null,
       background_color: "#ffffff",
-      background_asset: contentManager.addAsset(r.dataUrl),
+      background_asset: r.asset,
       regions: [],
       layers: [{ id: crypto.randomUUID(), name: "Layer 1", blocks: [], visible: true, locked: false }],
     }));
@@ -178,7 +183,7 @@ export async function importPdfPages(
     const block: Block = {
       type: "Image",
       id: newId(),
-      asset: contentManager.addAsset(r.dataUrl),
+      asset: r.asset,
       x: centreX - width / 2,
       y,
       width,

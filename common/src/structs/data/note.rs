@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -10,13 +8,10 @@ pub struct NoteData {
     pub meta: Meta,
     pub content: Content,
     pub state: State,
-    /// Binary attachments (images, PDF page renders) as `data:` URLs, keyed by
-    /// asset id. Stored as raw files under `assets/` inside the archive.
-    ///
-    /// Loading fills it completely. Saving only needs the attachments the
-    /// target file doesn't hold yet: the others are copied from it, so they
-    /// don't cross IPC as base64 on every autosave.
-    pub assets: BTreeMap<String, String>,
+    // Binary attachments (images, PDF page renders) are not part of this:
+    // they can be hundreds of MB, so they stay in the archive (`assets/<id>`)
+    // or a cache file, and the frontend loads them by URL. Blocks and pages
+    // refer to them by id; see `used_assets`.
 }
 
 impl NoteData {
@@ -46,11 +41,6 @@ impl NoteData {
         if !self.state.zoom.is_finite() || self.state.zoom <= 0.0 {
             self.state.zoom = 1.0;
         }
-
-        // Drop assets nothing refers to. Done here (at load/save time) rather than
-        // on delete, so undo can still restore a block whose asset was "removed".
-        let used = self.used_assets();
-        self.assets.retain(|id, _| used.contains(id.as_str()));
 
         // Add layer if no layer is present
         for page in &mut self.content.pages {
