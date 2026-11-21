@@ -44,7 +44,8 @@ Cargo workspace with two crates plus a SvelteKit 3 frontend:
 NoteData { meta, content, state }
   Meta    -> id, title, folder, tags, created_at, edited_at
   Content -> pages: Vec<Page>
-    Page  -> layers, width, height, pattern, pattern_scale, colors, name,
+    Page  -> id (unique, stable), section: Option<PageSection { id, name }>,
+             layers, width, height, pattern, pattern_scale, colors, name,
              background_asset (imported PDF page),
              regions: Vec<ExportRegion> (export order; format id or "free")
              default is A4 (794 x 1123 units, 96 units per inch);
@@ -53,7 +54,8 @@ NoteData { meta, content, state }
     Block -> #[serde(tag = "type")] enum { Stroke, Text, Image }
              TS: ({ type: "Stroke" } & Stroke) | ... -- every variant has `id`
     Stroke-> id, points (x, y, pressure), color, thickness, opacity
-  State   -> zoom, pan_x, pan_y, current_page, current_layer  (persisted per note)
+  State   -> zoom, pan_x, pan_y, current_page, current_layer,
+             collapsed_sections  (persisted per note)
   attachments are not in NoteData: blocks/pages hold an asset id, and the
   bytes stay in the archive or the cache (see "Attachments" below)
 ```
@@ -64,7 +66,7 @@ A zip archive (`common/src/io/archive.rs`) containing `meta`, `data`, `state`,
 `version`, `assets/index` + `assets/<id>` (raw attachment bytes), and an
 optional `preview` (PNG of the first page, rewritten on every save, read by the
 file browser; absent in older files, which show an icon). Current
-version is **4**. `common/src/io/migrate.rs` upgrades older `data` JSON step by
+version is **5** (v5 added page ids and sections). `common/src/io/migrate.rs` upgrades older `data` JSON step by
 step before deserializing; to change the format, bump `CURRENT_VERSION` and add
 a `vN_to_vN+1`.
 
@@ -209,6 +211,16 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 - [ ] Shapes and straightedge (axes, tables, arrows)
 - [x] Layer panel
 - [x] Page navigator with real thumbnails, reorder, duplicate
+- [x] Page overview (`PageOverview.svelte`, Ctrl+G or the page counter):
+      grid of all pages, drag to move (grip, or anywhere with a mouse),
+      select several to duplicate/delete/make a section, context menus.
+- [x] Sections: a section is a run of consecutive pages with the same
+      `Page.section` id; every page carries the name, so section edits are
+      ordinary `pages` changes and undo works unchanged. Pure helpers in
+      `lib/editor/sections.ts` (tested); `contentManager.restructure(label,
+      fn)` applies one as an undo step and stays on the same page. A run
+      split in two becomes two sections (`splitRepeats`). Folding is view
+      state (`State.collapsed_sections`), not an undo step.
 - [ ] Vertical-scroll mode (one continuously growing page)
 - [ ] Pen presets (saved colour + width, one-tap switch)
 - [ ] Search across notes (the index carries titles only; `tags` has no UI)
@@ -284,8 +296,10 @@ every note below it (`rename_folder`).
 
 - **Dark paper** exists as a preset, but ink colours are not adapted to it and
   there is no invert-for-display mode that keeps exports white.
-- **Thumbnails re-render** (debounced) on every change to their page; with many
-  image-heavy pages this could become noticeable.
+- **Thumbnails** render only once scrolled near the view, and are cached by
+  page and content identity (`PageThumbnail.svelte`), shared by the side
+  panel and the overview. An edited page still re-renders its thumbnail
+  (debounced) as a whole.
 
 ## Conventions
 

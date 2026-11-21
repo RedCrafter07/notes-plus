@@ -131,6 +131,9 @@ pub struct ExportRegion {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Page {
+    /// Unique within the note. Stable across edits, unlike the page object
+    /// in the frontend, which is replaced on every structural change.
+    pub id: String,
     pub layers: Vec<Layer>,
     pub width: f32,
     pub height: f32,
@@ -144,6 +147,18 @@ pub struct Page {
     pub background_asset: Option<String>,
     /// Export regions on this page, in export order.
     pub regions: Vec<ExportRegion>,
+    /// The section the page belongs to. A section is a run of consecutive
+    /// pages with the same section id; each of them carries the name, so a
+    /// section change is a change of the `pages` array (and undoable like
+    /// one). Pages before the first section have none.
+    pub section: Option<PageSection>,
+}
+
+/// A named group of consecutive pages, e.g. one lecture or chapter.
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
+pub struct PageSection {
+    pub id: String,
+    pub name: String,
 }
 
 /// A4 at 96 CSS pixels per inch (210 x 297 mm).
@@ -161,6 +176,7 @@ impl Page {
         background_color: String,
     ) -> Self {
         Self {
+            id: new_id(),
             layers: Vec::new(),
             name,
             width,
@@ -171,6 +187,7 @@ impl Page {
             background_color,
             background_asset: None,
             regions: Vec::new(),
+            section: None,
         }
     }
 
@@ -182,6 +199,7 @@ impl Page {
 impl Default for Page {
     fn default() -> Self {
         Self {
+            id: new_id(),
             layers: vec![Layer::default()],
             name: "Page 1".to_string(),
             // A negative width or height means the page is infinite.
@@ -193,8 +211,13 @@ impl Default for Page {
             background_color: String::from("#ffffff"),
             background_asset: None,
             regions: Vec::new(),
+            section: None,
         }
     }
+}
+
+fn new_id() -> String {
+    uuid::Uuid::new_v4().to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

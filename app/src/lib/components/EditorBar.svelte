@@ -6,17 +6,20 @@
     IconArrowDown,
     IconArrowUp,
     IconChevronDown,
+    IconChevronRight,
     IconChevronUp,
     IconDots,
     IconEye,
     IconEyeOff,
     IconFileTypePdf,
+    IconLayoutGrid,
     IconLock,
     IconLockOpen,
     IconPlus,
     IconTrash,
   } from "@tabler/icons-svelte";
   import PageThumbnail from "./PageThumbnail.svelte";
+  import { groups, stepPage } from "#lib/editor/sections.ts";
   import { pickFiles } from "#lib/editor/import/image.ts";
   import { pdfImport } from "#lib/editor/import/pdfImport.svelte.ts";
 
@@ -62,54 +65,81 @@
 
   <div class="flex-1 overflow-y-auto min-h-0">
     {#if editorComponents.rightBarOption === "pages"}
+      <button
+        class="w-full mb-3 p-2 rounded-xl flex flex-row gap-2 items-center justify-center text-content-2 hover:text-content-1 hover:bg-overlay/30 border-2 border-content-1/15 transition-all active:scale-95"
+        onclick={() => overlayManager.setOpen("pages")}
+        title="All pages (Ctrl+G)"
+      >
+        <IconLayoutGrid size={20} /> All pages
+      </button>
       <ol class="flex flex-col gap-3 pb-2">
-        {#each contentManager.pages as page, i (page)}
-          {@const active = contentManager.currentPage === i}
-          <li
-            class={[
-              "rounded-xl border-2 transition-all",
-              active ? "border-primary bg-primary/10" : "border-transparent hover:bg-overlay/20",
-            ]}
-          >
-            <button
-              class="w-full p-2 pb-0 active:scale-[0.98] transition-all"
-              onclick={() => (contentManager.currentPage = i)}
-              aria-current={active ? "page" : undefined}
-              aria-label="Open {page.name}"
-            >
-              <PageThumbnail {page} />
-            </button>
-            <div class="flex flex-row items-center gap-1 px-2 py-1">
-              <span class="text-sm text-content-3 tabular-nums w-5">{i + 1}</span>
-              <span class="flex-1 truncate text-left text-sm font-medium">{page.name}</span>
+        {#each groups(contentManager.pages) as g (g.section?.id ?? `none-${g.start}`)}
+          {@const collapsed = !!g.section && contentManager.isCollapsed(g.section.id)}
+          {#if g.section}
+            {@const s = g.section}
+            <li class="flex flex-row items-center gap-1 -mb-1">
               <button
-                class={iconBtn}
-                disabled={i === 0}
-                onclick={() => contentManager.movePage(i, i - 1)}
-                aria-label="Move {page.name} up"
-                title="Move up"
+                class="flex-1 min-w-0 h-9 px-1 flex flex-row items-center gap-1 rounded-lg text-left hover:bg-overlay/20"
+                onclick={() => contentManager.toggleSection(s.id)}
+                aria-expanded={!collapsed}
               >
-                <IconArrowUp size={18} />
+                {#if collapsed}<IconChevronRight size={18} class="shrink-0 text-content-3" />{:else}<IconChevronDown size={18} class="shrink-0 text-content-3" />{/if}
+                <span class="truncate font-semibold">{s.name}</span>
+                <span class="text-xs text-content-3 tabular-nums">{g.pages.length}</span>
               </button>
-              <button
-                class={iconBtn}
-                disabled={i === contentManager.pages.length - 1}
-                onclick={() => contentManager.movePage(i, i + 1)}
-                aria-label="Move {page.name} down"
-                title="Move down"
+            </li>
+          {/if}
+          {#if !collapsed}
+            {#each g.pages as page, k (page.id)}
+              {@const i = g.start + k}
+              {@const active = contentManager.currentPage === i}
+              <li
+                class={[
+                  "rounded-xl border-2 transition-all",
+                  active ? "border-primary bg-primary/10" : "border-transparent hover:bg-overlay/20",
+                ]}
               >
-                <IconArrowDown size={18} />
-              </button>
-              <button
-                class={iconBtn}
-                onclick={() => overlayManager.setOpen(`pagesettings-${i}`)}
-                aria-label="Page setup for {page.name}"
-                title="Page setup"
-              >
-                <IconDots size={18} />
-              </button>
-            </div>
-          </li>
+                <button
+                  class="w-full p-2 pb-0 active:scale-[0.98] transition-all"
+                  onclick={() => (contentManager.currentPage = i)}
+                  aria-current={active ? "page" : undefined}
+                  aria-label="Open {page.name}"
+                >
+                  <PageThumbnail {page} />
+                </button>
+                <div class="flex flex-row items-center gap-1 px-2 py-1">
+                  <span class="text-sm text-content-3 tabular-nums w-5">{i + 1}</span>
+                  <span class="flex-1 truncate text-left text-sm font-medium">{page.name}</span>
+                  <button
+                    class={iconBtn}
+                    disabled={i === 0}
+                    onclick={() => contentManager.restructure("Move page", (p) => stepPage(p, i, -1))}
+                    aria-label="Move {page.name} up"
+                    title="Move up"
+                  >
+                    <IconArrowUp size={18} />
+                  </button>
+                  <button
+                    class={iconBtn}
+                    disabled={i === contentManager.pages.length - 1}
+                    onclick={() => contentManager.restructure("Move page", (p) => stepPage(p, i, 1))}
+                    aria-label="Move {page.name} down"
+                    title="Move down"
+                  >
+                    <IconArrowDown size={18} />
+                  </button>
+                  <button
+                    class={iconBtn}
+                    onclick={() => overlayManager.setOpen(`pagesettings-${i}`)}
+                    aria-label="Page setup for {page.name}"
+                    title="Page setup"
+                  >
+                    <IconDots size={18} />
+                  </button>
+                </div>
+              </li>
+            {/each}
+          {/if}
         {/each}
       </ol>
       <div class="flex flex-col gap-2 sticky bottom-0 bg-base-1 pt-1">

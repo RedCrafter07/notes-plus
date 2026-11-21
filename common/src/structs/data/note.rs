@@ -48,6 +48,26 @@ impl NoteData {
                 page.layers.push(Layer::default());
             }
         }
+
+        // Page ids must be unique (a hand-edited or merged file might repeat one).
+        let mut seen = std::collections::HashSet::new();
+        for page in &mut self.content.pages {
+            if page.id.is_empty() || !seen.insert(page.id.clone()) {
+                page.id = uuid::Uuid::new_v4().to_string();
+                seen.insert(page.id.clone());
+            }
+        }
+
+        // Forget folded sections that no longer exist.
+        let sections: std::collections::HashSet<&str> = self
+            .content
+            .pages
+            .iter()
+            .filter_map(|p| p.section.as_ref().map(|s| s.id.as_str()))
+            .collect();
+        self.state
+            .collapsed_sections
+            .retain(|id| sections.contains(id.as_str()));
     }
 
     pub fn used_assets(&self) -> std::collections::BTreeSet<String> {
@@ -65,5 +85,26 @@ impl NoteData {
             }
         }
         used
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::structs::data::PageSection;
+
+    #[test]
+    fn normalize_fixes_page_ids_and_folded_sections() {
+        let mut note = NoteData::default();
+        let mut page = note.content.pages[0].clone();
+        page.section = Some(PageSection { id: "s1".into(), name: "Week 1".into() });
+        note.content.pages = vec![page.clone(), page];
+        note.state.collapsed_sections = vec!["s1".into(), "gone".into()];
+
+        note.normalize();
+
+        let [a, b] = &note.content.pages[..] else { panic!() };
+        assert_ne!(a.id, b.id, "duplicate page ids are replaced");
+        assert_eq!(note.state.collapsed_sections, vec!["s1".to_string()]);
     }
 }

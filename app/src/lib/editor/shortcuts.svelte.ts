@@ -1,3 +1,4 @@
+import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
 import { contentManager } from "#lib/state/contentManager.svelte.ts";
 import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { goto } from "$app/navigation";
@@ -46,6 +47,10 @@ export function useShortcuts() {
         } else if (key === "0") {
           e.preventDefault();
           canvasManager.fitPage();
+        } else if (key === "g") {
+          e.preventDefault();
+          if (overlayManager.open === "pages") overlayManager.close();
+          else overlayManager.setOpen("pages");
         }
         return;
       }

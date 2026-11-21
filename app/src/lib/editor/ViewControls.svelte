@@ -5,6 +5,7 @@
     IconFocus2,
     IconMinus,
     IconPlus,
+    IconLayoutGrid,
     IconSettings,
   } from "@tabler/icons-svelte";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
@@ -66,11 +67,19 @@
   </button>
   <button
     class="h-11 px-3 rounded-xl text-sm font-semibold text-content-2 hover:bg-overlay/30 active:scale-95 transition-all flex flex-row gap-2 items-center"
+    onclick={() => overlayManager.setOpen("pages")}
+    title="All pages (Ctrl+G)"
+  >
+    <IconLayoutGrid size={18} class="opacity-60" />
+    <span class="tabular-nums">{current + 1} / {pageCount}</span>
+  </button>
+  <button
+    class={btn}
     onclick={() => overlayManager.setOpen(`pagesettings-${current}`)}
+    aria-label="Page setup"
     title="Page setup"
   >
-    <span class="tabular-nums">{current + 1} / {pageCount}</span>
-    <IconSettings size={18} class="opacity-60" />
+    <IconSettings size={20} />
   </button>
   {#if atEnd}
     <button

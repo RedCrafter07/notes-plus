@@ -13,7 +13,7 @@ use serde_json::{Map, Value, json};
 
 use crate::io::archive::RnpfError;
 
-pub const CURRENT_VERSION: u32 = 4;
+pub const CURRENT_VERSION: u32 = 5;
 /// The oldest version that can still be upgraded.
 pub const OLDEST_SUPPORTED_VERSION: u32 = 2;
 
@@ -35,6 +35,7 @@ pub fn migrate_content(mut content: Value, from: u32) -> Result<Value, RnpfError
         content = match version {
             2 => v2_to_v3(content)?,
             3 => v3_to_v4(content)?,
+            4 => v4_to_v5(content)?,
             _ => return Err(RnpfError::InvalidVersion),
         };
         version += 1;
@@ -93,6 +94,23 @@ fn v3_to_v4(mut content: Value) -> Result<Value, RnpfError> {
     Ok(content)
 }
 
+/// v4 -> v5: pages gain a unique `id`, and `section` (none).
+fn v4_to_v5(mut content: Value) -> Result<Value, RnpfError> {
+    let pages = content
+        .get_mut("pages")
+        .and_then(Value::as_array_mut)
+        .ok_or(RnpfError::InvalidFile)?;
+
+    for page in pages {
+        let page = page.as_object_mut().ok_or(RnpfError::InvalidFile)?;
+        page.entry("id")
+            .or_insert_with(|| json!(uuid::Uuid::new_v4().to_string()));
+        page.entry("section").or_insert(Value::Null);
+    }
+
+    Ok(content)
+}
+
 fn retag_block(block: Value) -> Result<Value, RnpfError> {
     let Value::Object(outer) = block else {
         return Err(RnpfError::InvalidFile);
@@ -125,6 +143,7 @@ mod tests {
         assert_eq!(parse_version("2").unwrap(), 2);
         assert_eq!(parse_version("3\n").unwrap(), 3);
         assert_eq!(parse_version("4").unwrap(), 4);
+        assert_eq!(parse_version("5").unwrap(), 5);
         assert!(parse_version("1").is_err());
         assert!(matches!(parse_version("99"), Err(RnpfError::NewerVersion(99))));
         assert!(parse_version("abc").is_err());
@@ -160,6 +179,8 @@ mod tests {
 
         let migrated = migrate_content(v2, 2).unwrap();
         assert_eq!(migrated["pages"][0]["regions"], json!([]), "v2 goes through v3 -> v4");
+        assert!(migrated["pages"][0]["id"].is_string(), "and v4 -> v5");
+        assert_eq!(migrated["pages"][0]["section"], Value::Null);
         let content: Content = serde_json::from_value(migrated).unwrap();
 
         let page = &content.pages[0];

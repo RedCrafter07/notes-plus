@@ -10,6 +10,8 @@ const defaultLayer: Layer = {
   visible: true,
 };
 const defaultPage: Page = {
+  id: "default",
+  section: null,
   name: "Page 1",
   background_color: "#ffffff",
   pattern_color: "#dddddd",

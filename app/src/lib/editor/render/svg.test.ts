@@ -4,6 +4,8 @@ import { boundsFromRect } from "#lib/util/canvasBounds.ts";
 import { areaToSvg } from "./svg";
 
 const page: Page = {
+  id: "p1",
+  section: null,
   name: "Page 1",
   width: 794,
   height: 1123,

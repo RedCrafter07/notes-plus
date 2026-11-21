@@ -1,4 +1,5 @@
 import { sessionAssets } from "#lib/editor/assets.ts";
+import { startSection } from "#lib/editor/sections.ts";
 import { commands, type ExportRegion, type Layer, type Page } from "#lib/tauri/bindings.ts";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { settingsStore } from "./settingsStore.svelte";
@@ -40,6 +41,7 @@ class ContentManager {
     const base = source ?? $state.snapshot(defaultsStore.store.page);
     return {
       ...$state.snapshot(base),
+      id: crypto.randomUUID(),
       // An imported PDF background and export regions belong to their page only.
       background_asset: null,
       regions: [],
@@ -48,13 +50,19 @@ class ContentManager {
     };
   }
 
-  /** Inserts a page after `after` (default: the current page) and opens it. */
+  /**
+   * Inserts a page after `after` (default: the current page) and opens it.
+   * It joins the section of the page before it.
+   */
   public addPage(after = this.currentPage) {
     const source =
       settingsStore.store.use_last_page_settings ? this.pages[after] : undefined;
 
     tabManager.transact("Add page", () => {
-      const page = this.#blankPage(source, `Page ${this.pages.length + 1}`);
+      const page = {
+        ...this.#blankPage(source, `Page ${this.pages.length + 1}`),
+        section: $state.snapshot(this.pages[after]?.section) ?? null,
+      };
       const pages = this.pages.slice();
       pages.splice(after + 1, 0, page);
       this.pages = pages;
@@ -64,16 +72,34 @@ class ContentManager {
 
   /**
    * Inserts ready-made pages (e.g. from a PDF) at index `at` (default: the
-   * end) and opens the first of them. One undo step.
+   * end) and opens the first of them. They join the section of the page
+   * before them. One undo step.
    */
   public insertPages(newPages: Page[], at = this.pages.length, label = "Insert pages") {
     if (newPages.length === 0) return;
+    const section = $state.snapshot(this.pages[at - 1]?.section) ?? null;
     tabManager.transact(label, () => {
       const pages = this.pages.slice();
-      pages.splice(at, 0, ...newPages);
+      pages.splice(at, 0, ...newPages.map((p) => ({ ...p, id: crypto.randomUUID(), section })));
       this.pages = pages;
       this.currentPage = at;
     });
+  }
+
+  /** A copy of a page with fresh ids (pages, layers and blocks must stay unique). */
+  #copyOf(src: Page): Page {
+    return {
+      ...$state.snapshot(src),
+      id: crypto.randomUUID(),
+      name: `${src.name} (copy)`,
+      // Block ids key the render caches, so copies need their own.
+      layers: src.layers.map((l) => ({
+        ...$state.snapshot(l),
+        id: crypto.randomUUID(),
+        blocks: l.blocks.map((b) => ({ ...$state.snapshot(b), id: crypto.randomUUID() })),
+      })),
+      regions: src.regions.map((r) => ({ ...$state.snapshot(r), id: crypto.randomUUID() })),
+    };
   }
 
   public duplicatePage(i: number) {
@@ -81,17 +107,7 @@ class ContentManager {
     if (!src) return;
 
     tabManager.transact("Duplicate page", () => {
-      const copy: Page = {
-        ...$state.snapshot(src),
-        name: `${src.name} (copy)`,
-        // Layer ids must be unique, block ids too (they key the render cache).
-        layers: src.layers.map((l) => ({
-          ...$state.snapshot(l),
-          id: crypto.randomUUID(),
-          blocks: l.blocks.map((b) => ({ ...$state.snapshot(b), id: crypto.randomUUID() })),
-        })),
-        regions: src.regions.map((r) => ({ ...$state.snapshot(r), id: crypto.randomUUID() })),
-      };
+      const copy = this.#copyOf(src);
       const pages = this.pages.slice();
       pages.splice(i + 1, 0, copy);
       this.pages = pages;
@@ -111,17 +127,64 @@ class ContentManager {
     });
   }
 
-  public movePage(from: number, to: number) {
-    if (from === to || to < 0 || to >= this.pages.length) return;
-
-    tabManager.transact("Move page", () => {
-      const pages = this.pages.slice();
-      const [page] = pages.splice(from, 1);
-      pages.splice(to, 0, page);
-      const current = this.page;
+  /**
+   * Replaces the pages with `fn(pages)` as one undo step, staying on the
+   * same page (by id) if it still exists. For reordering, sections and
+   * other edits of the page list as a whole (see `editor/sections.ts`).
+   */
+  public restructure(label: string, fn: (pages: Page[]) => Page[]) {
+    const current = this.page?.id;
+    tabManager.transact(label, () => {
+      const pages = fn(this.pages);
+      if (pages === this.pages) return;
       this.pages = pages;
-      this.currentPage = pages.indexOf(current);
+      const i = pages.findIndex((p) => p.id === current);
+      this.currentPage = i === -1 ? Math.min(this.currentPage, pages.length - 1) : i;
     });
+  }
+
+  /** Adds a blank page at the end, as the first page of a new section. */
+  public addSection(name: string) {
+    tabManager.transact("Add section", () => {
+      this.addPage(this.pages.length - 1);
+      const i = this.pages.length - 1;
+      this.pages = startSection(this.pages, i, name);
+      this.currentPage = i;
+    });
+  }
+
+  /** Deletes several pages in one step (keeping at least one page). */
+  public deletePages(indices: number[]) {
+    const gone = new Set(indices);
+    this.restructure(gone.size === 1 ? "Delete page" : "Delete pages", (pages) => {
+      const rest = pages.filter((_, i) => !gone.has(i));
+      return rest.length ? rest : [this.#blankPage(pages[0], "Page 1")];
+    });
+  }
+
+  /** Duplicates several pages, each copy right after the last of them. */
+  public duplicatePages(indices: number[]) {
+    const sorted = [...indices].sort((a, b) => a - b);
+    if (sorted.length === 0) return;
+    this.restructure(sorted.length === 1 ? "Duplicate page" : "Duplicate pages", (pages) => {
+      const copies = sorted.map((i) => this.#copyOf(pages[i]));
+      const out = pages.slice();
+      out.splice(sorted.at(-1)! + 1, 0, ...copies);
+      return out;
+    });
+  }
+
+  /** Whether a section is folded away in the page list and overview. */
+  public isCollapsed(section: string) {
+    return this.#note.state.collapsed_sections?.includes(section) ?? false;
+  }
+
+  /** Folds or unfolds a section. View state, like zoom: not an undo step. */
+  public toggleSection(section: string) {
+    const list = this.#note.state.collapsed_sections ?? [];
+    this.#note.state.collapsed_sections = list.includes(section)
+      ? list.filter((s) => s !== section)
+      : [...list, section];
   }
 
   /** Applies page setup to one page, or to every page with `all`. */
