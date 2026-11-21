@@ -13,6 +13,7 @@
   import { newNote, openNotes } from "#lib/util/notes.svelte.ts";
   import Popups from "#lib/components/Popups.svelte";
   import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
+  import { titleBar } from "#lib/state/titleBar.svelte.ts";
   import { defaultsStore } from "#lib/state/defaultsStore.svelte.ts";
   import type { UnlistenFn } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -72,21 +73,17 @@
     });
 
     await timeout(50);
-    // Settings first: the title bar style must be applied before the window
-    // becomes visible (ready() shows it), or it would visibly switch.
+    // Settings first, so the tab bar matches the window's title bar (which
+    // the backend created from the same setting) before ready() shows it.
     settingsStore.store = await commands.getSettings();
-    await getCurrentWindow().setDecorations(settingsStore.store.system_title_bar);
+    titleBar.init();
     await commands.ready();
     defaultsStore.store = await commands.getDefaults();
   });
 
   // Follow the title bar setting when it is changed at runtime.
-  let decorated: boolean | undefined;
   $effect(() => {
-    const want = settingsStore.store.system_title_bar;
-    if (decorated !== undefined && want !== decorated)
-      getCurrentWindow().setDecorations(want);
-    decorated = want;
+    titleBar.follow(settingsStore.store.system_title_bar);
   });
 
   $effect(() => {

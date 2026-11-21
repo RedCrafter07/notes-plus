@@ -1,7 +1,13 @@
 <script lang="ts">
   import Switch from "#lib/components/Switch.svelte";
   import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
-  import { IconAppWindow, IconDeviceFloppy, IconPencil } from "@tabler/icons-svelte";
+  import { titleBar } from "#lib/state/titleBar.svelte.ts";
+  import {
+    IconAppWindow,
+    IconDeviceFloppy,
+    IconInfoCircle,
+    IconPencil,
+  } from "@tabler/icons-svelte";
 </script>
 
 <div class="gap-8 flex-col flex">
@@ -61,6 +67,12 @@
         checked={settingsStore.store.system_title_bar}
         onChange={(v) => updateSettings({ system_title_bar: v })}
       />
+      {#if titleBar.needsRestart}
+        <p class="flex flex-row gap-2 items-center text-sm text-content-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
+          <IconInfoCircle size={18} class="shrink-0 text-primary" />
+          Restart RedNotes Plus to apply this. On Linux the title bar can only be chosen when the window opens.
+        </p>
+      {/if}
     </div>
   </div>
 

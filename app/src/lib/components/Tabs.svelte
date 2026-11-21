@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { titleBar } from "#lib/state/titleBar.svelte.ts";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { handleSave } from "#lib/editor/handleSave.svelte.ts";
@@ -6,7 +7,6 @@
   import { editorComponents } from "#lib/state/editorComponents.svelte.ts";
   import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import { tabManager } from "#lib/state/tabManager.svelte.ts";
-  import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
   import WindowControls from "./WindowControls.svelte";
   import { presenter } from "#lib/present/presenter.svelte.ts";
   import {
@@ -34,7 +34,7 @@
   });
 
   /** Tabs share the bar with the window controls unless the OS draws them. */
-  const merged = $derived(!settingsStore.store.system_title_bar);
+  const merged = $derived(!titleBar.system);
   const hasTabs = $derived(tabManager.tabs.length > 0);
 
   function updateTab(index: number) {

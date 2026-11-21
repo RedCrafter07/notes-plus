@@ -4,7 +4,7 @@ use tauri_specta::Event;
 
 use crate::{events::SettingsUpdate, structs::Settings, util::dialog::show_error};
 
-fn load_settings(app: &tauri::AppHandle) -> Settings {
+pub(crate) fn load_settings(app: &tauri::AppHandle) -> Settings {
     let Ok(store) = app.store("data.json") else {
         return Settings::default();
     };

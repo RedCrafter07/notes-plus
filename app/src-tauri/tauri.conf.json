@@ -12,6 +12,8 @@
   "app": {
     "windows": [
       {
+        "label": "main",
+        "create": false,
         "title": "RedNotes Plus",
         "visible": false,
         "decorations": false,

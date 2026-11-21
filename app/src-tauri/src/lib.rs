@@ -73,10 +73,39 @@ pub fn run() {
             }
             store.close_resource();
 
+            create_main_window(app)?;
+
             Ok(())
         });
 
     tauri_builder
         .run(tauri::generate_context!())
         .expect("error while running RedNotes Plus");
+}
+
+/// Creates the main window from its entry in `tauri.conf.json` (which has
+/// `create: false`), with the title bar the user chose.
+///
+/// It has to be decided here, before the window exists: on Linux (GTK), a
+/// window created without decorations gets an empty custom title bar so the
+/// compositor doesn't draw one, and that can't be undone later. Turning
+/// decorations on at runtime then shows nothing at all. The frontend
+/// therefore applies a change on Linux at the next start; see
+/// `titleBar.svelte.ts`.
+fn create_main_window(app: &tauri::App) -> tauri::Result<()> {
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == "main")
+        .expect("no main window in tauri.conf.json")
+        .clone();
+
+    let builder = tauri::WebviewWindowBuilder::from_config(app, &config)?;
+    #[cfg(desktop)]
+    let builder = builder.decorations(commands::load_settings(app.handle()).system_title_bar);
+    builder.build()?;
+
+    Ok(())
 }
