@@ -53,6 +53,10 @@
   // whose view was never moved (a new note).
   let shown: { note: string; page: number } | undefined;
   $effect(() => {
+    // Closing the last tab swaps in a read-only placeholder note while this
+    // page is still mounted; it has no view worth fitting.
+    const tab = tabManager.tab;
+    if (!tab) return;
     const note = contentManager.id;
     const page = contentManager.currentPage;
     void canvasManager.width;
@@ -66,7 +70,10 @@
       const changedPage = shown?.note === note && shown.page !== page;
 
       if (shown?.note !== note || changedPage) {
-        if (changedPage || pristine) tick().then(() => canvasManager.fitPage());
+        if (changedPage || pristine)
+          tick().then(() => {
+            if (tabManager.tab === tab) canvasManager.fitPage();
+          });
         else canvasManager.clampPan();
       }
       shown = { note, page };
