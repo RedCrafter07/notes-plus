@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "prebuild": "cargo test -p rednotes-plus export_typescript_bindings -- --include-ignored --show-output",
+    "bindings": "bun scripts/bindings.ts",
+    "prebuild": "bun scripts/bindings.ts",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

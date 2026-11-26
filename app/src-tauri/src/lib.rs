@@ -23,7 +23,7 @@ pub fn run() {
     let builder = util::get_builder();
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     {
-        util::export_bindings();
+        util::export_bindings::export_bindings();
     }
 
     let mut tauri_builder = tauri::Builder::default();

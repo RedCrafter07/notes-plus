@@ -10,7 +10,6 @@ mod handle_args;
 mod handle_drag_drop;
 
 pub(crate) use display_error::*;
-pub(crate) use export_bindings::*;
 pub(crate) use handle_args::*;
 pub(crate) use handle_drag_drop::*;
 
