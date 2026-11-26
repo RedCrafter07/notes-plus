@@ -25,6 +25,7 @@
   import { clearTextLayouts } from "#lib/editor/text.ts";
   import { clearTextBounds } from "#lib/editor/blocks.ts";
   import { requestRedraw } from "#lib/editor/render/scheduler.ts";
+  import { enablePenWindowDrag } from "#lib/util/penWindowDrag.ts";
 
   const { children } = $props();
 
@@ -115,6 +116,7 @@
       capture: true,
     });
     document.addEventListener("keydown", keydownEvent);
+    const stopPenDrag = enablePenWindowDrag();
 
     let unlisten: UnlistenFn;
     let dialogUnlisten: UnlistenFn;
@@ -132,6 +134,7 @@
 
     return () => {
       document.removeEventListener("keydown", keydownEvent);
+      stopPenDrag();
       document.removeEventListener("contextmenu", contextMenuEvent, {
         capture: true,
       });

@@ -15,6 +15,7 @@
     "notification:default",
     "store:default",
     "core:window:allow-start-dragging",
+    "core:window:allow-set-position",
     "core:window:allow-internal-toggle-maximize",
     "core:window:allow-toggle-maximize",
     "core:window:allow-minimize",
