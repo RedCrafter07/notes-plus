@@ -5,7 +5,104 @@ OneNote, Notability or GoodNotes. Written Nov 2026. CLAUDE.md keeps the record
 of what is done and why; this file is the plan.
 
 Sizes are rough: **S** an evening, **M** a few days, **L** a week or more.
-Within a phase, items are in the suggested order.
+Within a phase, items are in the suggested order. Items that only concern one
+platform are tagged **[Windows]**, **[Linux]** or **[Android]**.
+
+## Platforms
+
+| Platform | Priority | Webview | Status |
+| --- | --- | --- | --- |
+| Windows | primary | WebView2 (Chromium) | daily use |
+| Linux (X11 and Wayland) | primary | WebKitGTK | builds; title bar and presenter placement handled |
+| Android tablets | next | Android System WebView (Chromium) | not started |
+| Android phones | maybe | Android System WebView | not started |
+
+Ground rules:
+
+- **One codebase, no platform forks.** Platform code lives behind small seams:
+  `#[cfg(...)]` in Rust, and in the frontend a `platform` module, not
+  `userAgent` checks scattered through components.
+- **Windows and Linux ship together.** A feature is done when it works on
+  both. Windows-only APIs (handwriting recognition, the native pen drag) need
+  either a Linux equivalent or a graceful fallback.
+- **WebKitGTK is the odd one out.** Windows and Android both run Chromium, so
+  most web-platform surprises show up on Linux first. Test pen input,
+  performance and rendering there before calling something done.
+- **Android assumes no plain file system.** Notes live in the app's storage;
+  getting files in and out goes through the system file picker and share
+  sheet.
+
+---
+
+## Platform track
+
+This runs alongside the phases below rather than after them.
+
+### Windows and Linux parity (with Phase 1)
+
+- **CI for both** (M). GitHub Actions building Windows and Linux on every
+  push, running `mise run check` and the tests, and producing installers:
+  MSI/NSIS for Windows; AppImage, `.deb` and `.rpm` for Linux. Catches a
+  Linux break the day it happens instead of the next time someone tries.
+- **Pen input on WebKitGTK** [Linux] (M). Check pressure, the eraser end,
+  barrel buttons and `getCoalescedEvents` (the controller already falls back
+  to the single event) with a real tablet on X11 and on Wayland. Where
+  WebKitGTK reports less than Chromium, document it in the app instead of
+  failing silently.
+- **Rendering performance on WebKitGTK** [Linux] (M). Canvas 2D on WebKitGTK
+  can be much slower than on Chromium, depending on whether GPU acceleration
+  is on. Profile a dense page (the "Lag" note) on Linux; this decides how
+  early the WebGPU / off-main-thread work in Phase 7 is needed.
+- **Window behaviour** [Linux] (S). Custom title bar dragging and resizing
+  under GNOME, KDE and a tiling compositor; the pen window drag from Phase 1
+  (on Wayland only the compositor may move a window, so use
+  `start_dragging`, not cursor polling).
+- **Desktop integration** [Linux] (S). `.rnpf` MIME type and icon, a
+  `.desktop` file, "Open with", and single-instance handoff when a file is
+  opened while the app runs.
+- **Flatpak** [Linux] (M). One package for every distribution. The notebooks
+  folder must then be reached through the file chooser portal or a granted
+  folder.
+
+### Android tablets (after Phase 3)
+
+Tablets come first: they are what students write on, and the desktop layout
+mostly fits.
+
+- **Get it running** (M). `tauri android init`, a debug build on a real
+  tablet, and the Rust parts that assume a desktop behind `cfg(desktop)`:
+  window controls, the presenter window, drag and drop, single instance,
+  opener.
+- **Storage** [Android] (M). Notebooks in app storage; import and export
+  through the system file picker and the share sheet ("Open with RedNotes"
+  for `.rnpf` and PDF). Sync then has to work through a chosen folder or an
+  app such as Nextcloud, not a path.
+- **Lifecycle** [Android] (S). Android can kill a backgrounded app without
+  warning: save on pause, not only 1.5 s after the last change, and restore
+  open tabs on the next start.
+- **Pen and touch** [Android] (M). Stylus pressure, the S Pen button, palm
+  rejection while the pen hovers or touches, and two-finger gestures that
+  must not fight the system's own edge gestures.
+- **Tablet UI** (M). Bigger touch targets where needed, no window controls,
+  the toolbar respecting display cutouts and the gesture bar, the on-screen
+  keyboard not covering the text being typed.
+- **Presenting** [Android] (L). An external display needs a native plugin
+  (Android `Presentation` API), as already noted under presenter mode.
+- **Release** (M). Signing, Play Store listing, and an F-Droid build to stay
+  true to free and offline.
+
+### Android phones (maybe, last)
+
+A phone is a different app more than a smaller tablet: mostly reading,
+quick notes and photos of the board.
+
+- **Phone layout** (M). One panel at a time, a compact bottom toolbar, the
+  page fitted to width with vertical scrolling (needs the vertical-scroll
+  mode from Phase 3).
+- **Capture** (M). Photograph the board or a handout straight onto a page,
+  with perspective correction.
+- **Read and find first** (S). Open quickly at the last page, search, and
+  quick jot notes; full editing stays available but is not the focus.
 
 ---
 
@@ -30,9 +127,11 @@ inherit.
   `lassoManager` / `returnFromTemporaryTool`; needs a repro.
 - **Images don't match the greyed-out selection** (S). The selection overlay
   (`BlockSvg`) and the canvas draw images differently.
-- **Native pen window drag** (M). The frontend drag works but trails the pen by
-  an IPC round trip per frame. Move it to Rust: one command on pen-down, then
-  follow `GetCursorPos` with `SetWindowPos` until the pen lifts.
+- **Native pen window drag** [Windows] (M). The frontend drag works but trails
+  the pen by an IPC round trip per frame. Move it to Rust: one command on
+  pen-down, then follow `GetCursorPos` with `SetWindowPos` until the pen
+  lifts. Linux needs its own answer (see the platform track); keep the
+  frontend drag as the fallback.
 - **Remember the workspace across restarts** (S). Last tool, per-tool sizes and
   colours, eraser mode, zoom lock. Settings or a small `workspace` store.
 - **Laser stays selected after a stroke** (S).
@@ -108,10 +207,16 @@ say why.
 - **Search across notes** (M). Titles, tags, typed text and imported PDF text,
   from an index the backend keeps up to date. Tags get a UI (they exist in
   `Meta` but have none).
-- **Searchable handwriting** (L). Windows has an offline handwriting
-  recogniser (Windows Ink / `Windows.UI.Input.Inking`), so handwriting can be
-  indexed without any cloud. Recognise per page in the background and store
-  the text in the file.
+- **Searchable handwriting** (L). Recognise each page in the background and
+  store the text in the file, so search works on every platform once a page
+  has been recognised anywhere. The recogniser differs per platform, behind
+  one Rust trait:
+  - [Windows] the built-in offline recogniser (`Windows.UI.Input.Inking`).
+  - [Android] ML Kit Digital Ink Recognition, on device after a one-time
+    model download.
+  - [Linux] no system recogniser exists. Either a bundled open model (e.g. an
+    ONNX handwriting model run in Rust), or Linux shows text found elsewhere
+    and does not recognise new pages itself. Decide after trying a model.
 - **Links between notes** (M). Link a selection to another page or note;
   backlinks in the sidebar.
 
@@ -140,7 +245,9 @@ Features the big apps charge for.
   or Synology Drive. Watch the notebooks folder for outside changes, reload
   open notes that changed on disk, and never overwrite: write a conflict copy,
   or merge stroke by stroke. Stroke-level history patches (tech debt 1) make
-  merging feasible.
+  merging feasible. Watching works differently per platform (the `notify`
+  crate covers Windows and Linux); on Android, sync goes through a folder
+  chosen in the system picker or through the sync app itself.
 - **Version history and backups** (M). Keep the last N saves of each note
   inside the app's data folder; "Restore an earlier version".
 - **Vector PDF export** (M). Today PDF export is raster (JPEG). Vector ink
@@ -151,8 +258,8 @@ Features the big apps charge for.
   and OneNote through the Microsoft Graph export. Native `.goodnotes` and
   `.one` files are undocumented; only attempt them after checking what open
   tools already parse.
-- **Mobile and tablet builds** (L). Android first: Tauri supports it and icons
-  exist. A tablet layout, then iPad.
+- **Mobile builds**: see the platform track (Android tablets, then phones).
+  iOS/iPadOS is not planned.
 
 ## Phase 7 — Under the hood
 
@@ -169,4 +276,6 @@ Do these when a feature needs them, not up front.
 - **Rendering off the main thread** (M). Thumbnails, previews and export
   (`toDataURL` showed up in the eraser profile) can render in a Web Worker
   with `OffscreenCanvas`. If the live canvas becomes the limit, WebGPU inside
-  Tauri, as CLAUDE.md already decided.
+  Tauri, as CLAUDE.md already decided. Check support first: WebGPU and
+  `OffscreenCanvas` arrive later in WebKitGTK than in Chromium, so Linux may
+  need the Canvas 2D path to stay.

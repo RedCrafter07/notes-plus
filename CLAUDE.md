@@ -1,7 +1,9 @@
 # RedNotes Plus
 
 An SVG-based, stylus-first note-taking app built with Tauri 2 + Svelte 5 + Rust.
-Primary target is **Windows**; the author uses it for taking notes in class.
+Primary targets are **Windows** and **Linux** (both must work; Windows is
+the daily driver), then Android tablets, maybe phones (see `ROADMAP.md`). The
+author uses it for taking notes in class.
 Goal: a free, offline, no-subscription alternative to OneNote/Notability.
 
 ## Commands
