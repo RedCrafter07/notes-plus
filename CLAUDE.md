@@ -122,7 +122,11 @@ and ruling as SVG in content space). Painting is reactive: `canvasManager.watch(
 runs in one `$effect`, and any change schedules a single repaint through
 `render/scheduler.ts` (one rAF loop, dirty flag). Blocks outside the viewport
 are culled using cached bounds (`blocks.ts`). The in-progress stroke is an SVG
-`<path>` overlay, committed on pointer-up.
+`<path>` overlay, committed on pointer-up. The lasso selection is drawn on its
+own canvas above the layers (same `drawBlocks`), which a drag only moves with
+a CSS transform; the frame and the lasso loop stay SVG. Gestures that change
+many blocks (eraser, lasso drop) work outside the note's deep `$state` and
+assign once at the end; per-move writes into it were the cause of their lag.
 
 `render/draw.ts` holds pure draw functions shared by the live canvas, page
 thumbnails and export (`render/page.ts`), so what you see is what you export.

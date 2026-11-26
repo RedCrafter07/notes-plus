@@ -72,8 +72,11 @@ export class LassoManager {
       if (!layer) continue;
 
       const blocks = [...layer.blocks];
+      // One pass over the layer, not one search per selected block: a big
+      // selection on a full page made dropping it take seconds.
+      const indexOf = new Map(blocks.map((b, i) => [b.id, i]));
       next[layerId] = this.selection[layerId].map(({ block }) => {
-        const index = blocks.findIndex((b) => b.id === block.id);
+        const index = indexOf.get(block.id) ?? -1;
         const replaced = fn(block);
         if (index !== -1) blocks[index] = replaced;
         return { index, block: replaced };

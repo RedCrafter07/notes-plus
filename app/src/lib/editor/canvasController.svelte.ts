@@ -107,6 +107,7 @@ export function canvasController(
     // Suppress the compatibility mousedown, whose default action would move
     // focus to <body> and immediately blur a text box this tap just opened.
     e.preventDefault();
+    canvasManager.gesture = true;
 
     let held: Tool | undefined;
     if (e.pointerType === "pen") {
@@ -142,6 +143,7 @@ export function canvasController(
     tabManager.tab?.history.commit();
 
     canvasManager.heldTool = undefined;
+    canvasManager.gesture = false;
     canvasManager.returnFromTemporaryTool();
   };
 

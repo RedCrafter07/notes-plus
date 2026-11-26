@@ -80,6 +80,8 @@
       width={rect.width}
       height={rect.height}
       preserveAspectRatio="none"
+      class="transition-opacity"
+      opacity={canvasManager.dimmed ? 0.35 : 1}
     />
   {/if}
   {#if page.pattern}

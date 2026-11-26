@@ -1,6 +1,6 @@
 import { contentManager } from "#lib/state/contentManager.svelte.ts";
 import type { Block, Point } from "#lib/tauri/bindings.ts";
-import { blockInPolygon } from "../blocks";
+import { blockBounds, blockInPolygon } from "../blocks";
 
 export type LassoSelection = Record<string, { index: number; block: Block }[]>;
 
@@ -9,13 +9,23 @@ export function runSelection(lassoPoints: Point[]): LassoSelection | undefined {
 
   const selection: LassoSelection = {};
 
+  // Blocks whose bounds miss the loop's bounds cannot be inside it; skipping
+  // them saves testing every point of every stroke on the page.
+  const xs = lassoPoints.map((p) => p.x);
+  const ys = lassoPoints.map((p) => p.y);
+  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const nearLoop = (b: Block) => {
+    const r = blockBounds(b);
+    return !r || (r.max.x >= minX && r.min.x <= maxX && r.max.y >= minY && r.min.y <= maxY);
+  };
+
   contentManager.layers.forEach((layer) => {
     if (layer.locked || !layer.visible) return;
 
     const selectedInLayer: { index: number; block: Block }[] = [];
 
     layer.blocks.forEach((block, index) => {
-      if (blockInPolygon(block, lassoPoints))
+      if (nearLoop(block) && blockInPolygon(block, lassoPoints))
         selectedInLayer.push({ index, block });
     });
 

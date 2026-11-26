@@ -85,8 +85,22 @@ class CanvasManager {
 
   dpr = $state(typeof window !== "undefined" ? window.devicePixelRatio : 1);
 
+  /** A pen or mouse gesture is in progress on the canvas. */
+  gesture = $state(false);
+
   constructor() {
     onPaint(() => this.paint());
+
+    // A barrel-button lasso hands back the previous tool once nothing is
+    // selected, however the selection ended: Delete in its menu, Escape,
+    // undo or a tab switch, not only a tap on the canvas. Checking only after
+    // canvas gestures left it in lasso, so the next stroke drew a loop.
+    // Never mid-gesture: a tap outside a selection clears it on pen-down.
+    $effect.root(() => {
+      $effect(() => {
+        if (!this.gesture && !lassoManager.selection) this.returnFromTemporaryTool();
+      });
+    });
   }
 
   // ---------------------------------------------------------------- rendering
@@ -144,10 +158,7 @@ class CanvasManager {
       if (!l.visible) continue;
 
       ctx.save();
-      ctx.scale(this.dpr, this.dpr);
-      ctx.translate(this.width / 2, this.height / 2);
-      ctx.scale(contentManager.zoom, contentManager.zoom);
-      ctx.translate(contentManager.panX, contentManager.panY);
+      this.#toContent(ctx);
 
       // On a fixed page, ink past the edge is kept but not shown, like paper.
       if (clip) {
@@ -159,6 +170,49 @@ class CanvasManager {
       drawBlocks(ctx, this.#erasing.get(l.id)?.blocks ?? l.blocks, assets, view, skip);
       ctx.restore();
     }
+
+    // The selection, on its own canvas above the layers. Dragging moves that
+    // canvas with a CSS transform, so a drag repaints nothing. (It used to be
+    // one SVG component per selected block, rebuilt on every drop.) Not
+    // culled or clipped, so what is dragged in from off screen is there.
+    const sel = this.selectionCtx;
+    if (sel) {
+      sel.resetTransform();
+      sel.clearRect(0, 0, sel.canvas.width, sel.canvas.height);
+      const selected = Object.values(lassoManager.selection ?? {}).flatMap((e) =>
+        e.map((s) => s.block),
+      );
+      if (selected.length) {
+        this.#toContent(sel);
+        const hidden = textEditor.hiddenId ? new Set([textEditor.hiddenId]) : undefined;
+        drawBlocks(sel, selected, assets, undefined, hidden);
+      }
+    }
+  }
+
+  /** Sets up a canvas to draw in content coordinates at the current view. */
+  #toContent(ctx: CanvasRenderingContext2D) {
+    ctx.scale(this.dpr, this.dpr);
+    ctx.translate(this.width / 2, this.height / 2);
+    ctx.scale(contentManager.zoom, contentManager.zoom);
+    ctx.translate(contentManager.panX, contentManager.panY);
+  }
+
+  selectionCtx: CanvasRenderingContext2D | undefined;
+
+  assignSelectionContext = (element: HTMLCanvasElement) => {
+    this.selectionCtx = element.getContext("2d") ?? undefined;
+    requestRedraw();
+    return {
+      destroy: () => {
+        if (this.selectionCtx?.canvas === element) this.selectionCtx = undefined;
+      },
+    };
+  };
+
+  /** While something is selected with the lasso, the rest of the page fades. */
+  get dimmed() {
+    return this.#tool === "lasso" && !!lassoManager.selection;
   }
 
   /**

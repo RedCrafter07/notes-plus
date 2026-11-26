@@ -2,19 +2,14 @@
   import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import { fade } from "svelte/transition";
-  import BlockSvg from "./BlockSvg.svelte";
   import { canvasManager } from "./state/canvasManager.svelte";
 </script>
 
 {#if lassoManager.selection}
+  <!-- The selected blocks are drawn on the selection canvas; this is only the frame. -->
   <g
     transform="translate({lassoManager.dragOffsetX}, {lassoManager.dragOffsetY})"
   >
-    {#each lassoManager.selectedLayers as l}
-      {#each lassoManager.selection[l] as e (e.block.id)}
-        <BlockSvg block={e.block} />
-      {/each}
-    {/each}
     <rect
       transition:fade={{ duration: 100 }}
       x={lassoManager.boundingBox?.x}

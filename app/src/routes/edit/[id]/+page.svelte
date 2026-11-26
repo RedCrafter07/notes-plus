@@ -122,11 +122,8 @@
   <Paper />
   <div
     class={[
-      "absolute w-full h-full top-0 transition-[filter]",
-      {
-        "contrast-20":
-          canvasManager.tool === "lasso" && !!lassoManager.selection,
-      },
+      "absolute w-full h-full top-0 transition-opacity",
+      { "opacity-35": canvasManager.dimmed },
     ]}
   >
     {#each contentManager.layers as layer (`layer-${layer.id}`)}
@@ -139,6 +136,14 @@
       ></canvas>
     {/each}
   </div>
+  <!-- The lasso selection; dragging only moves this canvas. -->
+  <canvas
+    class="absolute top-0 pointer-events-none"
+    style="width: {canvasManager.width}px; height: {canvasManager.height}px; transform: translate({lassoManager.dragOffsetX * contentManager.zoom}px, {lassoManager.dragOffsetY * contentManager.zoom}px);"
+    width={Math.round(canvasManager.width * canvasManager.dpr)}
+    height={Math.round(canvasManager.height * canvasManager.dpr)}
+    use:canvasManager.assignSelectionContext
+  ></canvas>
 
   <svg
     class="w-full h-full absolute top-0 pointer-events-none"
