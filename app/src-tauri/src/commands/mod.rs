@@ -14,6 +14,7 @@ mod lifecycle;
 mod notes;
 mod present;
 mod settings;
+mod window;
 
 pub use data::*;
 pub use export::*;
@@ -23,3 +24,4 @@ pub use lifecycle::*;
 pub use notes::*;
 pub use present::*;
 pub use settings::*;
+pub use window::*;
