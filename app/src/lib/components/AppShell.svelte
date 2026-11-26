@@ -15,7 +15,7 @@
   import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
   import { titleBar } from "#lib/state/titleBar.svelte.ts";
   import { defaultsStore } from "#lib/state/defaultsStore.svelte.ts";
-  import type { UnlistenFn } from "@tauri-apps/api/event";
+  import { listenAll } from "#lib/util/listeners.ts";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { jotStore } from "#lib/state/jotStore.svelte.ts";
   import { handleDialog } from "#lib/util/dialog.ts";
@@ -64,22 +64,27 @@
     });
   });
 
-  onMount(async () => {
-    await events.open.listen((e) => {
-      openNote(e.payload);
-    });
+  onMount(() => {
+    const listeners = listenAll(
+      events.open.listen((e) => openNote(e.payload)),
+      events.settingsUpdate.listen((e) => {
+        settingsStore.store = e.payload;
+      }),
+    );
 
-    await events.settingsUpdate.listen((e) => {
-      settingsStore.store = e.payload;
-    });
+    (async () => {
+      // Listening first: ready() emits the files passed on the command line.
+      await listeners.ready;
+      await timeout(50);
+      // Settings first, so the tab bar matches the window's title bar (which
+      // the backend created from the same setting) before ready() shows it.
+      settingsStore.store = await commands.getSettings();
+      titleBar.init();
+      await commands.ready();
+      defaultsStore.store = await commands.getDefaults();
+    })();
 
-    await timeout(50);
-    // Settings first, so the tab bar matches the window's title bar (which
-    // the backend created from the same setting) before ready() shows it.
-    settingsStore.store = await commands.getSettings();
-    titleBar.init();
-    await commands.ready();
-    defaultsStore.store = await commands.getDefaults();
+    return listeners.stop;
   });
 
   // Follow the title bar setting when it is changed at runtime.
@@ -118,19 +123,13 @@
     document.addEventListener("keydown", keydownEvent);
     const stopPenDrag = enablePenWindowDrag();
 
-    let unlisten: UnlistenFn;
-    let dialogUnlisten: UnlistenFn;
-
-    (async () => {
-      unlisten = await getCurrentWindow().onCloseRequested(async (e) => {
+    const listeners = listenAll(
+      getCurrentWindow().onCloseRequested(async (e) => {
         e.preventDefault();
-
         await quit();
-      });
-      dialogUnlisten = await events.dialogEvent.listen(async (e) => {
-        handleDialog(e.payload);
-      });
-    })();
+      }),
+      events.dialogEvent.listen((e) => handleDialog(e.payload)),
+    );
 
     return () => {
       document.removeEventListener("keydown", keydownEvent);
@@ -138,8 +137,7 @@
       document.removeEventListener("contextmenu", contextMenuEvent, {
         capture: true,
       });
-      unlisten();
-      dialogUnlisten();
+      listeners.stop();
     };
   });
 

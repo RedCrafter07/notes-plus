@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 
 /*
@@ -9,7 +10,9 @@ import { expect, test } from "vitest";
  * Neither svelte-check nor the build catches it, so this test does.
  */
 const RUNE = /\$(state|derived|effect|props|bindable|inspect|host)\s*[.(<]/;
-const root = new URL("..", import.meta.url).pathname; // src/
+// fileURLToPath, not `.pathname`: on Windows that gives "/C:/..." and the
+// test failed before checking anything.
+const root = fileURLToPath(new URL("..", import.meta.url)); // src/
 
 function* tsFiles(dir: string): Generator<string> {
   for (const name of readdirSync(dir)) {
