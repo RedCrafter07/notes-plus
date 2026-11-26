@@ -1,0 +1,62 @@
+name: Release
+
+# Pushing a tag such as v0.2.0 builds the installers for Windows (MSI,
+# NSIS) and Linux (AppImage, .deb, .rpm) and attaches them to a draft
+# GitHub release, to be reviewed and published by hand. The installers are
+# not code-signed yet, so Windows SmartScreen will warn on first run.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+          # The oldest supported Ubuntu, so the AppImage runs on older glibc.
+          - name: Linux
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    env:
+      NO_STRIP: "1" # see mise.toml: strip breaks AppImage bundling
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: jdx/mise-action@v5
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install frontend dependencies
+        working-directory: app
+        run: bun install --frozen-lockfile
+
+      # `tauri build` runs `bun run build`, whose prebuild step generates the
+      # bindings with the release profile, sharing the compiled dependencies
+      # with the build that follows.
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: app
+          tauriScript: bun tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: RedNotes Plus ${{ github.ref_name }}
+          releaseBody: See the commits since the last release.
+          releaseDraft: true
+          prerelease: false

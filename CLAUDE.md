@@ -20,13 +20,24 @@ cd app && bun test      # vitest
 ```
 
 **Regenerating TypeScript bindings:** `app/src/lib/tauri/bindings.ts` is generated
-by specta. It runs automatically via `prebuild`, or manually:
+by specta and kept out of git. Dev builds export it on every start; a
+production build runs `prebuild`. Manually:
 
 ```bash
-cd app && cargo test -p rednotes-plus export_typescript_bindings -- --include-ignored --show-output
+cd app && bun run bindings       # release profile, as `tauri build` compiles it
+cd app && bun run bindings dev   # debug profile (CI, quick local runs)
 ```
 
+Both run the `export_bindings` example (`app/scripts/bindings.ts`). The
+release variant uses the same profile and `tauri/custom-protocol` feature as
+`tauri build`, so the two share every compiled dependency; the old
+`cargo test` export built the whole tree a second time in the debug profile.
 Never hand-edit `bindings.ts`. Change the Rust type, then regenerate.
+
+**CI** (`.github/workflows/`): `ci.yml` runs clippy (`-D warnings`), the Rust
+and frontend tests and svelte-check on Windows and Ubuntu for every push to
+`main` and every PR. `release.yml` builds the installers on a `v*` tag and
+attaches them to a draft release. Commits follow Conventional Commits.
 
 ## Architecture
 

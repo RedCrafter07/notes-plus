@@ -1,0 +1,70 @@
+name: CI
+
+# Checks every push to main and every pull request on both primary
+# platforms. Linux builds against WebKitGTK, Windows against WebView2, so a
+# break on either shows up here instead of on someone's machine.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+          - name: Linux
+            os: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
+      # Bun and Rust at the versions pinned in mise.toml.
+      - uses: jdx/mise-action@v5
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install frontend dependencies
+        working-directory: app
+        run: bun install --frozen-lockfile
+
+      # bindings.ts is generated, never committed. The debug build it needs
+      # is reused by the Rust tests below.
+      - name: Generate TypeScript bindings
+        working-directory: app
+        run: bun run bindings dev
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Rust tests
+        run: cargo test --workspace
+
+      - name: svelte-check
+        working-directory: app
+        run: bun run check
+
+      - name: Frontend tests
+        working-directory: app
+        run: bunx vitest run
