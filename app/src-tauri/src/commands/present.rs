@@ -22,9 +22,13 @@ pub struct Presenting {
 ///
 /// On Wayland the compositor decides where windows go, so the window may
 /// open on the editor's display; it can then be moved there by hand.
+///
+/// Must stay `async`: a sync command runs on the main thread, and building a
+/// webview window there deadlocks on Windows (WebView2 needs the event loop
+/// that the command is blocking), which also leaves the app unable to close.
 #[tauri::command]
 #[specta::specta]
-pub fn start_presenting(app: AppHandle) -> Option<Presenting> {
+pub async fn start_presenting(app: AppHandle) -> Option<Presenting> {
     if let Some(existing) = app.get_webview_window(AUDIENCE) {
         let _ = existing.set_focus();
         return Some(Presenting {
