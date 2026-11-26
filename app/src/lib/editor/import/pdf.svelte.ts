@@ -1,3 +1,4 @@
+import { encodeCanvas } from "#lib/util/encode.ts";
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist";
 import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
 import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
@@ -90,7 +91,7 @@ async function render(
   page.cleanup();
 
   return {
-    dataUrl: canvas.toDataURL(type, JPEG_QUALITY),
+    dataUrl: await encodeCanvas(canvas, type, JPEG_QUALITY),
     width: Math.round(size.width),
     height: Math.round(size.height),
   };

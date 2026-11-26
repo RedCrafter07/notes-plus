@@ -1,3 +1,4 @@
+import { encodeCanvas } from "#lib/util/encode.ts";
 import type { NoteData, Page } from "#lib/tauri/bindings.ts";
 import { boundsFromRect, padBounds, type ContentBounds } from "#lib/util/canvasBounds.ts";
 import { contentBounds, pageRect } from "../pageFormats";
@@ -126,7 +127,7 @@ export async function notePreview(note: NoteData, assets: Assets): Promise<strin
   try {
     const page = note.content.pages[0];
     const canvas = page && (await renderPage(page, assets, { maxSize: PREVIEW_SIZE }));
-    return canvas ? canvas.toDataURL("image/png") : null;
+    return canvas ? await encodeCanvas(canvas) : null;
   } catch {
     return null;
   }

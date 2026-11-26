@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { encodeCanvas } from "#lib/util/encode.ts";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import type { Page } from "#lib/tauri/bindings.ts";
   import type { ContentBounds } from "#lib/util/canvasBounds.ts";
@@ -34,7 +35,7 @@
         height: (w * a.h) / a.w,
         ...opts,
       });
-      src = canvas?.toDataURL("image/png");
+      src = canvas ? await encodeCanvas(canvas) : undefined;
     }, 120);
     return () => clearTimeout(timer);
   });

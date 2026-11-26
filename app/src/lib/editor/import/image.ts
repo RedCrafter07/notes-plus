@@ -1,3 +1,4 @@
+import { encodeCanvas } from "#lib/util/encode.ts";
 import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
 import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
 import { selectionFromIds } from "#lib/editor/tools/lasso.ts";
@@ -43,7 +44,7 @@ async function normalize(file: File): Promise<{ src: string; w: number; h: numbe
   canvas.height = Math.round(h * scale);
   canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
   const type = file.type === "image/png" ? "image/png" : "image/jpeg";
-  return { src: canvas.toDataURL(type, 0.9), w: canvas.width, h: canvas.height };
+  return { src: await encodeCanvas(canvas, type, 0.9), w: canvas.width, h: canvas.height };
 }
 
 /**

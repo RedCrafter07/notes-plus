@@ -27,6 +27,7 @@
 </script>
 
 <script lang="ts">
+  import { encodeCanvas } from "#lib/util/encode.ts";
   import { renderPage } from "#lib/editor/render/page.ts";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
 
@@ -67,7 +68,7 @@
     const timer = setTimeout(
       async () => {
         const canvas = await renderPage(snapshot, contentManager.assets, { maxSize });
-        src = canvas?.toDataURL("image/png");
+        src = canvas ? await encodeCanvas(canvas) : undefined;
         cache.set(snapshot, { deps: d, src });
       },
       src ? 400 : 0,
