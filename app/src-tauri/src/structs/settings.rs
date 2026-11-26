@@ -30,6 +30,10 @@ pub struct Settings {
     pub system_title_bar: bool,
     /// Where the editor toolbar sits; left-handed writers often prefer left.
     pub toolbar_dock: ToolbarDock,
+    /// Presenter mode on a second display: full screen (true), or a normal
+    /// window on that display (false). Without a second display the audience
+    /// view is always a window, opened behind the editor.
+    pub present_fullscreen: bool,
 }
 
 impl Default for Settings {
@@ -46,6 +50,7 @@ impl Default for Settings {
             autosave: true,
             system_title_bar: false,
             toolbar_dock: ToolbarDock::Top,
+            present_fullscreen: true,
         }
     }
 }

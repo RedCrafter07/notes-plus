@@ -13,6 +13,7 @@ export const settingsStore = new Store<Settings>({
   autosave: true,
   system_title_bar: false,
   toolbar_dock: "top",
+  present_fullscreen: true,
 });
 
 /**

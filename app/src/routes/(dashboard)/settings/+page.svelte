@@ -7,6 +7,7 @@
     IconDeviceFloppy,
     IconInfoCircle,
     IconPencil,
+    IconPresentation,
   } from "@tabler/icons-svelte";
 </script>
 
@@ -73,6 +74,21 @@
           Restart RedNotes Plus to apply this. On Linux the title bar can only be chosen when the window opens.
         </p>
       {/if}
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-4 p-4 rounded-xl bg-base-2">
+    <h3 class="text-xl flex flex-row gap-2 items-center font-semibold">
+      <IconPresentation /> Presenting
+    </h3>
+    <div class="flex gap-4 flex-col">
+      <Switch
+        id="present-fullscreen"
+        label="Full screen on a second display"
+        description="Presenter mode (F5) fills your second display. Turn this off to open it as a maximized window there instead, e.g. to keep the taskbar. Without a second display it always opens as a window behind the editor."
+        checked={settingsStore.store.present_fullscreen}
+        onChange={(v) => updateSettings({ present_fullscreen: v })}
+      />
     </div>
   </div>
 

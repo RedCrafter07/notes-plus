@@ -43,7 +43,7 @@ class Presenter {
       type: "info",
       message: r.second_display
         ? `Presenting on ${r.display}. Press F5 or Stop to end.`
-        : "No second display found: the audience view opened as a window you can share or move.",
+        : "No second display found: the audience view opened as a window behind this one, to share or move.",
     });
   }
 
