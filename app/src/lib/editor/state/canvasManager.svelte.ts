@@ -16,12 +16,14 @@ import { onPaint, requestRedraw } from "../render/scheduler";
 import {
   defaultColors,
   defaultSizes,
+  TOOL_IDS,
   toolDef,
   type Tool,
 } from "../tools/registry";
 import { erase } from "../tools/erase";
 import { centerLine } from "../svg";
 import { lassoManager } from "./lassoManager.svelte";
+import { loadWorkspace, saveWorkspace } from "./workspace";
 import { textEditor } from "./textEditor.svelte";
 
 export type { Tool } from "../tools/registry";
@@ -90,6 +92,30 @@ class CanvasManager {
 
   constructor() {
     onPaint(() => this.paint());
+
+    // Start where the last session left off (see workspace.ts).
+    const w = loadWorkspace({ ids: TOOL_IDS, size: (t) => toolDef(t).size });
+    if (w.tool) this.#tool = w.tool;
+    Object.assign(this.colors, w.colors);
+    Object.assign(this.sizes, w.sizes);
+    if (w.eraserMode) this.eraserMode = w.eraserMode;
+    if (w.zoomLock !== undefined) this.zoomLock = w.zoomLock;
+
+    $effect.root(() => {
+      $effect(() => {
+        const next = {
+          // A barrel-button lasso is temporary: remember the tool under it.
+          tool: this.#returnTo ?? this.#tool,
+          colors: $state.snapshot(this.colors),
+          sizes: $state.snapshot(this.sizes),
+          eraserMode: this.eraserMode,
+          zoomLock: this.zoomLock,
+        };
+        // Sliders change sizes many times a second; write once they settle.
+        const timer = setTimeout(() => saveWorkspace(next), 500);
+        return () => clearTimeout(timer);
+      });
+    });
 
     // A barrel-button lasso hands back the previous tool once nothing is
     // selected, however the selection ended: Delete in its menu, Escape,
