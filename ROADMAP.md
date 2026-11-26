@@ -106,41 +106,32 @@ quick notes and photos of the board.
 
 ---
 
-## Phase 1 — Feel and reliability
+## Phase 1 — Feel and reliability (done, Nov 2026)
 
-Nothing here is a new feature. It is what makes the app feel solid during a
-lecture, and it removes causes of lag that later features would otherwise
-inherit.
+Nothing here was a new feature: it made the app feel solid during a lecture
+and removed causes of lag that later features would have inherited.
 
-- **Async backend commands** (S). `open_notes`, `save_note`, `get_notebooks`,
-  `get_recent` and `add_asset` are synchronous, so Tauri runs them on the main
-  thread and the window freezes while a zip is read or written. That includes
-  every autosave, 1.5 s after you stop writing. Making them `async` (as was
-  done for `start_presenting`) is the cheap, large win.
-- **Loading state for big notes** (S, after the above). Once opening no longer
-  blocks, a tab can show a spinner or skeleton page while `open_notes` runs.
-- **Lasso lag** (M). Probably the same pattern the eraser had: moving a
-  selection writes into the note's deep `$state` on every move. Work on a
-  plain copy during the gesture and commit on release, as `finishErasing`
-  does. Profile first, with the CDP script used for the eraser.
-- **Lasso stays active after the selection is discarded** (S). A state bug in
-  `lassoManager` / `returnFromTemporaryTool`; needs a repro.
-- **Images don't match the greyed-out selection** (S). The selection overlay
-  (`BlockSvg`) and the canvas draw images differently.
-- **Native pen window drag** [Windows] (M). The frontend drag works but trails
-  the pen by an IPC round trip per frame. Move it to Rust: one command on
-  pen-down, then follow `GetCursorPos` with `SetWindowPos` until the pen
-  lifts. Linux needs its own answer (see the platform track); keep the
-  frontend drag as the fallback.
-- **Remember the workspace across restarts** (S). Last tool, per-tool sizes and
-  colours, eraser mode, zoom lock. Settings or a small `workspace` store.
-- **Laser stays selected after a stroke** (S).
-- **Pen-friendly sliders** (S). A custom range control: large thumb, tap
-  anywhere to jump, fine steps when dragging slowly, and it shows the value.
-  Used for size, opacity and zoom.
-- **Housekeeping** (S). `runes.test.ts` builds `C:\C:\…` paths on Windows, and
-  `AppShell` calls `unlisten()` before its async listener exists, which blanks
-  the window on hot reload.
+- **Eraser**: worked outside the note's reactive state and commits on lift;
+  cut pieces keep their drawn shape (`Stroke.smoothed`); whole-stroke mode.
+- **Async backend commands**: file I/O no longer freezes the window; a
+  notebook card shows a spinner while its note opens.
+- **Lasso**: selection drawn on its own canvas and dragged with a CSS
+  transform; dropping is linear, not quadratic; a barrel-button lasso ends
+  whenever the selection does; the page fades evenly (PDF pages included).
+- **Pen window drag**: the backend follows the cursor from pen-down to
+  pen-up (`start_window_drag`); the frontend drag remains the fallback where
+  the cursor position is unavailable (Wayland).
+- **Workspace across restarts**: tool, per-tool colour and size, eraser mode,
+  zoom lock (`editor/state/workspace.ts`, per device in localStorage).
+- **Laser trail**: strokes stay while you keep pointing and fade together.
+- **`Slider`**: pen-friendly range control (whole track is a target, slower
+  when the pen moves away from it), used by tool size, line spacing and the
+  colour picker.
+- **Housekeeping**: `runes.test.ts` on Windows; async listeners in `AppShell`
+  that threw on hot reload or were never removed (`util/listeners.ts`).
+
+Still to confirm with a real pen: the barrel-button lasso and the native
+window drag.
 
 ## Phase 2 — Ink quality
 
