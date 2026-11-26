@@ -5,6 +5,8 @@
     IconGripHorizontal,
     IconGripVertical,
     IconPhotoPlus,
+    IconScissors,
+    IconScribbleOff,
     IconPlus,
   } from "@tabler/icons-svelte";
   import { fade } from "svelte/transition";
@@ -355,6 +357,22 @@
       >
         <IconPlus />
       </button>
+    {/if}
+
+    {#if canvasManager.tool === "eraser"}
+      {@render sep()}
+      {#each [["partial", "Erase what you touch", IconScissors], ["stroke", "Erase whole strokes", IconScribbleOff]] as const as [mode, label, Icon] (mode)}
+        {@const active = canvasManager.eraserMode === mode}
+        <button
+          class={btnOn(active)}
+          onclick={() => (canvasManager.eraserMode = mode)}
+          aria-label={label}
+          aria-pressed={active}
+          title={label}
+        >
+          <Icon />
+        </button>
+      {/each}
     {/if}
 
     {#if def.size}

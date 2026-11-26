@@ -9,7 +9,7 @@ import {
   type ContentBounds,
   type Point2D,
 } from "#lib/util/canvasBounds.ts";
-import { blockBounds, newId, pruneBlockCaches } from "../blocks";
+import { blockBounds, newId, pruneBlockCaches, type StrokeBlock } from "../blocks";
 import { isInfinite, pageExtent, pageRect } from "../pageFormats";
 import { drawBlocks } from "../render/draw";
 import { onPaint, requestRedraw } from "../render/scheduler";
@@ -20,10 +20,25 @@ import {
   type Tool,
 } from "../tools/registry";
 import { erase } from "../tools/erase";
+import { centerLine } from "../svg";
 import { lassoManager } from "./lassoManager.svelte";
 import { textEditor } from "./textEditor.svelte";
 
 export type { Tool } from "../tools/registry";
+
+/** A block as the eraser sees it, read once per gesture. */
+interface EraseEntry {
+  block: Block;
+  stroke?: StrokeBlock;
+  bounds: ContentBounds | null;
+  /** The centre line to cut, filled in when the eraser first gets near. */
+  line?: Point[];
+}
+
+function eraseEntry(block: Block): EraseEntry {
+  const stroke = block.type === "Stroke" ? block : undefined;
+  return { block, stroke, bounds: blockBounds(block) };
+}
 
 /** Screen pixels kept free around a page when fitting it to the view. */
 const FIT_MARGIN = 32;
@@ -49,8 +64,20 @@ class CanvasManager {
   /** Per-tool size: stroke width, eraser radius or font size. */
   sizes = $state<Record<Tool, number>>(defaultSizes());
 
+  /** "partial" cuts away what the eraser covers; "stroke" removes whole strokes it touches. */
+  eraserMode = $state<"partial" | "stroke">("partial");
+
   drawing = $state(false);
   points = $state<Point[]>([]);
+
+  /*
+   * While the eraser is down, each touched layer's blocks live here as plain
+   * arrays and are painted from here; `finishErasing` assigns them to the
+   * note once. Assigning to the note's deep state on every move used to
+   * proxy every new piece, snapshot the note and re-render its thumbnail per
+   * step, which is what made erasing lag.
+   */
+  #erasing = new Map<string, { entries: EraseEntry[]; blocks?: Block[] }>();
 
   width = $state(0);
   height = $state(0);
@@ -129,7 +156,7 @@ class CanvasManager {
         ctx.clip();
       }
 
-      drawBlocks(ctx, l.blocks, assets, view, skip);
+      drawBlocks(ctx, this.#erasing.get(l.id)?.blocks ?? l.blocks, assets, view, skip);
       ctx.restore();
     }
   }
@@ -367,35 +394,69 @@ class CanvasManager {
     }
   }
 
-  /** Cuts strokes under the eraser. Text and images are removed with the lasso. */
+  /**
+   * Cuts strokes under the eraser, or removes them whole in "stroke" mode.
+   * Text and images are removed with the lasso. The result is kept until
+   * `finishErasing` (see `#erasing`).
+   */
   eraser(p: Point2D) {
     const r = this.eraserRadius;
+    const whole = this.eraserMode === "stroke";
 
     for (const l of contentManager.layers) {
       if (l.locked || !l.visible) continue;
 
+      // The layer's blocks are read through the note's proxies once per
+      // gesture; every later step only touches this plain list.
+      let work = this.#erasing.get(l.id);
+      if (!work) {
+        work = { entries: l.blocks.map(eraseEntry) };
+        this.#erasing.set(l.id, work);
+      }
+
       let changed = false;
-      const blocks = l.blocks.flatMap((b): Block[] => {
-        if (b.type !== "Stroke") return [b];
-        if (b.points.length === 0) {
-          changed = true;
-          return [];
+      const next: EraseEntry[] = [];
+      for (const e of work.entries) {
+        const s = e.stroke;
+        if (!s) {
+          next.push(e);
+          continue;
+        }
+        if (e.bounds && !circleIntersectsBounds(p, r, e.bounds)) {
+          next.push(e);
+          continue;
         }
 
-        const bounds = blockBounds(b);
-        if (bounds && !circleIntersectsBounds(p, r, bounds)) return [b];
-
-        const pieces = erase(b.points, p, r);
+        // Cut the line as drawn, not the raw input (see `centerLine`).
+        e.line ??= s.smoothed ? s.points : centerLine(s.points, s.thickness);
+        const pieces = e.line.length ? erase(e.line, p, r) : [];
         // One piece with every point means the eraser missed.
-        if (pieces.length === 1 && pieces[0].length === b.points.length)
-          return [b];
+        if (pieces.length === 1 && pieces[0].length === e.line.length) {
+          next.push(e);
+          continue;
+        }
 
         changed = true;
-        return pieces.map((points) => ({ ...b, id: newId(), points }));
-      });
+        if (whole) continue;
+        for (const points of pieces)
+          next.push(eraseEntry({ ...s, id: newId(), points, smoothed: true }));
+      }
 
-      if (changed) l.blocks = blocks;
+      if (changed) {
+        work.entries = next;
+        work.blocks = next.map((e) => e.block);
+        requestRedraw();
+      }
     }
+  }
+
+  /** Puts what the eraser left into the note, as one change. */
+  finishErasing() {
+    for (const l of contentManager.layers) {
+      const blocks = this.#erasing.get(l.id)?.blocks;
+      if (blocks) l.blocks = blocks;
+    }
+    this.#erasing.clear();
   }
 
   finishStroke() {

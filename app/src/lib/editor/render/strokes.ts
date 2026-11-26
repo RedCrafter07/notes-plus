@@ -1,5 +1,5 @@
 import type { StrokeBlock } from "../blocks";
-import { inputToPath } from "../svg";
+import { strokeToPath } from "../svg";
 
 /*
  * Outlining a stroke with perfect-freehand is the expensive part of drawing,
@@ -12,7 +12,7 @@ const paths = new Map<string, Path2D>();
 export function strokePath(s: StrokeBlock): Path2D {
   let p = paths.get(s.id);
   if (!p) {
-    p = new Path2D(inputToPath(s.points, s.thickness, false));
+    p = new Path2D(strokeToPath(s));
     paths.set(s.id, p);
   }
   return p;

@@ -14,6 +14,7 @@ const move: ToolHandler = (p) => {
 };
 const up: ToolHandler = () => {
   last = undefined;
+  canvasManager.finishErasing();
 };
 
 export const eraser: ToolHandlers = { down, move, up };

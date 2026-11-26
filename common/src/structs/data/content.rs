@@ -16,6 +16,13 @@ pub struct Stroke {
     pub thickness: f32,
     /// 1.0 for ink; highlighters use a lower value.
     pub opacity: f32,
+    /// The points are already the smoothed centre line, so they are drawn as
+    /// they are instead of being smoothed again. Set on the pieces the eraser
+    /// leaves: smoothing a piece afresh from its cut would bend it away from
+    /// where the ink was. Absent for strokes as drawn. (An `Option` so that
+    /// specta types it as optional; `Some(false)` means the same as `None`.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub smoothed: Option<bool>,
 }
 
 /// A block of plain text, wrapped to `width`. `(x, y)` is the top-left corner.

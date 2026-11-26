@@ -2,7 +2,7 @@ import type { Block, Page } from "#lib/tauri/bindings.ts";
 import type { ContentBounds } from "#lib/util/canvasBounds.ts";
 import { assertNever } from "../blocks";
 import { pageRect } from "../pageFormats";
-import { inputToPath } from "../svg";
+import { strokeToPath } from "../svg";
 import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT } from "../text";
 import type { Assets } from "./draw";
 
@@ -32,7 +32,7 @@ function blockSvg(b: Block, assets: Assets): string {
   switch (b.type) {
     case "Stroke": {
       const opacity = b.opacity < 1 ? ` fill-opacity="${b.opacity}"` : "";
-      return `<path d="${inputToPath(b.points, b.thickness, false)}" fill="${esc(b.color)}"${opacity}/>`;
+      return `<path d="${strokeToPath(b)}" fill="${esc(b.color)}"${opacity}/>`;
     }
     case "Text": {
       const lh = b.font_size * TEXT_LINE_HEIGHT;

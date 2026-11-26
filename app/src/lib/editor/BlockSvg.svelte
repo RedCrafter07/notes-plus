@@ -1,7 +1,7 @@
 <script lang="ts">
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import type { Block } from "#lib/tauri/bindings.ts";
-  import { inputToPath } from "./svg";
+  import { strokeToPath } from "./svg";
   import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT } from "./text";
 
   /** SVG rendering of a block; mirrors `drawBlock` in render/draw.ts. */
@@ -10,7 +10,7 @@
 
 {#if b.type === "Stroke"}
   <path
-    d={inputToPath(b.points, b.thickness, false)}
+    d={strokeToPath(b)}
     fill={b.color}
     fill-opacity={b.opacity}
   />
