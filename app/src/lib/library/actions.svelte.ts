@@ -1,4 +1,5 @@
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { SvelteSet } from "svelte/reactivity";
 import { saveTab } from "#lib/editor/handleSave.svelte.ts";
 import { fsStore, loadNotebooks } from "#lib/state/fsStore.svelte.ts";
 import { popupManager } from "#lib/state/popupManager.svelte.ts";
@@ -29,9 +30,19 @@ async function viaTab(tab: Tab, change: () => void) {
   return saveTab(tab, { silent: true });
 }
 
+/** Notebooks being read from disk, by path; their cards show a spinner. */
+export const opening = new SvelteSet<string>();
+
 export async function openNotebook(file: File) {
-  const { openNotes } = await import("#lib/util/notes.svelte.ts");
-  openNotes(await commands.openNotes([file.path]));
+  // A second tap while a big note loads would open it twice.
+  if (opening.has(file.path)) return;
+  opening.add(file.path);
+  try {
+    const { openNotes } = await import("#lib/util/notes.svelte.ts");
+    openNotes(await commands.openNotes([file.path]));
+  } finally {
+    opening.delete(file.path);
+  }
 }
 
 export async function renameNotebook(file: File, title: string) {

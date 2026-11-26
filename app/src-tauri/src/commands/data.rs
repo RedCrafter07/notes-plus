@@ -25,7 +25,7 @@ pub(crate) fn notebooks_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
 /// The most recently edited notes in app storage, newest first.
 #[tauri::command]
 #[specta::specta]
-pub fn get_recent(app: tauri::AppHandle, limit: u32) -> Vec<File> {
+pub async fn get_recent(app: tauri::AppHandle, limit: u32) -> Vec<File> {
     let Ok(path) = app.path().app_data_dir().map(|p| p.join("notebooks")) else {
         return vec![];
     };
@@ -48,7 +48,7 @@ pub fn get_defaults() -> Defaults {
 #[tauri::command]
 #[specta::specta]
 // Indexes the notes in the main notes directory
-pub fn get_notebooks(app: tauri::AppHandle) -> Option<Notebooks> {
+pub async fn get_notebooks(app: tauri::AppHandle) -> Option<Notebooks> {
     let path = match app.path().app_data_dir() {
         Ok(p) => p.join("notebooks"),
         Err(e) => {
@@ -94,7 +94,7 @@ pub fn get_notebooks(app: tauri::AppHandle) -> Option<Notebooks> {
 /// the path comes from the UI, and this must never become "delete any file".
 #[tauri::command]
 #[specta::specta]
-pub fn trash_note_file(app: tauri::AppHandle, path: String) -> bool {
+pub async fn trash_note_file(app: tauri::AppHandle, path: String) -> bool {
     let Some(dir) = notebooks_dir(&app) else {
         show_error("Application storage could not be found.".into());
         return false;

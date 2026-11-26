@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { File } from "#lib/tauri/bindings.ts";
-  import { IconDots, IconNotebook } from "@tabler/icons-svelte";
+  import { IconDots, IconLoader2, IconNotebook } from "@tabler/icons-svelte";
   import { contextMenu, contextMenuState } from "#lib/state/contextMenu.svelte.ts";
   import { notebookMenu } from "#lib/library/menus.ts";
+  import { opening } from "#lib/library/actions.svelte.ts";
 
   /**
    * Right-click, long-press or the ⋯ button open the notebook's menu.
@@ -28,8 +29,15 @@
     title={file.title}
   >
     <div
-      class="w-full aspect-[3/4] rounded-lg overflow-hidden bg-base-1 grid place-items-center shadow-sm"
+      class="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-base-1 grid place-items-center shadow-sm"
+      aria-busy={opening.has(file.path)}
     >
+      {#if opening.has(file.path)}
+        <!-- Reading a big note can take a moment. -->
+        <div class="absolute inset-0 grid place-items-center bg-base-3/60 backdrop-blur-[1px]">
+          <IconLoader2 size={36} class="animate-spin text-primary" aria-label="Opening" />
+        </div>
+      {/if}
       {#if file.preview}
         <img
           src={file.preview}

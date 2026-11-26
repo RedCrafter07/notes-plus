@@ -43,7 +43,7 @@ fn report(result: Result<(), RnpfError>, what: &str) -> bool {
 
 #[tauri::command]
 #[specta::specta]
-pub fn rename_note(app: tauri::AppHandle, path: String, title: String) -> bool {
+pub async fn rename_note(app: tauri::AppHandle, path: String, title: String) -> bool {
     let title = title.trim().to_string();
     if title.is_empty() {
         return false;
@@ -57,7 +57,7 @@ pub fn rename_note(app: tauri::AppHandle, path: String, title: String) -> bool {
 /// `folder` like "Uni/Physics"; `None` or empty for the top level.
 #[tauri::command]
 #[specta::specta]
-pub fn move_note(app: tauri::AppHandle, path: String, folder: Option<String>) -> bool {
+pub async fn move_note(app: tauri::AppHandle, path: String, folder: Option<String>) -> bool {
     let Some(file) = note(&app, &path) else {
         return false;
     };
@@ -69,7 +69,7 @@ pub fn move_note(app: tauri::AppHandle, path: String, folder: Option<String>) ->
 /// new id, same folder). Returns the new file's path.
 #[tauri::command]
 #[specta::specta]
-pub fn duplicate_note(app: tauri::AppHandle, path: String) -> Option<String> {
+pub async fn duplicate_note(app: tauri::AppHandle, path: String) -> Option<String> {
     let file = note(&app, &path)?;
     let dir = notebooks_dir(&app)?;
 
@@ -107,7 +107,7 @@ pub fn duplicate_note(app: tauri::AppHandle, path: String) -> Option<String> {
 /// Returns how many files were changed.
 #[tauri::command]
 #[specta::specta]
-pub fn rename_folder(app: tauri::AppHandle, from: String, to: String, skip: Vec<String>) -> u32 {
+pub async fn rename_folder(app: tauri::AppHandle, from: String, to: String, skip: Vec<String>) -> u32 {
     let from = normalize_folder(from);
     let to = normalize_folder(to);
     if from.is_empty() || to.is_empty() || from == to {

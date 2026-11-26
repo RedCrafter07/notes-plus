@@ -12,7 +12,7 @@ use crate::util::dialog::show_error;
 /// `None` if the user cancelled or writing failed (errors are shown).
 #[tauri::command]
 #[specta::specta]
-pub fn export_file(
+pub async fn export_file(
     app: tauri::AppHandle,
     data_base64: String,
     file_name: String,
@@ -56,7 +56,7 @@ pub struct ExportedFile {
 /// folder, or `None` if cancelled or nothing could be written.
 #[tauri::command]
 #[specta::specta]
-pub fn export_files(app: tauri::AppHandle, files: Vec<ExportedFile>) -> Option<String> {
+pub async fn export_files(app: tauri::AppHandle, files: Vec<ExportedFile>) -> Option<String> {
     let folder = app.dialog().file().blocking_pick_folder()?;
     let folder = folder.as_path()?.to_path_buf();
 

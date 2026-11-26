@@ -60,20 +60,28 @@ export async function handleSave(saveAs: boolean) {
     return;
   }
 
-  const lastId = $state.snapshot(contentManager.id);
-  // Save As: the new file is a new note and needs its own id.
-  const id = tab.path ? crypto.randomUUID() : lastId;
-  contentManager.id = id;
+  // Saves run concurrently in the backend; never two of one tab at once, or
+  // an autosave could land after Save As, in the old file.
+  if (tab.saving) return;
+  tab.saving = true;
+  try {
+    const lastId = $state.snapshot(contentManager.id);
+    // Save As: the new file is a new note and needs its own id.
+    const id = tab.path ? crypto.randomUUID() : lastId;
+    contentManager.id = id;
 
-  const token = tab.saveToken();
-  const note = $state.snapshot(tab.note);
-  const path = await commands.saveNoteDialog(tab.assets, note, await preview(tab, note));
+    const token = tab.saveToken();
+    const note = $state.snapshot(tab.note);
+    const path = await commands.saveNoteDialog(tab.assets, note, await preview(tab, note));
 
-  if (path) {
-    tab.path = path;
-    tab.markSaved(token);
-  } else {
-    // Revert ID, no saving since error occurred
-    contentManager.id = lastId;
+    if (path) {
+      tab.path = path;
+      tab.markSaved(token);
+    } else {
+      // Revert ID, no saving since error occurred
+      contentManager.id = lastId;
+    }
+  } finally {
+    tab.saving = false;
   }
 }

@@ -21,7 +21,7 @@ use crate::{
 
 #[tauri::command]
 #[specta::specta]
-pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<OpenData> {
+pub async fn open_notes_dialog(app: tauri::AppHandle) -> Vec<OpenData> {
     let paths = app
         .dialog()
         .file()
@@ -47,19 +47,25 @@ pub fn open_notes_dialog(app: tauri::AppHandle) -> Vec<OpenData> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn open_notes(paths: Vec<String>) -> Vec<OpenData> {
+pub async fn open_notes(paths: Vec<String>) -> Vec<OpenData> {
     let path_data: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
     open_paths(&path_data)
 }
 
+/// Opens files dropped on the window or passed on the command line. Called
+/// from window events on the main thread, so the reading happens elsewhere.
 pub fn open_and_emit(app: &AppHandle, paths: &[PathBuf]) {
-    for data in open_paths(paths) {
-        Open(data)
-            .emit(app)
-            .map_err(AppError::from)
-            .unwrap_or_display(());
-    }
+    let app = app.clone();
+    let paths = paths.to_vec();
+    tauri::async_runtime::spawn_blocking(move || {
+        for data in open_paths(&paths) {
+            Open(data)
+                .emit(&app)
+                .map_err(AppError::from)
+                .unwrap_or_display(());
+        }
+    });
 }
 
 fn open_paths(paths: &[PathBuf]) -> Vec<OpenData> {
@@ -95,7 +101,7 @@ pub(crate) fn open_single(path: &Path) -> Result<OpenData, RnpfError> {
 /// from the cache. `id` is chosen by the frontend.
 #[tauri::command]
 #[specta::specta]
-pub fn add_asset(app: tauri::AppHandle, session: String, id: String, data_url: String) -> bool {
+pub async fn add_asset(app: tauri::AppHandle, session: String, id: String, data_url: String) -> bool {
     match app.state::<AssetStore>().add(&session, &id, &data_url) {
         Ok(()) => true,
         Err(e) => {
@@ -108,7 +114,7 @@ pub fn add_asset(app: tauri::AppHandle, session: String, id: String, data_url: S
 /// Forgets a closed tab's attachments, deleting any unsaved ones.
 #[tauri::command]
 #[specta::specta]
-pub fn close_asset_session(app: tauri::AppHandle, session: String) {
+pub async fn close_asset_session(app: tauri::AppHandle, session: String) {
     app.state::<AssetStore>().close(&session);
 }
 
@@ -122,7 +128,7 @@ pub fn new_note() -> NoteData {
 /// not from the frontend.
 #[tauri::command]
 #[specta::specta]
-pub fn save_note(
+pub async fn save_note(
     app: tauri::AppHandle,
     assets: String,
     note_data: NoteData,
@@ -158,7 +164,7 @@ fn sanitize_note_id(id: &str) -> Option<&str> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_note_to_storage(
+pub async fn save_note_to_storage(
     app: tauri::AppHandle,
     assets: String,
     note_data: NoteData,
@@ -198,7 +204,7 @@ pub fn save_note_to_storage(
 /// cache into the new one, which becomes the session's file.
 #[tauri::command]
 #[specta::specta]
-pub fn save_note_dialog(
+pub async fn save_note_dialog(
     app: tauri::AppHandle,
     assets: String,
     note_data: NoteData,
