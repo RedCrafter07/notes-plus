@@ -6,6 +6,7 @@ import type { Block, Point } from "#lib/tauri/bindings.ts";
 import {
   boundsFromRect,
   circleIntersectsBounds,
+  unionBounds,
   type ContentBounds,
   type Point2D,
 } from "#lib/util/canvasBounds.ts";
@@ -91,7 +92,7 @@ class CanvasManager {
   gesture = $state(false);
 
   constructor() {
-    onPaint(() => this.paint());
+    onPaint((full) => this.paint(full));
 
     // Start where the last session left off (see workspace.ts).
     const w = loadWorkspace({ ids: TOOL_IDS, size: (t) => toolDef(t).size });
@@ -166,11 +167,19 @@ class CanvasManager {
     return boundsFromRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
   }
 
-  private paint() {
+  private paint(full = true) {
     const page = contentManager.page;
     const assets = contentManager.assets;
     const view = this.viewBounds();
     const clip = pageRect(page);
+
+    // The eraser only changes ink where it is: unless something else asked
+    // for a full repaint this frame, redraw just that area of the layers it
+    // touched, so erasing costs the same on a full page as on an empty one.
+    const area = full ? undefined : this.#dirty;
+    const touched = this.#dirtyLayers;
+    this.#dirty = undefined;
+    this.#dirtyLayers = new Set();
 
     const skip = new Set(lassoManager.selectedIds);
     if (textEditor.hiddenId) skip.add(textEditor.hiddenId);
@@ -178,13 +187,24 @@ class CanvasManager {
     for (const l of page.layers) {
       const ctx = this.layerCtx[l.id];
       if (!ctx) continue;
+      if (area && !touched.has(l.id)) continue;
 
       ctx.resetTransform();
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      if (!l.visible) continue;
-
+      if (!area) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.save();
-      this.#toContent(ctx);
+      ctx.scale(this.dpr, this.dpr);
+      if (area) {
+        const r = this.#screenRect(area);
+        ctx.beginPath();
+        ctx.rect(r.x, r.y, r.w, r.h);
+        ctx.clip();
+        ctx.clearRect(r.x, r.y, r.w, r.h);
+      }
+      if (!l.visible) {
+        ctx.restore();
+        continue;
+      }
+      this.#viewTransform(ctx);
 
       // On a fixed page, ink past the edge is kept but not shown, like paper.
       if (clip) {
@@ -193,9 +213,11 @@ class CanvasManager {
         ctx.clip();
       }
 
-      drawBlocks(ctx, this.#erasing.get(l.id)?.blocks ?? l.blocks, assets, view, skip);
+      const blocks = this.#erasing.get(l.id)?.blocks ?? l.blocks;
+      drawBlocks(ctx, blocks, assets, area ?? view, skip);
       ctx.restore();
     }
+    if (area) return; // the selection did not change
 
     // The selection, on its own canvas above the layers. Dragging moves that
     // canvas with a CSS transform, so a drag repaints nothing. (It used to be
@@ -219,10 +241,28 @@ class CanvasManager {
   /** Sets up a canvas to draw in content coordinates at the current view. */
   #toContent(ctx: CanvasRenderingContext2D) {
     ctx.scale(this.dpr, this.dpr);
+    this.#viewTransform(ctx);
+  }
+
+  /** From CSS pixels to content coordinates. */
+  #viewTransform(ctx: CanvasRenderingContext2D) {
     ctx.translate(this.width / 2, this.height / 2);
     ctx.scale(contentManager.zoom, contentManager.zoom);
     ctx.translate(contentManager.panX, contentManager.panY);
   }
+
+  /** A content area on screen, in CSS pixels, rounded outwards with a margin for anti-aliasing. */
+  #screenRect(b: ContentBounds) {
+    const tl = this.translateToAbsolute(b.min);
+    const br = this.translateToAbsolute(b.max);
+    const x = Math.floor(tl.x) - 2;
+    const y = Math.floor(tl.y) - 2;
+    return { x, y, w: Math.ceil(br.x) - x + 2, h: Math.ceil(br.y) - y + 2 };
+  }
+
+  /** Area the eraser changed since the last paint, and on which layers. */
+  #dirty: ContentBounds | undefined;
+  #dirtyLayers = new Set<string>();
 
   selectionCtx: CanvasRenderingContext2D | undefined;
 
@@ -482,6 +522,8 @@ class CanvasManager {
   eraser(p: Point2D) {
     const r = this.eraserRadius;
     const whole = this.eraserMode === "stroke";
+    // Set when a change has no bounds (an empty stroke): repaint everything.
+    let fullRepaint = false;
 
     for (const l of contentManager.layers) {
       if (l.locked || !l.visible) continue;
@@ -517,6 +559,9 @@ class CanvasManager {
         }
 
         changed = true;
+        // The pieces lie within the stroke's bounds, so those cover the change.
+        if (e.bounds) this.#dirty = this.#dirty ? unionBounds(this.#dirty, e.bounds) : e.bounds;
+        else fullRepaint = true;
         if (whole) continue;
         for (const points of pieces)
           next.push(eraseEntry({ ...s, id: newId(), points, smoothed: true }));
@@ -525,9 +570,10 @@ class CanvasManager {
       if (changed) {
         work.entries = next;
         work.blocks = next.map((e) => e.block);
-        requestRedraw();
+        this.#dirtyLayers.add(l.id);
       }
     }
+    if (this.#dirtyLayers.size) requestRedraw(!fullRepaint);
   }
 
   /** Puts what the eraser left into the note, as one change. */

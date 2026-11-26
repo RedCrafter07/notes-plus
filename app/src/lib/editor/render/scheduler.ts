@@ -10,16 +10,25 @@
  * graph acyclic.
  */
 
-type Painter = () => void;
+/** `full` is false only when every request this frame was partial. */
+type Painter = (full: boolean) => void;
 
 const painters = new Set<Painter>();
 let frame = 0;
+let full = false;
 
-export function requestRedraw() {
+/**
+ * `partial`: the caller has recorded which area changed (the eraser) and a
+ * painter may redraw just that. Any full request in the same frame wins.
+ */
+export function requestRedraw(partial = false) {
+  if (!partial) full = true;
   if (frame || typeof requestAnimationFrame === "undefined") return;
   frame = requestAnimationFrame(() => {
     frame = 0;
-    for (const paint of painters) paint();
+    const f = full;
+    full = false;
+    for (const paint of painters) paint(f);
   });
 }
 
