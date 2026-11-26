@@ -22,6 +22,7 @@
   import Input from "./Input.svelte";
   import Overlay from "./Overlay.svelte";
   import ColorInput from "./ColorInput.svelte";
+  import Slider from "./Slider.svelte";
 
   /*
    * Page setup. Every control applies to the page immediately (and is one
@@ -58,6 +59,9 @@
     { id: "Squares", label: "Grid" },
     { id: "Dots", label: "Dots" },
   ];
+
+  /** Line spacing while its slider is being dragged; applied on release. */
+  let scaleDraft = $state<number>();
 
   function set(props: PageProps) {
     contentManager.setPageProps(pageIndex, props);
@@ -243,22 +247,25 @@
       </div>
 
       {#if page.pattern}
-        <label class="flex flex-col gap-1" for="pattern-scale">
+        <div class="flex flex-col gap-1">
           <span class="flex flex-row justify-between text-sm text-content-2">
             <span>Line spacing</span>
-            <span class="tabular-nums">{page.pattern_scale}</span>
+            <span class="tabular-nums">{scaleDraft ?? page.pattern_scale}</span>
           </span>
-          <input
-            id="pattern-scale"
-            type="range"
-            class="h-8 accent-[var(--primary)]"
-            min="12"
-            max="64"
-            step="2"
-            value={page.pattern_scale}
-            onchange={(e) => set({ pattern_scale: +e.currentTarget.value })}
+          <!-- Shown while dragging, applied (one undo step) on release. -->
+          <Slider
+            label="Line spacing"
+            min={12}
+            max={64}
+            step={2}
+            value={scaleDraft ?? page.pattern_scale}
+            onchange={(v) => (scaleDraft = v)}
+            oncommit={(v) => {
+              scaleDraft = undefined;
+              if (v !== page.pattern_scale) set({ pattern_scale: v });
+            }}
           />
-        </label>
+        </div>
       {/if}
     </section>
 

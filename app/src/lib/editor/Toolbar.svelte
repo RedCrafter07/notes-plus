@@ -11,6 +11,7 @@
   } from "@tabler/icons-svelte";
   import { fade } from "svelte/transition";
   import ColorEditPopup from "#lib/components/ColorEditPopup.svelte";
+  import Slider from "#lib/components/Slider.svelte";
   import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { tabManager } from "#lib/state/tabManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
@@ -416,19 +417,17 @@
       transition:fade={{ duration: 100 }}
       class="absolute {POPOVER[dock]} p-3 w-64 rounded-xl bg-base-1/85 backdrop-blur-md shadow-lg border border-content-1/10 flex flex-col gap-2"
     >
-      <label class="flex flex-row justify-between text-sm text-content-2" for="tool-size">
+      <div class="flex flex-row justify-between text-sm text-content-2">
         <span>{spec.label}</span>
         <span class="tabular-nums">{Math.round(canvasManager.size)}</span>
-      </label>
-      <input
-        id="tool-size"
-        type="range"
-        class="w-full accent-[var(--primary)] h-8"
+      </div>
+      <Slider
+        label={spec.label}
         min={spec.min}
         max={spec.max}
-        step="1"
+        step={1}
         value={canvasManager.size}
-        oninput={(e) => setSize(+e.currentTarget.value)}
+        onchange={setSize}
       />
     </div>
   {/if}

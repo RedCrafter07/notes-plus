@@ -1,5 +1,6 @@
 <script lang="ts">
   import { clamp, hexToHsv, hsvToHex, normalizeHex } from "#lib/util/colors.ts";
+  import Slider from "./Slider.svelte";
 
   let {
     value = $bindable("#000000"),
@@ -120,53 +121,52 @@
     ></div>
   </div>
 
-  <!-- Hue slider -->
-  <label class="flex flex-col gap-1">
+  <div class="flex flex-col">
     <span class="text-sm text-content-2">Hue</span>
-    <input
-      type="range"
-      class="color-range"
-      min="0"
-      max="360"
-      step="1"
-      bind:value={h}
-      oninput={commit}
-      style="background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);"
-      aria-label="Hue"
+    <Slider
+      label="Hue"
+      min={0}
+      max={360}
+      value={h}
+      track="linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)"
+      onchange={(x) => {
+        h = x;
+        commit();
+      }}
     />
-  </label>
+  </div>
 
-  <!-- Saturation slider -->
-  <label class="flex flex-col gap-1">
+  <div class="flex flex-col">
     <span class="text-sm text-content-2">Saturation</span>
-    <input
-      type="range"
-      class="color-range"
-      min="0"
-      max="1"
-      step="0.001"
-      bind:value={s}
-      oninput={commit}
-      style="background: {satTrack};"
-      aria-label="Saturation"
+    <Slider
+      label="Saturation"
+      min={0}
+      max={1}
+      step={0.001}
+      value={s}
+      track={satTrack}
+      onchange={(x) => {
+        s = x;
+        commit();
+      }}
     />
-  </label>
+  </div>
 
-  <!-- Value slider -->
-  <label class="flex flex-col gap-1">
+  <div class="flex flex-col">
     <span class="text-sm text-content-2">Value</span>
-    <input
-      type="range"
-      class="color-range"
-      min="0"
-      max="1"
-      step="0.001"
-      bind:value={v}
-      oninput={commit}
-      style="background: {valTrack};"
-      aria-label="Value"
+    <Slider
+      label="Value"
+      min={0}
+      max={1}
+      step={0.001}
+      value={v}
+      track={valTrack}
+      onchange={(x) => {
+        v = x;
+        commit();
+      }}
     />
-  </label>
+  </div>
 
   <!-- Hex input with live preview swatch -->
   <div class="flex w-full flex-row items-center gap-2 rounded-xl bg-base-3 px-3 py-2">
