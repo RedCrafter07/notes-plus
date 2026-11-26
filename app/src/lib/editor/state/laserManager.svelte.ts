@@ -8,19 +8,28 @@ const FADE_MS = 700;
 
 /*
  * Laser pointer: temporary ink for pointing at things while presenting.
- * Strokes are never added to the note or to history; they fade out shortly
- * after the pen lifts. Shown in the editor and sent to the audience window.
+ * Strokes are never added to the note or to history. The trail is one
+ * gesture: strokes stay while you keep pointing (circle something, then
+ * underline it) and fade out together once the pen has been up a moment.
+ * A new stroke brings back strokes that were already fading. Shown in the
+ * editor and sent to the audience window.
  */
 class LaserManager {
   strokes = $state<LaserStroke[]>([]);
-  #ended = new Map<string, number>();
+  /** When the last stroke ended; the whole trail fades from then. */
+  #lastEnd?: number;
   #current?: string;
   #frame = 0;
 
   begin(p: Point) {
+    cancelAnimationFrame(this.#frame);
     const id = crypto.randomUUID();
     this.#current = id;
-    this.strokes = [...this.strokes, { id, points: [p], opacity: 1 }];
+    this.#lastEnd = undefined;
+    this.strokes = [
+      ...this.strokes.map((s) => (s.opacity === 1 ? s : { ...s, opacity: 1 })),
+      { id, points: [p], opacity: 1 },
+    ];
   }
 
   add(p: Point) {
@@ -33,30 +42,27 @@ class LaserManager {
 
   end() {
     if (!this.#current) return;
-    this.#ended.set(this.#current, performance.now());
+    this.#lastEnd = performance.now();
     this.#current = undefined;
     this.#tick();
   }
 
-  /** Fades ended strokes, one animation frame at a time, until none are left. */
+  /** Fades the trail, one animation frame at a time, until it is gone. */
   #tick = () => {
     cancelAnimationFrame(this.#frame);
-    const now = performance.now();
-    let pending = false;
+    if (this.#current || this.#lastEnd === undefined) return;
 
-    this.strokes = this.strokes.flatMap((s) => {
-      const ended = this.#ended.get(s.id);
-      if (ended === undefined) return [s];
-      const age = now - ended - HOLD_MS;
-      if (age >= FADE_MS) {
-        this.#ended.delete(s.id);
-        return [];
-      }
-      pending = true;
-      return [{ ...s, opacity: age <= 0 ? 1 : 1 - age / FADE_MS }];
-    });
-
-    if (pending) this.#frame = requestAnimationFrame(this.#tick);
+    const age = performance.now() - this.#lastEnd - HOLD_MS;
+    if (age >= FADE_MS) {
+      this.strokes = [];
+      this.#lastEnd = undefined;
+      return;
+    }
+    if (age > 0) {
+      const opacity = 1 - age / FADE_MS;
+      this.strokes = this.strokes.map((s) => ({ ...s, opacity }));
+    }
+    this.#frame = requestAnimationFrame(this.#tick);
   };
 }
 
