@@ -43,8 +43,6 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             rename_folder,
             start_presenting,
             stop_presenting,
-            start_window_drag,
-            stop_window_drag,
         ])
         .events(collect_events![
             events::Open,

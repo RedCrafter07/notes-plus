@@ -181,7 +181,11 @@ Done: `Toolbar.svelte` + `ViewControls.svelte` (zoom, pages). The toolbar docks
 to any edge (`toolbar_dock` setting, drag the grip); it snaps rather than
 floating freely on purpose. The tab bar doubles as the window title bar
 (`decorations: false`, `data-tauri-drag-region`, `WindowControls.svelte`),
-with a `system_title_bar` setting to bring back the OS bar.
+with a `system_title_bar` setting to bring back the OS bar. On Windows the
+drag regions are also `app-region: drag` (app.css; wry enables WebView2's
+non-client regions), so Windows drags the window for mouse, pen and touch;
+Tauri's script-driven `start_dragging` only works with a mouse there. On
+Linux, `penWindowDrag.ts` moves the window for pen and touch.
 Do not maintain both shapes. If a radial menu returns later, it belongs as a
 long-press context menu at the pen tip, not as a second primary toolbar.
 

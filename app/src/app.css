@@ -61,6 +61,27 @@ textarea,
  * Tailwind tries to parse the whole component as CSS ("Invalid declaration").
  */
 @layer components {
+  /*
+   * Window dragging by the tab bar (when the title bar is merged into it).
+   * On Windows, WebView2 has non-client region support switched on (wry does
+   * this), so `app-region: drag` makes these areas a real title bar: Windows
+   * itself moves the window, for mouse, pen and touch alike, with Snap and
+   * double-click to maximize. Script-driven dragging cannot do that: the OS
+   * move loop follows the mouse button, which a pen or finger does not hold.
+   * Like Tauri's `data-tauri-drag-region`, only the region itself drags; its
+   * children (tabs, buttons) stay clickable unless they are regions too.
+   * WebKitGTK ignores this; there Tauri's drag script and penWindowDrag.ts
+   * do the work.
+   */
+  [data-tauri-drag-region]:not([data-tauri-drag-region="false"]) {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  [data-tauri-drag-region] > :not([data-tauri-drag-region]) {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+
   /* ColorPicker */
   .sv-area {
     touch-action: none;

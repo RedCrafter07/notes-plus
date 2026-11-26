@@ -118,9 +118,10 @@ and removed causes of lag that later features would have inherited.
 - **Lasso**: selection drawn on its own canvas and dragged with a CSS
   transform; dropping is linear, not quadratic; a barrel-button lasso ends
   whenever the selection does; the page fades evenly (PDF pages included).
-- **Pen window drag**: the backend follows the cursor from pen-down to
-  pen-up (`start_window_drag`); the frontend drag remains the fallback where
-  the cursor position is unavailable (Wayland).
+- **Pen and touch window drag**: on Windows the tab bar's drag regions are
+  `app-region: drag`, so Windows moves the window itself (any input, with
+  Snap). Following the cursor from Rust did not work: pen and touch do not
+  move it. On Linux, a frontend drag moves the window (X11 only).
 - **Workspace across restarts**: tool, per-tool colour and size, eraser mode,
   zoom lock (`editor/state/workspace.ts`, per device in localStorage).
 - **Laser trail**: strokes stay while you keep pointing and fade together.
@@ -130,8 +131,8 @@ and removed causes of lag that later features would have inherited.
 - **Housekeeping**: `runes.test.ts` on Windows; async listeners in `AppShell`
   that threw on hot reload or were never removed (`util/listeners.ts`).
 
-Still to confirm with a real pen: the barrel-button lasso and the native
-window drag.
+Still to confirm with a real pen: the barrel-button lasso and the window
+drag (checked with the mouse: Windows handles the press, the page gets none).
 
 ## Phase 2 — Ink quality
 
