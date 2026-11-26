@@ -181,6 +181,9 @@ long-press context menu at the pen tip, not as a second primary toolbar.
 
 ## Roadmap
 
+The forward plan, in phases, is in `ROADMAP.md`. This section records what is
+done and how it was built.
+
 ### Pages
 
 A note is a list of pages. Each page has a format (A4 default; A5, Letter,
