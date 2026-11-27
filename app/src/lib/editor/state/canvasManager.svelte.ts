@@ -103,6 +103,8 @@ class CanvasManager {
     if (w.eraserMode) this.eraserMode = w.eraserMode;
     if (w.zoomLock !== undefined) this.zoomLock = w.zoomLock;
     if (w.scaleWidths !== undefined) lassoManager.scaleWidths = w.scaleWidths;
+    if (w.lassoMode) lassoManager.lassoMode = w.lassoMode;
+    if (w.rotationLock !== undefined) lassoManager.rotationLock = w.rotationLock;
 
     $effect.root(() => {
       $effect(() => {
@@ -114,6 +116,8 @@ class CanvasManager {
           eraserMode: this.eraserMode,
           zoomLock: this.zoomLock,
           scaleWidths: lassoManager.scaleWidths,
+          lassoMode: lassoManager.lassoMode,
+          rotationLock: lassoManager.rotationLock,
         };
         // Sliders change sizes many times a second; write once they settle.
         const timer = setTimeout(() => saveWorkspace(next), 500);

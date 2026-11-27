@@ -164,10 +164,11 @@ say why.
   from anywhere" (Concepts-style): drag anywhere to move, a tap outside
   deselects, two fingers move, scale and rotate (`transformBlock`, one undo
   step per touch sequence).
-- **Arrange within a layer** (S). "Bring to front" / "Send to back" (and
-  one step forward/back) in the selection menu, e.g. to put an imported
-  image behind text already written on the same layer. Order is the
-  position in `Layer.blocks`, so it is one reordered array, one undo step.
+- **Arrange within a layer** (done). "Arrange" in the selection menu: to
+  front, forward, backward, to back (`arrange.ts`, one undo step).
+- **Lasso modes** (done). Select what the loop touches or only what it
+  contains (toolbar, remembered), e.g. text over an image without it. A
+  rotation lock for two-finger gestures sits in the selection menu.
 - **Pen presets** (S). Saved colour, width and pen type; one tap to switch.
 - **Straight lines and shapes** (M). Hold still at the end of a stroke to snap
   it to a line, rectangle, ellipse or arrow (shape recognition). Plus a ruler

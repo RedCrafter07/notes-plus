@@ -1,10 +1,10 @@
 import { contentManager } from "#lib/state/contentManager.svelte.ts";
 import type { Block, Point } from "#lib/tauri/bindings.ts";
-import { blockBounds, blockInPolygon } from "../blocks";
+import { blockBounds, blockInPolygon, type LassoMode } from "../blocks";
 
 export type LassoSelection = Record<string, { index: number; block: Block }[]>;
 
-export function runSelection(lassoPoints: Point[]): LassoSelection | undefined {
+export function runSelection(lassoPoints: Point[], mode: LassoMode = "touch"): LassoSelection | undefined {
   if (lassoPoints.length < 3) return undefined;
 
   const selection: LassoSelection = {};
@@ -25,7 +25,7 @@ export function runSelection(lassoPoints: Point[]): LassoSelection | undefined {
     const selectedInLayer: { index: number; block: Block }[] = [];
 
     layer.blocks.forEach((block, index) => {
-      if (nearLoop(block) && blockInPolygon(block, lassoPoints))
+      if (nearLoop(block) && blockInPolygon(block, lassoPoints, mode))
         selectedInLayer.push({ index, block });
     });
 

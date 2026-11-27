@@ -26,6 +26,10 @@ export interface Workspace {
   zoomLock: boolean;
   /** Scaling a selection also scales line widths and font sizes. */
   scaleWidths: boolean;
+  /** Lasso selects what it touches, or only what it contains. */
+  lassoMode: "touch" | "contain";
+  /** Two-finger gestures do not rotate selections. */
+  rotationLock: boolean;
 }
 
 /** The saved workspace, with every invalid field left out. */
@@ -46,6 +50,8 @@ export function loadWorkspace(tools: ToolInfo): Partial<Workspace> {
   if (w.eraserMode === "partial" || w.eraserMode === "stroke") out.eraserMode = w.eraserMode;
   if (typeof w.zoomLock === "boolean") out.zoomLock = w.zoomLock;
   if (typeof w.scaleWidths === "boolean") out.scaleWidths = w.scaleWidths;
+  if (w.lassoMode === "touch" || w.lassoMode === "contain") out.lassoMode = w.lassoMode;
+  if (typeof w.rotationLock === "boolean") out.rotationLock = w.rotationLock;
 
   if (w.colors && typeof w.colors === "object") {
     out.colors = {};

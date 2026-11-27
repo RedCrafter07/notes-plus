@@ -29,6 +29,8 @@ describe("workspace", () => {
       eraserMode: "stroke" as const,
       zoomLock: false,
       scaleWidths: false,
+      lassoMode: "contain" as const,
+      rotationLock: true,
     };
     saveWorkspace(w);
     expect(loadWorkspace()).toEqual(w);
@@ -44,6 +46,8 @@ describe("workspace", () => {
         eraserMode: "sideways",
         zoomLock: "yes",
         scaleWidths: 1,
+        lassoMode: "around",
+        rotationLock: "no",
       }),
     );
     expect(loadWorkspace()).toEqual({

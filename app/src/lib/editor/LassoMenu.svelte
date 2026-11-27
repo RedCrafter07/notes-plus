@@ -1,6 +1,20 @@
 <script lang="ts">
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
-  import { IconArrowsDiagonal, IconCopy, IconLineHeight, IconTrash } from "@tabler/icons-svelte";
+  import {
+    IconArrowsDiagonal,
+    IconCopy,
+    IconLineHeight,
+    IconLock,
+    IconRotate2,
+    IconStack2,
+    IconStackBack,
+    IconStackBackward,
+    IconStackForward,
+    IconStackFront,
+    IconTrash,
+  } from "@tabler/icons-svelte";
+  import type { Arrange } from "./arrange";
+  import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
   import Slider from "#lib/components/Slider.svelte";
   import { formatSize } from "#lib/util/format.ts";
   import { toolDef } from "./tools/registry";
@@ -78,6 +92,20 @@
 
   function openWidth() {
     widthOpen = !widthOpen;
+    arrangeOpen = false;
+  }
+
+  // Drawing order within the layer (see arrange.ts).
+  let arrangeOpen = $state(false);
+  const ARRANGE: { how: Arrange; label: string; icon: typeof IconStackFront }[] = [
+    { how: "front", label: "Bring to front", icon: IconStackFront },
+    { how: "forward", label: "Bring forward", icon: IconStackForward },
+    { how: "backward", label: "Send backward", icon: IconStackBackward },
+    { how: "back", label: "Send to back", icon: IconStackBack },
+  ];
+  function openArrange() {
+    arrangeOpen = !arrangeOpen;
+    widthOpen = false;
   }
 
   function changeWidth(v: number) {
@@ -100,9 +128,9 @@
       : height + 8,
   );
 
-  // Close the popover with the selection.
+  // Close the popovers with the selection.
   $effect(() => {
-    if (!lassoManager.selection) widthOpen = false;
+    if (!lassoManager.selection) widthOpen = arrangeOpen = false;
   });
 </script>
 
@@ -158,6 +186,37 @@
     >
       <IconArrowsDiagonal />
     </button>
+    {#if settingsStore.store.transform_anywhere}
+      <!-- Two-finger gestures: move and scale only, no accidental tilt. -->
+      <button
+        class={[
+          "cursor-pointer p-2 rounded-lg active:scale-90 transition-all",
+          lassoManager.rotationLock ? "bg-primary/20 text-primary" : "hover:bg-overlay/30",
+        ]}
+        onpointerdown={(e) => e.stopPropagation()}
+        onclick={() => (lassoManager.rotationLock = !lassoManager.rotationLock)}
+        aria-pressed={lassoManager.rotationLock}
+        aria-label="Lock rotation"
+        title={lassoManager.rotationLock
+          ? "Rotation locked: two fingers only move and scale (tap to unlock)"
+          : "Two fingers also rotate (tap to lock rotation)"}
+      >
+        {#if lassoManager.rotationLock}<IconLock />{:else}<IconRotate2 />{/if}
+      </button>
+    {/if}
+    <button
+      class={[
+        "cursor-pointer p-2 rounded-lg active:scale-90 transition-all",
+        arrangeOpen ? "bg-primary text-base-1" : "hover:bg-overlay/30",
+      ]}
+      onpointerdown={(e) => e.stopPropagation()}
+      onclick={openArrange}
+      aria-label="Arrange"
+      aria-expanded={arrangeOpen}
+      title="Arrange: bring to front or send to back within the layer"
+    >
+      <IconStack2 />
+    </button>
     <button
       class="cursor-pointer p-2 rounded-lg hover:bg-overlay/30 active:scale-90 transition-all"
       onpointerdown={(e) => {
@@ -180,6 +239,25 @@
     >
       <IconCopy />
     </button>
+    {#if arrangeOpen}
+      <div
+        class="absolute left-1/2 -translate-x-1/2 w-56 p-1 rounded-xl bg-base-1/90 backdrop-blur-md shadow-lg border border-content-1/10 flex flex-col"
+        style:top="{popoverTop}px"
+        role="group"
+        aria-label="Arrange"
+        onpointerdown={(e) => e.stopPropagation()}
+      >
+        {#each ARRANGE as a (a.how)}
+          <button
+            class="flex flex-row items-center gap-3 px-3 h-11 rounded-lg text-left hover:bg-overlay/30 active:scale-95 transition-all"
+            onclick={() => lassoManager.arrangeSelection(a.how)}
+          >
+            <a.icon size={20} />
+            <span>{a.label}</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
     {#if widthOpen && hasInk}
       <div
         class="absolute left-1/2 -translate-x-1/2 w-64 p-3 rounded-xl bg-base-1/90 backdrop-blur-md shadow-lg border border-content-1/10 flex flex-col gap-1"

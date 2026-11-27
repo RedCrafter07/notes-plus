@@ -1,6 +1,39 @@
 import { describe, expect, it } from "vitest";
 import type { Block } from "#lib/tauri/bindings.ts";
-import { mapPoint, scaleBlock, transformBlock, type Similarity } from "./blocks";
+import { blockInPolygon, mapPoint, scaleBlock, transformBlock, type Similarity } from "./blocks";
+
+describe("lasso modes", () => {
+  const loop = [
+    { x: 0, y: 0, pressure: 0.5 },
+    { x: 100, y: 0, pressure: 0.5 },
+    { x: 100, y: 100, pressure: 0.5 },
+    { x: 0, y: 100, pressure: 0.5 },
+  ];
+  const halfIn: Block = {
+    type: "Stroke",
+    id: "lasso-stroke",
+    color: "#000",
+    thickness: 2,
+    opacity: 1,
+    points: [
+      { x: 50, y: 50, pressure: 0.5 },
+      { x: 150, y: 50, pressure: 0.5 },
+    ],
+  };
+  const imageIn: Block = { type: "Image", id: "lasso-image", x: 10, y: 10, width: 30, height: 30, asset: "a" };
+  const bigImage: Block = { type: "Image", id: "lasso-big-image", x: -20, y: -20, width: 200, height: 200, asset: "a" };
+
+  it("touch: selects what the loop reaches into", () => {
+    expect(blockInPolygon(halfIn, loop, "touch")).toBe(true);
+    expect(blockInPolygon(imageIn, loop, "touch")).toBe(true);
+  });
+
+  it("contain: only what lies entirely inside (text over a big image, without it)", () => {
+    expect(blockInPolygon(halfIn, loop, "contain")).toBe(false);
+    expect(blockInPolygon(imageIn, loop, "contain")).toBe(true);
+    expect(blockInPolygon(bigImage, loop, "contain")).toBe(false);
+  });
+});
 
 describe("transformBlock", () => {
   const quarterTurn: Similarity = { from: { x: 0, y: 0 }, to: { x: 100, y: 0 }, scale: 2, angle: Math.PI / 2 };

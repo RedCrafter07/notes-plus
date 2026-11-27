@@ -83,7 +83,8 @@ export function canvasController(
     const d1 = Math.hypot(now[1].x - now[0].x, now[1].y - now[0].y);
     const a0 = Math.atan2(before[1].y - before[0].y, before[1].x - before[0].x);
     const a1 = Math.atan2(now[1].y - now[0].y, now[1].x - now[0].x);
-    return { from: mid(before[0], before[1]), to: mid(now[0], now[1]), scale: d1 / d0, angle: a1 - a0 };
+    const angle = lassoManager.rotationLock ? 0 : a1 - a0;
+    return { from: mid(before[0], before[1]), to: mid(now[0], now[1]), scale: d1 / d0, angle };
   }
 
   function touchDown(e: PointerEvent) {

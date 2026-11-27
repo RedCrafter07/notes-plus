@@ -6,12 +6,15 @@
     IconGripVertical,
     IconPhotoPlus,
     IconScissors,
+    IconLassoPolygon,
+    IconSquareDashed,
     IconScribbleOff,
     IconPlus,
   } from "@tabler/icons-svelte";
   import { fade } from "svelte/transition";
   import ColorEditPopup from "#lib/components/ColorEditPopup.svelte";
   import Slider from "#lib/components/Slider.svelte";
+  import { lassoManager } from "./state/lassoManager.svelte";
   import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { tabManager } from "#lib/state/tabManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
@@ -359,6 +362,22 @@
       >
         <IconPlus />
       </button>
+    {/if}
+
+    {#if canvasManager.tool === "lasso"}
+      {@render sep()}
+      {#each [["touch", "Select what the loop touches", IconLassoPolygon], ["contain", "Select only what is entirely inside the loop", IconSquareDashed]] as const as [mode, label, Icon] (mode)}
+        {@const active = lassoManager.lassoMode === mode}
+        <button
+          class={btnOn(active)}
+          onclick={() => (lassoManager.lassoMode = mode)}
+          aria-label={label}
+          aria-pressed={active}
+          title={label}
+        >
+          <Icon />
+        </button>
+      {/each}
     {/if}
 
     {#if canvasManager.tool === "eraser"}

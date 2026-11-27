@@ -273,24 +273,27 @@ export function recolorBlock(b: Block, color: string): Block {
 }
 
 /** Whether a closed lasso polygon selects this block. */
-export function blockInPolygon(b: Block, polygon: Point[]): boolean {
+/**
+ * How the lasso decides: "touch" selects a block as soon as any part of it
+ * is inside the loop; "contain" only when all of it is (e.g. text written
+ * over an image, without the image).
+ */
+export type LassoMode = "touch" | "contain";
+
+export function blockInPolygon(b: Block, polygon: Point[], mode: LassoMode = "touch"): boolean {
+  const inside = (p: Point2D) => isPointInPolygon(p, polygon);
   switch (b.type) {
     case "Stroke":
-      return b.points.some((p) => isPointInPolygon(p, polygon));
+      return mode === "contain" ? b.points.every(inside) : b.points.some(inside);
     case "Text":
     case "Image": {
-      // Selected if any corner or the centre is inside the lasso.
+      // Touch: any corner or the centre inside. Contain: all four corners.
       const bounds = blockBounds(b);
       if (!bounds) return false;
       const { min, max } = bounds;
-      const probes: Point2D[] = [
-        min,
-        max,
-        { x: min.x, y: max.y },
-        { x: max.x, y: min.y },
-        { x: (min.x + max.x) / 2, y: (min.y + max.y) / 2 },
-      ];
-      return probes.some((p) => isPointInPolygon(p, polygon));
+      const corners: Point2D[] = [min, max, { x: min.x, y: max.y }, { x: max.x, y: min.y }];
+      if (mode === "contain") return corners.every(inside);
+      return [...corners, { x: (min.x + max.x) / 2, y: (min.y + max.y) / 2 }].some(inside);
     }
     default:
       return assertNever(b);

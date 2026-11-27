@@ -1,6 +1,8 @@
 import { contentManager } from "#lib/state/contentManager.svelte.ts";
+import { arrange, type Arrange } from "#lib/editor/arrange.ts";
 import {
   runSelection,
+  selectionFromIds,
   selectionIds,
   type LassoSelection,
 } from "#lib/editor/tools/lasso.ts";
@@ -17,6 +19,7 @@ import {
   recolorBlock,
   scaleBlock,
   transformBlock,
+  type LassoMode,
   type Similarity,
   translateBlock,
 } from "../blocks";
@@ -71,7 +74,7 @@ export class LassoManager {
   }
 
   updateSelection() {
-    this.selection = runSelection(this.points);
+    this.selection = runSelection(this.points, this.lassoMode);
   }
 
   /** Replaces each selected block via `fn`, keeping positions and the selection. */
@@ -214,6 +217,20 @@ export class LassoManager {
     tabManager.tab?.history.commit();
   }
 
+  /** Changes the drawing order of the selection within its layer(s): one
+   *  undo step; the selection stays (see `arrange`). */
+  arrangeSelection(how: Arrange) {
+    if (!this.selection) return;
+    const ids = this.selectedIds;
+    tabManager.transact("Arrange", () => {
+      for (const layerId of this.selectedLayers) {
+        const layer = contentManager.layers.find((l) => l.id === layerId);
+        if (layer) layer.blocks = arrange(layer.blocks, ids, how);
+      }
+      this.selection = selectionFromIds([...ids]) ?? undefined;
+    });
+  }
+
   colorSelection(color: string) {
     tabManager.transact("Change color", () => {
       this.mapSelection((b) => recolorBlock(b, color));
@@ -252,6 +269,11 @@ export class LassoManager {
   /** Whether scaling also changes line widths and font sizes (remembered,
    *  see workspace.ts). Off: they stay as they are. */
   scaleWidths = $state(true);
+  /** Whether a block is selected when the loop touches it or only when it
+   *  contains all of it (remembered, see workspace.ts). */
+  lassoMode = $state<LassoMode>("touch");
+  /** Two-finger gestures move and scale, but do not rotate (remembered). */
+  rotationLock = $state(false);
 
   /** The frame's corners, clockwise from the top left. */
   get corners(): Point2D[] {
