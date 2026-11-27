@@ -1,11 +1,13 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import { IconCheck, IconFileImport, IconLoader2 } from "@tabler/icons-svelte";
+  import { IconCheck, IconFileImport, IconLoader2, IconRuler2 } from "@tabler/icons-svelte";
   import Overlay from "#lib/components/Overlay.svelte";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import { importPdfPages, type PdfDestination } from "./pdf.svelte";
   import { formatPageRanges, parsePageRanges } from "./pageRanges";
   import { pdfImport } from "./pdfImport.svelte";
+  import { detectScan, isOversized, sizeFactor, type PdfSizing } from "./pdfScale";
+  import { pageRect, PAGE_FORMATS } from "../pageFormats";
 
   /*
    * Choose which PDF pages to import and where they go:
@@ -13,6 +15,11 @@
    *   current page or at the end; or
    * - as images on the current page, e.g. one diagram into your notes.
    * Pages are picked by tapping thumbnails or by typing ranges ("1-3, 7").
+   *
+   * Scans often claim a page size several times too large (see
+   * pdfScale.ts). When a chosen page is oversized, a size picker appears:
+   * real paper size (scans), the note's page width, as stored, or a
+   * percentage.
    */
   const src = $derived(pdfImport.source);
 
@@ -23,6 +30,10 @@
   let mode = $state<PdfDestination["kind"]>("pages");
   let at = $state<"after" | "end">("after");
   let progress = $state<{ done: number; total: number }>();
+  /** Each page's stored size in points, once read. */
+  let sizes = $state<{ width: number; height: number }[]>([]);
+  let sizeMode = $state<PdfSizing["kind"]>("keep");
+  let percent = $state(100);
 
   const count = $derived(selected.size);
   const order = $derived([...selected].sort((a, b) => a - b));
@@ -41,9 +52,27 @@
       setSelection(Array.from({ length: s.numPages }, (_, i) => i + 1));
       mode = "pages";
       progress = undefined;
+      sizes = [];
+      sizeMode = "keep";
+      percent = 100;
     });
 
     let cancelled = false;
+    (async () => {
+      const out = [];
+      for (let n = 1; n <= s.numPages; n++) {
+        try {
+          out.push(await s.pageSize(n));
+        } catch {
+          return; // closed meanwhile
+        }
+      }
+      if (cancelled) return;
+      sizes = out;
+      // Preselect the fix: real size for scans, else the note's width.
+      if (out.some((p) => detectScan(p.width, p.height))) sizeMode = "real";
+      else if (out.some((p) => isOversized(p.width, p.height))) sizeMode = "match";
+    })();
     (async () => {
       for (let n = 1; n <= s.numPages && !cancelled; n++) {
         try {
@@ -84,12 +113,38 @@
     const dest: PdfDestination = mode === "pages" ? { kind: "pages", at } : { kind: "here" };
     progress = { done: 0, total: count };
     try {
-      const ok = await importPdfPages(src, order, dest, (done, total) => (progress = { done, total }));
+      const ok = await importPdfPages(
+        src,
+        order,
+        dest,
+        (done, total) => (progress = { done, total }),
+        oversized ? sizing : { kind: "keep" },
+      );
       if (ok) await pdfImport.close();
     } finally {
       progress = undefined;
     }
   }
+
+  // Sizing applies to the chosen pages; it is offered only when one is oversized.
+  const chosen = $derived(order.map((n) => sizes[n - 1]).filter((p) => p !== undefined));
+  const oversized = $derived(chosen.find((p) => isOversized(p.width, p.height)));
+  const scan = $derived(chosen.map((p) => detectScan(p.width, p.height)).find((s) => s));
+  const sheet = $derived(pageRect(contentManager.page));
+  const a4 = PAGE_FORMATS.find((f) => f.id === "a4")!.size!;
+  const sizing = $derived<PdfSizing>(
+    sizeMode === "match"
+      ? { kind: "match", width: sheet?.width ?? a4.width }
+      : sizeMode === "custom"
+        ? { kind: "custom", percent }
+        : { kind: sizeMode },
+  );
+  /** What the first oversized page becomes, in mm. */
+  const resultMm = $derived.by(() => {
+    if (!oversized) return;
+    const k = sizeFactor(sizing, oversized.width, oversized.height) * (25.4 / 72);
+    return `${Math.round(oversized.width * k)} × ${Math.round(oversized.height * k)} mm`;
+  });
 
   const seg = (on: boolean) =>
     `h-10 px-4 rounded-lg font-semibold transition-all active:scale-95 ${
@@ -139,6 +194,54 @@
       {/if}
     </div>
 
+    {#if oversized}
+      <div class="flex flex-col gap-2 p-3 rounded-xl bg-base-2 border border-content-1/10">
+        <p class="flex flex-row gap-2 items-center text-sm text-content-2">
+          <IconRuler2 size={18} class="shrink-0 text-primary" />
+          {#if scan}
+            This looks like a scan of {scan.paper} paper at {scan.dpi} dpi, stored {Math.round(1 / scan.factor * 10) / 10}×
+            too large: ink and pens would look tiny on it.
+          {:else}
+            These pages are much larger than paper: ink and pens would look tiny on them.
+          {/if}
+        </p>
+        <div class="flex flex-row flex-wrap items-center gap-2">
+          <div class="flex flex-row flex-wrap p-1 rounded-xl bg-base-3" role="radiogroup" aria-label="Page size">
+            {#if scan}
+              <button role="radio" aria-checked={sizeMode === "real"} class={seg(sizeMode === "real")} onclick={() => (sizeMode = "real")}>
+                Real size ({scan.paper})
+              </button>
+            {/if}
+            <button role="radio" aria-checked={sizeMode === "match"} class={seg(sizeMode === "match")} onclick={() => (sizeMode = "match")}>
+              {sheet ? "Width of this note's page" : "A4 width"}
+            </button>
+            <button role="radio" aria-checked={sizeMode === "keep"} class={seg(sizeMode === "keep")} onclick={() => (sizeMode = "keep")}>
+              As stored
+            </button>
+            <button role="radio" aria-checked={sizeMode === "custom"} class={seg(sizeMode === "custom")} onclick={() => (sizeMode = "custom")}>
+              Custom
+            </button>
+          </div>
+          {#if sizeMode === "custom"}
+            <label class="flex flex-row items-center gap-1">
+              <input
+                type="number"
+                min="1"
+                max="400"
+                bind:value={percent}
+                class="w-20 h-10 px-3 rounded-lg bg-base-3 focus:outline-none border-2 border-transparent focus:border-primary tabular-nums"
+                aria-label="Size in percent"
+              />
+              <span class="text-content-2">%</span>
+            </label>
+          {/if}
+          {#if resultMm}
+            <span class="text-sm text-content-3">Pages become {resultMm}</span>
+          {/if}
+        </div>
+      </div>
+    {/if}
+
     <div class="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-3 pb-2">
       {#each thumbs as thumb, i (i)}
         {@const n = i + 1}
@@ -169,6 +272,7 @@
         </button>
       {/each}
     </div>
+
 
     <div class="sticky bottom-0 -mx-4 -mb-4 px-4 py-3 bg-base-1 border-t border-content-1/10 flex flex-row flex-wrap items-center gap-3">
       <div class="flex flex-row p-1 rounded-xl bg-base-2" role="radiogroup" aria-label="Where to put the pages">

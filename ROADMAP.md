@@ -191,16 +191,13 @@ say why.
   pages" (setting, moon button by the zoom) shows light pages dark in the
   editor only, PDF backgrounds inverted; exports, thumbnails and the
   presenter view keep the real colours.
-- **Right-size scanned PDFs** (S–M). Scanners often store the page size as
-  pixels at 72 dpi, so a 300 dpi A4 scan imports 4.2× too large and ink and
-  pen presets look tiny on it. Detect it: the aspect ratio matches a known
-  format (A4, A5, Letter, ...) within ~1 %, and the size equals that format
-  times a common scan resolution / 72 (150, 200, 300, 400, 600 dpi); that
-  gives the exact factor, and pages that are fine are left alone. Then
-  offer a picker in the import dialog, only when a page is off: "Real size
-  (A4, scanned at 300 dpi)" preselected, "Match this note's pages", "Keep
-  as is", and a custom percentage. Scaling down also lowers the render
-  size, so nothing is lost.
+- **Right-size scanned PDFs** (done). Scanners often store the page size
+  as pixels at 72 dpi, so a 300 dpi A4 scan imported 4.2× too large.
+  `import/pdfScale.ts` detects it (known paper shape × common scan dpi; A4
+  and 300 dpi tried first, since A4 at 300 and A6 at 600 have the same
+  pixels) and the import dialog then offers real size (preselected), the
+  note's page width, as stored, or a percentage. Scans render at their own
+  pixel count, which also makes them much smaller in the file.
 
 ## Phase 3 — Pages and organisation
 

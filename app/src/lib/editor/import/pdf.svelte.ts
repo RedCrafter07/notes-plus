@@ -10,6 +10,7 @@ import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import type { Block, Page } from "#lib/tauri/bindings.ts";
 import { newId } from "../blocks";
 import { pageRect } from "../pageFormats";
+import { detectScan, PT_TO_UNITS, sizeFactor, type PdfSizing } from "./pdfScale";
 
 /*
  * PDF import in steps, so a dialog can sit in between:
@@ -22,8 +23,6 @@ import { pageRect } from "../pageFormats";
  *   source.close()          release the document and pdf.js worker
  */
 
-/** PDF points are 1/72 inch; content units are 1/96 inch. */
-const PT_TO_UNITS = 96 / 72;
 /** Render at twice the page's size so slides stay sharp when zoomed in. */
 const RENDER_SCALE = 2;
 const JPEG_QUALITY = 0.88;
@@ -34,6 +33,8 @@ export interface PdfSource {
   numPages: number;
   /** A small preview of page `n` (1-based) as a data URL. */
   thumbnail(n: number, maxPx: number): Promise<string>;
+  /** Page `n`'s size as stored, in points (rotation applied). */
+  pageSize(n: number): Promise<{ width: number; height: number }>;
   close(): Promise<void>;
   /** @internal */
   doc: PDFDocumentProxy;
@@ -65,19 +66,27 @@ export async function openPdf(file: File): Promise<PdfSource> {
       const r = await render(doc, n, maxPx / Math.max(base.width, base.height), "image/png");
       return r.dataUrl;
     },
+    async pageSize(n) {
+      const v = (await doc.getPage(n)).getViewport({ scale: 1 });
+      return { width: v.width, height: v.height };
+    },
     close: () => task.destroy(),
   };
 }
 
-/** Renders page `n` onto a white sheet; size is in content units at scale 1. */
+/**
+ * Renders page `n` onto a white sheet at `scale` pixels per point. The size
+ * returned is in content units, times `factor` (see pdfScale.ts).
+ */
 async function render(
   doc: PDFDocumentProxy,
   n: number,
   scale: number,
   type: "image/png" | "image/jpeg" = "image/jpeg",
+  factor = 1,
 ) {
   const page = await doc.getPage(n);
-  const size = page.getViewport({ scale: PT_TO_UNITS });
+  const size = page.getViewport({ scale: PT_TO_UNITS * factor });
   const viewport = page.getViewport({ scale });
 
   const canvas = document.createElement("canvas");
@@ -107,14 +116,16 @@ const STACK_GAP = 24;
 const MARGIN = 32;
 
 /**
- * Renders the chosen pages and inserts them in one undo step. Reports
- * progress as (done, total). Returns whether anything was inserted.
+ * Renders the chosen pages and inserts them in one undo step, sized by
+ * `sizing`. Reports progress as (done, total). Returns whether anything was
+ * inserted.
  */
 export async function importPdfPages(
   src: PdfSource,
   pages: number[],
   dest: PdfDestination,
   onProgress?: (done: number, total: number) => void,
+  sizing: PdfSizing = { kind: "keep" },
 ): Promise<boolean> {
   const tab = tabManager.tab;
   if (pages.length === 0 || !tab) return false;
@@ -133,7 +144,12 @@ export async function importPdfPages(
   const rendered: { n: number; asset: string; width: number; height: number }[] = [];
   for (const [i, n] of pages.entries()) {
     onProgress?.(i, pages.length);
-    const { dataUrl, width, height } = await render(src.doc, n, PT_TO_UNITS * RENDER_SCALE);
+    const pt = await src.pageSize(n);
+    const factor = sizeFactor(sizing, pt.width, pt.height);
+    // A scan holds one image pixel per point: render exactly that, whatever
+    // size the page gets. More pixels add nothing; fewer would lose detail.
+    const scale = detectScan(pt.width, pt.height) ? 1 : PT_TO_UNITS * RENDER_SCALE * factor;
+    const { dataUrl, width, height } = await render(src.doc, n, scale, "image/jpeg", factor);
     const asset = await contentManager.addAsset(dataUrl, tab);
     if (!asset) return false;
     rendered.push({ n, asset, width, height });

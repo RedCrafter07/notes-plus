@@ -230,7 +230,8 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
       shows page thumbnails; pick pages by tapping or ranges ("1-3, 7"), then
       insert them as new pages (PDF page as background; after the current page
       or at the end) or as images on the current page. From the sidebar or the
-      toolbar's insert button.
+      toolbar's insert button. Scans stored too large are detected and offered
+      at their real paper size (`import/pdfScale.ts`).
 - [x] **Export.** Dedicated page (`routes/export/[id]`, Ctrl+E): all/current
       pages, the lasso selection, or **regions** saved on each page (a
       format such as A4 or free-form; drag to move/resize, drag handle to
