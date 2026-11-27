@@ -172,6 +172,80 @@ export function scaleBlock(
   }
 }
 
+/**
+ * Moving, scaling and rotating in one: `from` goes to `to`, and everything
+ * else turns by `angle` (radians) and scales by `scale` around it. A drag
+ * is `scale` 1 and `angle` 0; a two-finger pinch sets all four.
+ */
+export interface Similarity {
+  from: Point2D;
+  to: Point2D;
+  scale: number;
+  angle: number;
+}
+
+export function mapPoint(t: Similarity, p: Point2D): Point2D {
+  const dx = p.x - t.from.x;
+  const dy = p.y - t.from.y;
+  const c = Math.cos(t.angle) * t.scale;
+  const s = Math.sin(t.angle) * t.scale;
+  return { x: t.to.x + c * dx - s * dy, y: t.to.y + s * dx + c * dy };
+}
+
+/** Where a block's centre goes under `t` (text and images stay upright). */
+function mappedCentre(b: Block, t: Similarity): Point2D | null {
+  const bounds = blockBounds(b);
+  if (!bounds) return null;
+  return mapPoint(t, { x: bounds.min.x + bounds.width / 2, y: bounds.min.y + bounds.height / 2 });
+}
+
+/**
+ * Applies a `Similarity` to a block. Ink follows exactly (its points are
+ * mapped). Text and images have no stored rotation, so they stay upright:
+ * their centre is mapped and their size scaled. Line widths and font sizes
+ * scale too unless `keepWidths` (as in `scaleBlock`).
+ */
+export function transformBlock(
+  b: Block,
+  t: Similarity,
+  { keepWidths = false }: { keepWidths?: boolean } = {},
+): Block {
+  const w = keepWidths ? 1 : t.scale;
+  switch (b.type) {
+    case "Stroke":
+      return {
+        ...b,
+        id: newId(),
+        thickness: b.thickness * w,
+        points: b.points.map((p) => ({ ...p, ...mapPoint(t, p) })),
+      };
+    case "Text": {
+      const c = mappedCentre(b, t);
+      if (!c) return b;
+      const width = b.width * t.scale;
+      // Its height follows from the layout; scaling it alike keeps the centre.
+      const height = (blockBounds(b)?.height ?? 0) * w;
+      return {
+        ...b,
+        id: newId(),
+        x: c.x - width / 2,
+        y: c.y - height / 2,
+        width,
+        font_size: b.font_size * w,
+      };
+    }
+    case "Image": {
+      const c = mappedCentre(b, t);
+      if (!c) return b;
+      const width = b.width * t.scale;
+      const height = b.height * t.scale;
+      return { ...b, id: newId(), x: c.x - width / 2, y: c.y - height / 2, width, height };
+    }
+    default:
+      return assertNever(b);
+  }
+}
+
 /** The block's colour, or `null` if it has none (images). */
 export function blockColor(b: Block): string | null {
   switch (b.type) {

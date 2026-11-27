@@ -150,13 +150,20 @@ say why.
 - **Pressure** (done). `pen_pressure` setting (off / light / strong) with a
   preview; each stroke stores its `thinning`, so old ink keeps its look.
 - **Fractional stroke widths** (done). The pen slider steps by 0.5.
-- **Scale, rotate and restyle selections** (M). Still to do: a rotate
-  handle (text and images would need a stored rotation: a data-model
-  decision). Done: the width control in the selection menu (absolute for a
+- **Rotating text and images** (M). With "Move selections from anywhere",
+  a two-finger twist rotates a selection, but text and images only move
+  around the centre and stay upright: they have no stored rotation yet
+  (data model, rendering, export, hit testing, bounds). A rotate handle on
+  the frame for pen and mouse belongs here too.
+- **Scale, rotate and restyle selections** (M). Done: the width control in the selection menu (absolute for a
   common width, a percentage for mixed widths, one undo step per drag;
   `lassoManager.scaleWidth`), and corner handles that scale proportionally
   around the opposite corner, ink width and font size included, so images
-  can be resized (`scaleBlock`; previewed with a CSS transform).
+  can be resized (`scaleBlock`; previewed with a CSS transform). A toggle
+  in the menu keeps line widths when scaling. The setting "Move selections
+  from anywhere" (Concepts-style): drag anywhere to move, a tap outside
+  deselects, two fingers move, scale and rotate (`transformBlock`, one undo
+  step per touch sequence).
 - **Arrange within a layer** (S). "Bring to front" / "Send to back" (and
   one step forward/back) in the selection menu, e.g. to put an imported
   image behind text already written on the same layer. Order is the

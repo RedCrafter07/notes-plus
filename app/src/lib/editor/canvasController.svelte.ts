@@ -4,6 +4,9 @@ import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { toolDef, type Tool } from "./tools/registry";
 import type { ToolHandlers } from "./tools/types";
 import { penOverride } from "./penButtons";
+import { lassoManager } from "./state/lassoManager.svelte";
+import type { Similarity } from "./blocks";
+import type { Point2D } from "#lib/util/canvasBounds.ts";
 
 const ZOOM_STEP = 1.1;
 
@@ -41,6 +44,48 @@ export function canvasController(
 
   // ------------------------------------------------------------------ touch
 
+  /*
+   * "Move selections from anywhere" (setting): while something is selected
+   * with the lasso, one finger moves the selection and two fingers move,
+   * scale and rotate it, instead of panning and zooming the view. Finger
+   * positions are remembered in page coordinates whenever the set of
+   * fingers changes (`baseline`); each move turns baseline-to-now into one
+   * `Similarity` for lassoManager to preview. Once a touch sequence starts
+   * in this mode it stays in it until every finger is up.
+   */
+  let gestureActive = false;
+  let baseline: Map<number, Point2D> | undefined;
+
+  const transformMode = () =>
+    settingsStore.store.transform_anywhere &&
+    canvasManager.tool === "lasso" &&
+    !!lassoManager.selection &&
+    !lassoManager.isSelecting;
+
+  const pageAt = (p: { x: number; y: number }): Point2D =>
+    canvasManager.translateToRelative(p.x - elementRect.left, p.y - elementRect.top);
+
+  /** Applies the gesture so far and starts measuring from the current fingers. */
+  function rebaseline() {
+    lassoManager.applyGesture();
+    baseline = new Map([...activeTouch].map(([id, p]) => [id, pageAt(p)]));
+  }
+
+  function gestureNow(): Similarity | undefined {
+    if (!baseline) return;
+    const ids = [...activeTouch.keys()].filter((id) => baseline!.has(id));
+    const before = ids.map((id) => baseline!.get(id)!);
+    const now = ids.map((id) => pageAt(activeTouch.get(id)!));
+    if (ids.length === 1) return { from: before[0], to: now[0], scale: 1, angle: 0 };
+    if (ids.length !== 2) return;
+    const mid = (a: Point2D, b: Point2D) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    const d0 = Math.hypot(before[1].x - before[0].x, before[1].y - before[0].y) || 1;
+    const d1 = Math.hypot(now[1].x - now[0].x, now[1].y - now[0].y);
+    const a0 = Math.atan2(before[1].y - before[0].y, before[1].x - before[0].x);
+    const a1 = Math.atan2(now[1].y - now[0].y, now[1].x - now[0].x);
+    return { from: mid(before[0], before[1]), to: mid(now[0], now[1]), scale: d1 / d0, angle: a1 - a0 };
+  }
+
   function touchDown(e: PointerEvent) {
     if (inkPointer !== undefined) return; // palm while writing
     activeTouch.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -51,6 +96,12 @@ export function canvasController(
     // Pinch math restarts whenever the finger count changes.
     initialPinchDistance = undefined;
     prevCenter = undefined;
+
+    if (gestureActive || (activeTouch.size === 1 && transformMode())) {
+      if (!gestureActive) lassoManager.beginGestures();
+      gestureActive = true;
+      rebaseline();
+    }
   }
 
   function touchMove(e: PointerEvent) {
@@ -61,6 +112,11 @@ export function canvasController(
     const o = tap?.origin.get(e.pointerId);
     if (tap && o && Math.hypot(e.clientX - o.x, e.clientY - o.y) > TAP_MAX_MOVE)
       tap.moved = true;
+
+    if (gestureActive) {
+      lassoManager.gesture = gestureNow();
+      return;
+    }
 
     if (activeTouch.size === 1) {
       canvasManager.panBy(e.clientX - prev.x, e.clientY - prev.y);
@@ -86,6 +142,18 @@ export function canvasController(
     if (!activeTouch.delete(e.pointerId)) return;
     initialPinchDistance = undefined;
     prevCenter = undefined;
+
+    if (gestureActive) {
+      // A touch that never really moved is a tap (two fingers = undo):
+      // drop its jitter rather than turning it into an undo step of its own.
+      if (!tap?.moved) lassoManager.gesture = undefined;
+      if (activeTouch.size > 0) rebaseline();
+      else {
+        lassoManager.endGestures();
+        gestureActive = false;
+        baseline = undefined;
+      }
+    }
 
     if (activeTouch.size > 0 || !tap) return;
 

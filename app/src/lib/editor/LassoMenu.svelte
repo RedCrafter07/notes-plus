@@ -106,7 +106,7 @@
   });
 </script>
 
-{#if !lassoManager.isSelecting && !lassoManager.isDraggingSelection && !lassoManager.scaling && canvasManager.tool === "lasso"}
+{#if !lassoManager.isSelecting && !lassoManager.isDraggingSelection && !lassoManager.scaling && !lassoManager.gesture && canvasManager.tool === "lasso"}
   <div
     data-ui="true"
     transition:fade={{ duration: 100 }}

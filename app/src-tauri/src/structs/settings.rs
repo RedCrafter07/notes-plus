@@ -47,6 +47,9 @@ pub struct Settings {
     pub present_fullscreen: bool,
     /// Pressure response of the pen (not the highlighter, which stays even).
     pub pen_pressure: PenPressure,
+    /// With a lasso selection, dragging anywhere moves it (a tap outside
+    /// still deselects) and two fingers pinch/twist it instead of the view.
+    pub transform_anywhere: bool,
 }
 
 impl Default for Settings {
@@ -65,6 +68,7 @@ impl Default for Settings {
             toolbar_dock: ToolbarDock::Top,
             present_fullscreen: true,
             pen_pressure: PenPressure::Light,
+            transform_anywhere: false,
         }
     }
 }

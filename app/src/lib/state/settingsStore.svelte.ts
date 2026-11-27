@@ -15,6 +15,7 @@ export const settingsStore = new Store<Settings>({
   toolbar_dock: "top",
   present_fullscreen: true,
   pen_pressure: "light",
+  transform_anywhere: false,
 });
 
 /**

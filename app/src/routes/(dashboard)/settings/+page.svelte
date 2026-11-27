@@ -50,6 +50,13 @@
         checked={settingsStore.store.use_last_page_settings}
         onChange={(v) => updateSettings({ use_last_page_settings: v })}
       />
+      <Switch
+        id="transform-anywhere"
+        label="Move selections from anywhere"
+        description="With something selected, drag anywhere on the page to move it, and use two fingers to scale and rotate it instead of the view. A tap outside the selection still deselects. Text and images stay upright when rotated."
+        checked={settingsStore.store.transform_anywhere}
+        onChange={(v) => updateSettings({ transform_anywhere: v })}
+      />
       <div class="flex flex-col gap-2">
         <div class="flex flex-col">
           <span class="font-semibold">Pen pressure</span>

@@ -7,6 +7,7 @@ import {
 import type { Block, Point } from "#lib/tauri/bindings.ts";
 import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { popupManager } from "#lib/state/popupManager.svelte.ts";
+import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
 import { unionBounds, type ContentBounds, type Point2D } from "#lib/util/canvasBounds.ts";
 import {
   blockBounds,
@@ -15,6 +16,8 @@ import {
   newId,
   recolorBlock,
   scaleBlock,
+  transformBlock,
+  type Similarity,
   translateBlock,
 } from "../blocks";
 
@@ -22,6 +25,8 @@ import {
 const HANDLE_HIT_PX = 16;
 /** Scaling stops here, so a selection cannot collapse to nothing. */
 const MIN_SCALE = 0.05;
+/** A press outside the selection that moves less than this (screen px) is a tap. */
+const TAP_MOVE_PX = 8;
 
 /*
  * Every mutation here assigns a *new* `blocks` array to the layer instead of
@@ -234,6 +239,7 @@ export class LassoManager {
     this.selection = undefined;
     this.isDraggingSelection = false;
     this.scaling = undefined;
+    this.gesture = undefined;
   }
 
   /*
@@ -293,6 +299,15 @@ export class LassoManager {
 
     if (this.isDraggingSelection) {
       this.isDraggingSelection = false;
+      // "Move from anywhere": a press outside that barely moved was a tap,
+      // which deselects as it would without the setting.
+      const moved = Math.hypot(this.dragOffsetX, this.dragOffsetY) * contentManager.zoom;
+      if (this.#fromOutside && moved < TAP_MOVE_PX) {
+        this.#fromOutside = false;
+        this.reset();
+        return;
+      }
+      this.#fromOutside = false;
       this.updateDrag();
       return;
     }
@@ -314,9 +329,53 @@ export class LassoManager {
     } else if (this.isInsideSelection(point)) {
       this.isDraggingSelection = true;
       this.dragStart = point;
+    } else if (settingsStore.store.transform_anywhere) {
+      // Move from anywhere; `commit` turns it back into a deselect if it was a tap.
+      this.isDraggingSelection = true;
+      this.#fromOutside = true;
+      this.dragStart = point;
     } else {
       this.reset();
     }
+  }
+
+  /** The current move began outside the selection (see `commit`). */
+  #fromOutside = false;
+
+  /*
+   * Touch gestures with "move from anywhere": one finger moves the
+   * selection, two fingers move, scale and rotate it. `gesture` is the
+   * preview (a CSS transform of the selection canvas and frame), and
+   * `applyGesture` writes it into the blocks; the canvas controller calls it
+   * whenever the finger count changes and when the fingers lift. The whole
+   * touch sequence is one undo step (`beginGestures` / `endGestures`).
+   */
+  gesture = $state<Similarity>();
+  #gestureHistory = false;
+
+  beginGestures() {
+    if (this.#gestureHistory) return;
+    this.#gestureHistory = true;
+    tabManager.tab?.history.begin("Transform");
+  }
+
+  applyGesture() {
+    const g = this.gesture;
+    this.gesture = undefined;
+    if (!g) return;
+    const still =
+      g.from.x === g.to.x && g.from.y === g.to.y && Math.abs(g.scale - 1) < 1e-4 && Math.abs(g.angle) < 1e-4;
+    if (still) return;
+    const keepWidths = !this.scaleWidths;
+    const t = { ...g, scale: Math.max(MIN_SCALE, g.scale) };
+    this.mapSelection((b) => transformBlock(b, t, { keepWidths }));
+  }
+
+  endGestures() {
+    this.applyGesture();
+    if (!this.#gestureHistory) return;
+    this.#gestureHistory = false;
+    tabManager.tab?.history.commit();
   }
 
   isInsideSelection(p: Point) {

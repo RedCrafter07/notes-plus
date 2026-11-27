@@ -31,6 +31,12 @@
 
   /** CSS preview of a selection being moved or scaled (it is committed on release). */
   const selectionTransform = $derived.by(() => {
+    const g = lassoManager.gesture;
+    if (g) {
+      const f = canvasManager.translateToAbsolute(g.from);
+      const t = canvasManager.translateToAbsolute(g.to);
+      return `transform-origin: 0 0; transform: translate(${t.x}px, ${t.y}px) rotate(${g.angle}rad) scale(${g.scale}) translate(${-f.x}px, ${-f.y}px);`;
+    }
     const s = lassoManager.scaling;
     if (s) {
       const a = canvasManager.translateToAbsolute(s.anchor);

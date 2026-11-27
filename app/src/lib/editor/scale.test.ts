@@ -1,6 +1,49 @@
 import { describe, expect, it } from "vitest";
 import type { Block } from "#lib/tauri/bindings.ts";
-import { scaleBlock } from "./blocks";
+import { mapPoint, scaleBlock, transformBlock, type Similarity } from "./blocks";
+
+describe("transformBlock", () => {
+  const quarterTurn: Similarity = { from: { x: 0, y: 0 }, to: { x: 100, y: 0 }, scale: 2, angle: Math.PI / 2 };
+
+  it("maps points: move, scale and rotate around `from`", () => {
+    const p = mapPoint(quarterTurn, { x: 10, y: 0 });
+    expect(p.x).toBeCloseTo(100);
+    expect(p.y).toBeCloseTo(20);
+  });
+
+  it("rotates ink exactly and scales its width", () => {
+    const s: Block = {
+      type: "Stroke",
+      id: "a",
+      color: "#000",
+      thickness: 3,
+      opacity: 1,
+      points: [{ x: 10, y: 0, pressure: 0.4 }],
+    };
+    const out = transformBlock(s, quarterTurn);
+    if (out.type !== "Stroke") throw new Error("type changed");
+    expect(out.points[0].x).toBeCloseTo(100);
+    expect(out.points[0].y).toBeCloseTo(20);
+    expect(out.points[0].pressure).toBe(0.4);
+    expect(out.thickness).toBe(6);
+  });
+
+  it("keeps an image upright: its centre moves, its size scales", () => {
+    const img: Block = { type: "Image", id: "i", x: 0, y: 0, width: 20, height: 10, asset: "x" };
+    const out = transformBlock(img, quarterTurn);
+    if (out.type !== "Image") throw new Error("type changed");
+    // centre (10, 5) -> (100 - 10, 20); size 40 x 20
+    expect(out.width).toBe(40);
+    expect(out.height).toBe(20);
+    expect(out.x + out.width / 2).toBeCloseTo(90);
+    expect(out.y + out.height / 2).toBeCloseTo(20);
+  });
+
+  it("is a plain move with scale 1 and angle 0", () => {
+    const move: Similarity = { from: { x: 5, y: 5 }, to: { x: 8, y: 1 }, scale: 1, angle: 0 };
+    expect(mapPoint(move, { x: 10, y: 10 })).toEqual({ x: 13, y: 6 });
+  });
+});
 
 const anchor = { x: 10, y: 20 };
 

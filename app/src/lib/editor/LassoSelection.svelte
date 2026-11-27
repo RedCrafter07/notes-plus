@@ -7,12 +7,15 @@
 
 {#if lassoManager.selection}
   {@const s = lassoManager.scaling}
+  {@const g = lassoManager.gesture}
   <!-- The selected blocks are drawn on the selection canvas; this is only the
-       frame, moved or scaled with it while a gesture previews. -->
+       frame, moved, scaled or rotated with it while a gesture previews. -->
   <g
-    transform={s
-      ? `translate(${s.anchor.x} ${s.anchor.y}) scale(${s.factor}) translate(${-s.anchor.x} ${-s.anchor.y})`
-      : `translate(${lassoManager.dragOffsetX}, ${lassoManager.dragOffsetY})`}
+    transform={g
+      ? `translate(${g.to.x} ${g.to.y}) rotate(${(g.angle * 180) / Math.PI}) scale(${g.scale}) translate(${-g.from.x} ${-g.from.y})`
+      : s
+        ? `translate(${s.anchor.x} ${s.anchor.y}) scale(${s.factor}) translate(${-s.anchor.x} ${-s.anchor.y})`
+        : `translate(${lassoManager.dragOffsetX}, ${lassoManager.dragOffsetY})`}
   >
     <rect
       transition:fade={{ duration: 100 }}
@@ -29,7 +32,7 @@
   </g>
   <!-- Corner handles: drag one to scale (see lassoManager.scaling). Hidden
        during a gesture; the hit area is larger than the drawn square. -->
-  {#if !s && !lassoManager.isDraggingSelection}
+  {#if !s && !g && !lassoManager.isDraggingSelection}
     {@const size = 10 / contentManager.zoom}
     {#each lassoManager.corners as c, i (i)}
       <rect
