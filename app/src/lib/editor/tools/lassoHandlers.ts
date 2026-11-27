@@ -5,6 +5,10 @@ const down: ToolHandler = (p) => {
   lassoManager.begin(p);
 };
 const move: ToolHandler = (p) => {
+  if (lassoManager.scaling) {
+    lassoManager.updateScale(p);
+    return;
+  }
   if (lassoManager.isDraggingSelection) {
     lassoManager.dragOffsetX = p.x - lassoManager.dragStart.x;
     lassoManager.dragOffsetY = p.y - lassoManager.dragStart.y;

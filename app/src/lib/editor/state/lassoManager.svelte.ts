@@ -7,15 +7,21 @@ import {
 import type { Block, Point } from "#lib/tauri/bindings.ts";
 import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { popupManager } from "#lib/state/popupManager.svelte.ts";
-import { unionBounds, type ContentBounds } from "#lib/util/canvasBounds.ts";
+import { unionBounds, type ContentBounds, type Point2D } from "#lib/util/canvasBounds.ts";
 import {
   blockBounds,
   blockColor,
   cloneBlock,
   newId,
   recolorBlock,
+  scaleBlock,
   translateBlock,
 } from "../blocks";
+
+/** How close (in screen pixels) a press must be to a corner to grab it. */
+const HANDLE_HIT_PX = 16;
+/** Scaling stops here, so a selection cannot collapse to nothing. */
+const MIN_SCALE = 0.05;
 
 /*
  * Every mutation here assigns a *new* `blocks` array to the layer instead of
@@ -227,9 +233,59 @@ export class LassoManager {
     this.dragOffsetY = 0;
     this.selection = undefined;
     this.isDraggingSelection = false;
+    this.scaling = undefined;
+  }
+
+  /*
+   * Scaling by a corner handle: proportional, around the opposite corner.
+   * While the pen moves only `scaling.factor` changes (the selection canvas
+   * and frame preview it with a transform); the blocks are scaled once, on
+   * release, as part of the gesture's undo step.
+   */
+  scaling = $state<{ anchor: Point2D; corner: Point2D; factor: number }>();
+
+  /** The frame's corners, clockwise from the top left. */
+  get corners(): Point2D[] {
+    const b = this.boundingBox;
+    if (!b) return [];
+    return [
+      { x: b.x, y: b.y },
+      { x: b.x + b.width, y: b.y },
+      { x: b.x + b.width, y: b.y + b.height },
+      { x: b.x, y: b.y + b.height },
+    ];
+  }
+
+  /** Starts scaling if `p` is on a corner handle. */
+  #startScale(p: Point): boolean {
+    const reach = HANDLE_HIT_PX / contentManager.zoom;
+    const corners = this.corners;
+    const i = corners.findIndex((c) => Math.hypot(p.x - c.x, p.y - c.y) <= reach);
+    if (i === -1) return false;
+    this.scaling = { anchor: corners[(i + 2) % 4], corner: corners[i], factor: 1 };
+    return true;
+  }
+
+  /** The pointer's position along the anchor–corner diagonal sets the scale. */
+  updateScale(p: Point) {
+    const s = this.scaling;
+    if (!s) return;
+    const vx = s.corner.x - s.anchor.x;
+    const vy = s.corner.y - s.anchor.y;
+    const len2 = vx * vx + vy * vy;
+    if (len2 === 0) return;
+    const f = ((p.x - s.anchor.x) * vx + (p.y - s.anchor.y) * vy) / len2;
+    this.scaling = { ...s, factor: Math.max(MIN_SCALE, f) };
   }
 
   commit() {
+    if (this.scaling) {
+      const { factor, anchor } = this.scaling;
+      this.scaling = undefined;
+      if (Math.abs(factor - 1) > 1e-3) this.mapSelection((b) => scaleBlock(b, factor, anchor));
+      return;
+    }
+
     if (this.isDraggingSelection) {
       this.isDraggingSelection = false;
       this.updateDrag();
@@ -248,6 +304,8 @@ export class LassoManager {
   begin(point: Point) {
     if (this.isSelecting) {
       this.points = [point];
+    } else if (this.#startScale(point)) {
+      // A corner handle: scaling (checked first, the corners are on the frame).
     } else if (this.isInsideSelection(point)) {
       this.isDraggingSelection = true;
       this.dragStart = point;

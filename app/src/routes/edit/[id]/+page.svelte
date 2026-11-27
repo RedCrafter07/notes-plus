@@ -28,6 +28,17 @@
   let cursorVisible = $state(false);
 
   const view = $derived(canvasManager.viewBounds());
+
+  /** CSS preview of a selection being moved or scaled (it is committed on release). */
+  const selectionTransform = $derived.by(() => {
+    const s = lassoManager.scaling;
+    if (s) {
+      const a = canvasManager.translateToAbsolute(s.anchor);
+      return `transform-origin: ${a.x}px ${a.y}px; transform: scale(${s.factor});`;
+    }
+    const z = contentManager.zoom;
+    return `transform: translate(${lassoManager.dragOffsetX * z}px, ${lassoManager.dragOffsetY * z}px);`;
+  });
   const clip = $derived(pageRect(contentManager.page));
 
   const preview = $derived(
@@ -137,10 +148,10 @@
       ></canvas>
     {/each}
   </div>
-  <!-- The lasso selection; dragging only moves this canvas. -->
+  <!-- The lasso selection; moving or scaling it only transforms this canvas. -->
   <canvas
     class="absolute top-0 pointer-events-none"
-    style="width: {canvasManager.width}px; height: {canvasManager.height}px; transform: translate({lassoManager.dragOffsetX * contentManager.zoom}px, {lassoManager.dragOffsetY * contentManager.zoom}px);"
+    style="width: {canvasManager.width}px; height: {canvasManager.height}px; {selectionTransform}"
     width={Math.round(canvasManager.width * canvasManager.dpr)}
     height={Math.round(canvasManager.height * canvasManager.dpr)}
     use:canvasManager.assignSelectionContext

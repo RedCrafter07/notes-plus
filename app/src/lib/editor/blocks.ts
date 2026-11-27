@@ -125,6 +125,45 @@ export function cloneBlock(b: Block): Block {
   return translateBlock(b, 0, 0);
 }
 
+/**
+ * Scales a block by `s` around `anchor` (the corner that stays put). Ink
+ * gets thicker or thinner with it and text changes its font size, so a
+ * scaled note looks like a zoomed copy of the original.
+ */
+export function scaleBlock(b: Block, s: number, anchor: Point2D): Block {
+  const sx = (x: number) => anchor.x + (x - anchor.x) * s;
+  const sy = (y: number) => anchor.y + (y - anchor.y) * s;
+  switch (b.type) {
+    case "Stroke":
+      return {
+        ...b,
+        id: newId(),
+        thickness: b.thickness * s,
+        points: b.points.map((p) => ({ ...p, x: sx(p.x), y: sy(p.y) })),
+      };
+    case "Text":
+      return {
+        ...b,
+        id: newId(),
+        x: sx(b.x),
+        y: sy(b.y),
+        width: b.width * s,
+        font_size: b.font_size * s,
+      };
+    case "Image":
+      return {
+        ...b,
+        id: newId(),
+        x: sx(b.x),
+        y: sy(b.y),
+        width: b.width * s,
+        height: b.height * s,
+      };
+    default:
+      return assertNever(b);
+  }
+}
+
 /** The block's colour, or `null` if it has none (images). */
 export function blockColor(b: Block): string | null {
   switch (b.type) {

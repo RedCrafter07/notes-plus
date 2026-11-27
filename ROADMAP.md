@@ -150,11 +150,17 @@ say why.
 - **Pressure** (done). `pen_pressure` setting (off / light / strong) with a
   preview; each stroke stores its `thinning`, so old ink keeps its look.
 - **Fractional stroke widths** (done). The pen slider steps by 0.5.
-- **Scale, rotate and restyle selections** (M). Corner handles to scale
-  (scaling thickness with it), and a rotate handle. This also unblocks
-  image resizing. Done: the width control in the selection menu (absolute
-  for a common width, a percentage for mixed widths, one undo step per
-  drag; `lassoManager.scaleWidth`).
+- **Scale, rotate and restyle selections** (M). Still to do: a rotate
+  handle (text and images would need a stored rotation: a data-model
+  decision). Done: the width control in the selection menu (absolute for a
+  common width, a percentage for mixed widths, one undo step per drag;
+  `lassoManager.scaleWidth`), and corner handles that scale proportionally
+  around the opposite corner, ink width and font size included, so images
+  can be resized (`scaleBlock`; previewed with a CSS transform).
+- **Arrange within a layer** (S). "Bring to front" / "Send to back" (and
+  one step forward/back) in the selection menu, e.g. to put an imported
+  image behind text already written on the same layer. Order is the
+  position in `Layer.blocks`, so it is one reordered array, one undo step.
 - **Pen presets** (S). Saved colour, width and pen type; one tap to switch.
 - **Straight lines and shapes** (M). Hold still at the end of a stroke to snap
   it to a line, rectangle, ellipse or arrow (shape recognition). Plus a ruler

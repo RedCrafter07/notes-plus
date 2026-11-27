@@ -6,9 +6,13 @@
 </script>
 
 {#if lassoManager.selection}
-  <!-- The selected blocks are drawn on the selection canvas; this is only the frame. -->
+  {@const s = lassoManager.scaling}
+  <!-- The selected blocks are drawn on the selection canvas; this is only the
+       frame, moved or scaled with it while a gesture previews. -->
   <g
-    transform="translate({lassoManager.dragOffsetX}, {lassoManager.dragOffsetY})"
+    transform={s
+      ? `translate(${s.anchor.x} ${s.anchor.y}) scale(${s.factor}) translate(${-s.anchor.x} ${-s.anchor.y})`
+      : `translate(${lassoManager.dragOffsetX}, ${lassoManager.dragOffsetY})`}
   >
     <rect
       transition:fade={{ duration: 100 }}
@@ -23,6 +27,23 @@
       class="cursor-move"
     />
   </g>
+  <!-- Corner handles: drag one to scale (see lassoManager.scaling). Hidden
+       during a gesture; the hit area is larger than the drawn square. -->
+  {#if !s && !lassoManager.isDraggingSelection}
+    {@const size = 10 / contentManager.zoom}
+    {#each lassoManager.corners as c, i (i)}
+      <rect
+        x={c.x - size / 2}
+        y={c.y - size / 2}
+        width={size}
+        height={size}
+        rx={2 / contentManager.zoom}
+        fill="var(--base-1)"
+        stroke="var(--primary)"
+        stroke-width={2 / contentManager.zoom}
+      />
+    {/each}
+  {/if}
 {/if}
 {#if canvasManager.tool === "lasso" && lassoManager.points.length > 0 && lassoManager.isSelecting}
   <path

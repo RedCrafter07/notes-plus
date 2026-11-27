@@ -296,8 +296,8 @@ per setting, the missing format migration, and the `contentManager` ↔
 
 1. **History stores full before/after block arrays** per layer per entry.
    Stroke-level patches would be lighter and would make sync/merge feasible later.
-2. **No selection transforms beyond move.** `scaleSelection` is gone; images
-   cannot be resized after insertion.
+2. **No rotation of selections.** Moving, scaling (corner handles,
+   `scaleBlock`) and width changes exist; rotating does not.
 3. **Text layout is measured with canvas `measureText`** and the editing
    `<textarea>` wraps with the browser's own algorithm; they agree closely but
    not perfectly for unusual text.
