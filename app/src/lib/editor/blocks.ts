@@ -5,7 +5,7 @@ import {
   type ContentBounds,
   type Point2D,
 } from "#lib/util/canvasBounds.ts";
-import { isPointInPolygon } from "#lib/util/geometry.ts";
+import { isPointInPolygon, polylineCrossesPolygon } from "#lib/util/geometry.ts";
 import { prunePaths } from "./render/strokes";
 import { layoutText } from "./text";
 
@@ -283,8 +283,12 @@ export type LassoMode = "touch" | "contain";
 export function blockInPolygon(b: Block, polygon: Point[], mode: LassoMode = "touch"): boolean {
   const inside = (p: Point2D) => isPointInPolygon(p, polygon);
   switch (b.type) {
+    // Points and segments: a ruler line or a shape edge has few points,
+    // so a lasso across the middle of it contains none of them.
     case "Stroke":
-      return mode === "contain" ? b.points.every(inside) : b.points.some(inside);
+      return mode === "contain"
+        ? b.points.every(inside) && !polylineCrossesPolygon(b.points, polygon)
+        : b.points.some(inside) || polylineCrossesPolygon(b.points, polygon);
     case "Text":
     case "Image": {
       // Touch: any corner or the centre inside. Contain: all four corners.

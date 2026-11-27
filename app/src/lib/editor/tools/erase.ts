@@ -67,6 +67,16 @@ export function erase(
   return resultingStrokes.filter((s) => s.length > 1);
 }
 
+/**
+ * Whether `erase` left the line exactly as it was. Comparing point counts
+ * is not enough: trimming the end of a two-point line (a ruler line or a
+ * shape edge) leaves two points, the kept end and the new cut, which then
+ * looked like a miss, so the eraser only ever nicked such lines.
+ */
+export function untouched(points: Point[], pieces: Point[][]): boolean {
+  return pieces.length === 1 && pieces[0].length === points.length && pieces[0].every((q, i) => q === points[i]);
+}
+
 export function checkInEraser(
   p: Point,
   eraser: Omit<Point, "pressure">,

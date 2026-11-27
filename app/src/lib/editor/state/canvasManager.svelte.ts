@@ -21,7 +21,7 @@ import {
   toolDef,
   type Tool,
 } from "../tools/registry";
-import { erase } from "../tools/erase";
+import { erase, untouched } from "../tools/erase";
 import { centerLine } from "../svg";
 import { adaptInk, displayPaper, type PaperColors } from "../inkColor";
 import { recognizeShape, shapePoints, snapLineEnd, type Shape } from "../shapes";
@@ -662,8 +662,7 @@ class CanvasManager {
         // Cut the line as drawn, not the raw input (see `centerLine`).
         e.line ??= s.smoothed ? s.points : centerLine(s.points, s.thickness);
         const pieces = e.line.length ? erase(e.line, p, r) : [];
-        // One piece with every point means the eraser missed.
-        if (pieces.length === 1 && pieces[0].length === e.line.length) {
+        if (untouched(e.line, pieces)) {
           next.push(e);
           continue;
         }

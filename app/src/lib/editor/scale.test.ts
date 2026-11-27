@@ -33,6 +33,39 @@ describe("lasso modes", () => {
     expect(blockInPolygon(imageIn, loop, "contain")).toBe(true);
     expect(blockInPolygon(bigImage, loop, "contain")).toBe(false);
   });
+
+  it("a two-point line (ruler, shape edge) counts where the loop crosses it, not only at its ends", () => {
+    const across: Block = {
+      ...halfIn,
+      id: "lasso-ruler-line",
+      points: [
+        { x: -200, y: 50, pressure: 0.5 },
+        { x: 300, y: 50, pressure: 0.5 },
+      ],
+    };
+    expect(blockInPolygon(across, loop, "touch")).toBe(true);
+    expect(blockInPolygon(across, loop, "contain")).toBe(false);
+    const away: Block = { ...across, id: "lasso-far-line", points: across.points.map((p) => ({ ...p, y: 500 })) };
+    expect(blockInPolygon(away, loop, "touch")).toBe(false);
+  });
+
+  it("contain: a line whose ends are inside but that leaves a concave loop is not contained", () => {
+    // A U-shaped loop: both ends of the line are in the arms, the middle crosses the gap.
+    const u = [
+      { x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 70 }, { x: 70, y: 70 }, { x: 70, y: 0 },
+      { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 },
+    ].map((p) => ({ ...p, pressure: 0.5 }));
+    const bridge: Block = {
+      ...halfIn,
+      id: "lasso-bridge",
+      points: [
+        { x: 15, y: 30, pressure: 0.5 },
+        { x: 85, y: 30, pressure: 0.5 },
+      ],
+    };
+    expect(blockInPolygon(bridge, u, "contain")).toBe(false);
+    expect(blockInPolygon(bridge, u, "touch")).toBe(true);
+  });
 });
 
 describe("transformBlock", () => {
