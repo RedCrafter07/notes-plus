@@ -12,6 +12,17 @@ pub enum ToolbarDock {
     Right,
 }
 
+/// How strongly pen pressure changes the pen's stroke width.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PenPressure {
+    /// Even width, whatever the pressure.
+    Off,
+    #[default]
+    Light,
+    Strong,
+}
+
 #[derive(Clone, Debug, Type, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -34,6 +45,8 @@ pub struct Settings {
     /// window on that display (false). Without a second display the audience
     /// view is always a window, opened behind the editor.
     pub present_fullscreen: bool,
+    /// Pressure response of the pen (not the highlighter, which stays even).
+    pub pen_pressure: PenPressure,
 }
 
 impl Default for Settings {
@@ -51,6 +64,7 @@ impl Default for Settings {
             system_title_bar: false,
             toolbar_dock: ToolbarDock::Top,
             present_fullscreen: true,
+            pen_pressure: PenPressure::Light,
         }
     }
 }

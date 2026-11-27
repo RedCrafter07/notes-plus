@@ -25,17 +25,32 @@ export function getSvgPathFromStroke(stroke: [number, number][]) {
   return d;
 }
 
-/** One set of options, so the eraser cuts the line the renderer draws. */
-function strokeOptions(size: number, drawing: boolean): StrokeOptions {
-  return { size, thinning: 0, last: !drawing, smoothing: 0.25, streamline: 0.25 };
+/**
+ * One set of options, so the eraser cuts the line the renderer draws.
+ *
+ * `thinning` is how much pressure changes the width (`Stroke.thinning`).
+ * `simulatePressure` is off: perfect-freehand would otherwise ignore the
+ * pen's real pressure and fake one from drawing speed. A mouse reports a
+ * constant 0.5, which is the nominal width, so mouse strokes stay even.
+ */
+function strokeOptions(size: number, drawing: boolean, thinning = 0): StrokeOptions {
+  return {
+    size,
+    thinning,
+    simulatePressure: false,
+    last: !drawing,
+    smoothing: 0.25,
+    streamline: 0.25,
+  };
 }
 
 export function inputToPath(
   inputPoints: Point[],
   t: number,
   drawing: boolean,
+  thinning = 0,
 ): string {
-  return getSvgPathFromStroke(getStroke(inputPoints, strokeOptions(t, drawing)));
+  return getSvgPathFromStroke(getStroke(inputPoints, strokeOptions(t, drawing, thinning)));
 }
 
 /**
@@ -77,7 +92,8 @@ function asStrokePoints(points: Point[]): StrokePoint[] {
 
 /** SVG path of a committed stroke. */
 export function strokeToPath(s: Stroke): string {
-  if (!s.smoothed) return inputToPath(s.points, s.thickness, false);
-  const opts = strokeOptions(s.thickness, false);
+  const thinning = s.thinning ?? 0;
+  if (!s.smoothed) return inputToPath(s.points, s.thickness, false, thinning);
+  const opts = strokeOptions(s.thickness, false, thinning);
   return getSvgPathFromStroke(getStrokeOutlinePoints(asStrokePoints(s.points), opts));
 }

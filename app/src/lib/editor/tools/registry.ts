@@ -30,6 +30,8 @@ export interface SizeSpec {
   default: number;
   /** One-tap sizes shown in the toolbar. */
   presets: number[];
+  /** Slider step; default 1. The pen allows half steps for fine lines. */
+  step?: number;
 }
 
 export interface ToolDef {
@@ -56,7 +58,7 @@ export const TOOLS = {
     palette: "colors",
     defaultColor: "#000000",
     opacity: 1,
-    size: { label: "Thickness", min: 1, max: 40, default: 4, presets: [2, 4, 8] },
+    size: { label: "Thickness", min: 0.5, max: 40, default: 4, presets: [2, 4, 8], step: 0.5 },
   },
   highlighter: {
     label: "Highlighter",

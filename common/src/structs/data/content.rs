@@ -23,6 +23,11 @@ pub struct Stroke {
     /// specta types it as optional; `Some(false)` means the same as `None`.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub smoothed: Option<bool>,
+    /// How much pen pressure changes the width (perfect-freehand's
+    /// `thinning`, 0..1), as set when the stroke was drawn, so changing the
+    /// setting later does not alter existing ink. Absent means 0: even width.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinning: Option<f32>,
 }
 
 /// A block of plain text, wrapped to `width`. `(x, y)` is the top-left corner.

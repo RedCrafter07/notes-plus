@@ -23,6 +23,7 @@ import {
 } from "../tools/registry";
 import { erase } from "../tools/erase";
 import { centerLine } from "../svg";
+import { PRESSURE_THINNING } from "../pressure";
 import { lassoManager } from "./lassoManager.svelte";
 import { loadWorkspace, saveWorkspace } from "./workspace";
 import { textEditor } from "./textEditor.svelte";
@@ -484,6 +485,11 @@ class CanvasManager {
     return this.zoomLock ? t : t / contentManager.zoom;
   }
 
+  /** Pressure response of the stroke being drawn: the pen's setting; even for the highlighter. */
+  get thinning() {
+    return this.#tool === "pen" ? PRESSURE_THINNING[settingsStore.store.pen_pressure] : 0;
+  }
+
   get eraserRadius() {
     return this.sizes.eraser;
   }
@@ -609,6 +615,8 @@ class CanvasManager {
         thickness: this.thickness,
         opacity: this.opacity,
         points,
+        // Stored with the stroke, so a later change of the setting keeps it.
+        ...(this.thinning ? { thinning: this.thinning } : {}),
       },
     ];
   }

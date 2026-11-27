@@ -28,6 +28,13 @@ export type PresentMessage =
   /** The editor's visible area, for "follow" mode. */
   | { kind: "view"; zoom: number; panX: number; panY: number; width: number; height: number }
   /** The stroke being drawn right now (empty points when none). */
-  | { kind: "ink"; points: Point[]; color: string; thickness: number; opacity: number }
+  | {
+      kind: "ink";
+      points: Point[];
+      color: string;
+      thickness: number;
+      opacity: number;
+      thinning: number;
+    }
   | { kind: "laser"; strokes: LaserStroke[] }
   | { kind: "state"; mode: ViewMode; blank: boolean };

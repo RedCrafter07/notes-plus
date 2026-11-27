@@ -58,6 +58,7 @@ export function usePresenterSync() {
       color: canvasManager.color,
       thickness: canvasManager.thickness,
       opacity: canvasManager.opacity,
+      thinning: canvasManager.thinning,
     });
   });
 

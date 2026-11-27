@@ -149,11 +149,9 @@ say why.
     midpoints in `getSvgPathFromStroke`.
   - An own outliner if needed. `asStrokePoints` / `strokeToPath` already show
     where it would plug in.
-- **Pressure** (S). `thinning` is 0, so pressure does nothing. Add a pressure
-  curve setting (off / light / strong) and a per-pen preview.
-- **Fractional stroke widths** (S). `Stroke.thickness` is already `f32`. Only
-  the UI rounds (`step="1"`, `Math.round`). Needed for scaling and for thin
-  pens on zoomed-out pages.
+- **Pressure** (done). `pen_pressure` setting (off / light / strong) with a
+  preview; each stroke stores its `thinning`, so old ink keeps its look.
+- **Fractional stroke widths** (done). The pen slider steps by 0.5.
 - **Scale, rotate and restyle selections** (M). Corner handles to scale
   (scaling thickness with it), a rotate handle, and, when the selection
   contains ink, a width and colour picker that applies to the selected

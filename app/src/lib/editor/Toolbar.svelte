@@ -17,6 +17,7 @@
   import { canvasManager } from "./state/canvasManager.svelte";
   import { textEditor } from "./state/textEditor.svelte";
   import { TOOL_IDS, toolDef, type Tool } from "./tools/registry";
+  import { formatSize } from "#lib/util/format.ts";
   import { insertImageFile, pickFiles } from "./import/image";
   import { isPdf, pdfImport } from "./import/pdfImport.svelte";
   import type { ToolbarDock } from "#lib/tauri/bindings.ts";
@@ -406,7 +407,7 @@
         aria-expanded={sizeOpen}
         title="Custom {spec.label.toLowerCase()}"
       >
-        {Math.round(canvasManager.size)}
+        {formatSize(canvasManager.size)}
       </button>
     {/if}
   </div>
@@ -419,13 +420,13 @@
     >
       <div class="flex flex-row justify-between text-sm text-content-2">
         <span>{spec.label}</span>
-        <span class="tabular-nums">{Math.round(canvasManager.size)}</span>
+        <span class="tabular-nums">{formatSize(canvasManager.size)}</span>
       </div>
       <Slider
         label={spec.label}
         min={spec.min}
         max={spec.max}
-        step={1}
+        step={spec.step ?? 1}
         value={canvasManager.size}
         onchange={setSize}
       />

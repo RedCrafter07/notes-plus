@@ -32,7 +32,9 @@
   let page: Page | undefined;
   let assets: Assets = () => undefined;
   let view = { zoom: 1, panX: 0, panY: 0, width: 1, height: 1 };
-  let ink: { points: Point[]; color: string; thickness: number; opacity: number } | undefined;
+  let ink:
+    | { points: Point[]; color: string; thickness: number; opacity: number; thinning: number }
+    | undefined;
   let laser: LaserStroke[] = [];
   let mode: ViewMode = "fit";
   let blank = $state(false);
@@ -99,7 +101,7 @@
     if (ink && ink.points.length) {
       ctx.globalAlpha = ink.opacity;
       ctx.fillStyle = ink.color;
-      ctx.fill(new Path2D(inputToPath(ink.points, ink.thickness, true)));
+      ctx.fill(new Path2D(inputToPath(ink.points, ink.thickness, true, ink.thinning)));
       ctx.globalAlpha = 1;
     }
     ctx.restore();

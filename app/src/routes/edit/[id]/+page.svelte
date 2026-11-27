@@ -35,6 +35,7 @@
       canvasManager.points,
       canvasManager.thickness,
       canvasManager.drawing,
+      canvasManager.thinning,
     ),
   );
 

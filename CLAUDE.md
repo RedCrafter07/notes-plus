@@ -68,7 +68,9 @@ NoteData { meta, content, state }
              TS: ({ type: "Stroke" } & Stroke) | ... -- every variant has `id`
     Stroke-> id, points (x, y, pressure), color, thickness, opacity,
              smoothed (optional: points are the drawn centre line, as left
-             by the eraser; drawn without smoothing again, see `strokeToPath`)
+             by the eraser; drawn without smoothing again, see `strokeToPath`),
+             thinning (optional: pressure response it was drawn with, from
+             the `pen_pressure` setting; absent = even width)
   State   -> zoom, pan_x, pan_y, current_page, current_layer,
              collapsed_sections  (persisted per note)
   attachments are not in NoteData: blocks/pages hold an asset id, and the

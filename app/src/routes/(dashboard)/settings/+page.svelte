@@ -2,6 +2,18 @@
   import Switch from "#lib/components/Switch.svelte";
   import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { titleBar } from "#lib/state/titleBar.svelte.ts";
+  import { PRESSURE_THINNING, pressurePreview } from "#lib/editor/pressure.ts";
+  import { inputToPath } from "#lib/editor/svg.ts";
+  import type { PenPressure } from "#lib/tauri/bindings.ts";
+
+  const PRESSURE_OPTIONS: { id: PenPressure; label: string }[] = [
+    { id: "off", label: "Off" },
+    { id: "light", label: "Light" },
+    { id: "strong", label: "Strong" },
+  ];
+  const PREVIEW_W = 240;
+  const PREVIEW_H = 48;
+  const previewPoints = pressurePreview(PREVIEW_W, PREVIEW_H);
   import {
     IconAppWindow,
     IconDeviceFloppy,
@@ -38,6 +50,44 @@
         checked={settingsStore.store.use_last_page_settings}
         onChange={(v) => updateSettings({ use_last_page_settings: v })}
       />
+      <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
+          <span class="font-semibold">Pen pressure</span>
+          <span class="text-sm text-content-2">
+            How much pressing harder widens the pen's line. Applies to new strokes; what you have
+            written keeps its look. The highlighter always draws an even line.
+          </span>
+        </div>
+        <div class="flex flex-row flex-wrap items-center gap-3">
+          <div class="flex flex-row gap-1 p-1 rounded-xl bg-base-3" role="radiogroup" aria-label="Pen pressure">
+            {#each PRESSURE_OPTIONS as o (o.id)}
+              {@const active = settingsStore.store.pen_pressure === o.id}
+              <button
+                class={[
+                  "px-4 h-10 rounded-lg font-semibold transition-all active:scale-95",
+                  active ? "bg-primary text-base-1" : "text-content-2 hover:bg-overlay/30 hover:text-content-1",
+                ]}
+                role="radio"
+                aria-checked={active}
+                onclick={() => updateSettings({ pen_pressure: o.id })}
+              >
+                {o.label}
+              </button>
+            {/each}
+          </div>
+          <svg
+            viewBox="0 0 {PREVIEW_W} {PREVIEW_H}"
+            class="h-12 w-60 rounded-lg bg-content-1 text-base-3"
+            aria-label="Preview: a line drawn light, then firm, then light"
+            role="img"
+          >
+            <path
+              d={inputToPath(previewPoints, 6, false, PRESSURE_THINNING[settingsStore.store.pen_pressure])}
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+      </div>
     </div>
   </div>
 
