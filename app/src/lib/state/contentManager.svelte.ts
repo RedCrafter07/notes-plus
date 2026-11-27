@@ -55,19 +55,26 @@ class ContentManager {
    * It joins the section of the page before it.
    */
   public addPage(after = this.currentPage) {
-    const source =
-      settingsStore.store.use_last_page_settings ? this.pages[after] : undefined;
-
     tabManager.transact("Add page", () => {
-      const page = {
-        ...this.#blankPage(source, `Page ${this.pages.length + 1}`),
-        section: $state.snapshot(this.pages[after]?.section) ?? null,
-      };
+      const page = this.newPageAfter(after);
       const pages = this.pages.slice();
       pages.splice(after + 1, 0, page);
       this.pages = pages;
       this.currentPage = after + 1;
     });
+  }
+
+  /**
+   * The empty page `addPage` would insert after `after`, without inserting
+   * it: set up like that page (or the default, by the setting), in its
+   * section.
+   */
+  public newPageAfter(after: number): Page {
+    const source = settingsStore.store.use_last_page_settings ? this.pages[after] : undefined;
+    return {
+      ...this.#blankPage(source, `Page ${this.pages.length + 1}`),
+      section: $state.snapshot(this.pages[after]?.section) ?? null,
+    };
   }
 
   /**

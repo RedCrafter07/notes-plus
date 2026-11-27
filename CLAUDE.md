@@ -261,7 +261,8 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 - [x] Pen presets (saved colour + width, one-tap switch)
 - [ ] Search across notes (the index carries titles only; `tags` has no UI)
 - [ ] Stroke eraser vs pixel eraser; erase-by-lasso
-- [ ] Selection transforms: move, scale, rotate, cross-page/cross-note paste
+- [ ] Selection transforms: move, scale, rotate and moving to another page
+      (`movePage.ts`) done; cross-note paste missing
 - [ ] Snapping, stroke stabilization (straight-line snap: hold at the end)
 - [x] Hold-to-switch tools: the `barrel_button` setting (lasso, or eraser /
       highlighter while held)

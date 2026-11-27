@@ -1,5 +1,6 @@
 import { contentManager } from "#lib/state/contentManager.svelte.ts";
 import { arrange, type Arrange } from "#lib/editor/arrange.ts";
+import { moveBlocksToPage } from "#lib/editor/movePage.ts";
 import {
   runSelection,
   selectionFromIds,
@@ -229,6 +230,45 @@ export class LassoManager {
       }
       this.selection = selectionFromIds([...ids]) ?? undefined;
     });
+  }
+
+  /**
+   * Moves the selection to page `to` (an index, or "new" for a new page
+   * after this one) at the same position, as one undo step, then shows that
+   * page with the moved blocks still selected.
+   */
+  moveSelectionToPage(to: number | "new") {
+    if (!this.selection) return;
+    const ids = new Set(this.selectedIds);
+    const from = contentManager.currentPage;
+    const target = to === "new" ? from + 1 : to;
+    let moved: string[] = [];
+    let failed: string | undefined;
+
+    contentManager.restructure("Move to page", (pages) => {
+      let next = pages;
+      if (to === "new") {
+        next = pages.slice();
+        next.splice(target, 0, contentManager.newPageAfter(from));
+      }
+      const r = moveBlocksToPage(next, from, target, ids);
+      if (!r.ok) {
+        failed = r.reason;
+        return pages;
+      }
+      moved = r.ids;
+      return r.pages;
+    });
+
+    if (failed === "no-layer") {
+      popupManager.add({ type: "warning", message: `Every layer of page ${target + 1} is locked or hidden.` });
+      return;
+    }
+    if (failed) return;
+    contentManager.currentPage = target;
+    this.reset();
+    this.selection = selectionFromIds(moved) ?? undefined;
+    this.isSelecting = !this.selection;
   }
 
   colorSelection(color: string) {

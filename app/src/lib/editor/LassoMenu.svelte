@@ -3,6 +3,10 @@
   import {
     IconArrowsDiagonal,
     IconCopy,
+    IconFileArrowRight,
+    IconArrowLeft,
+    IconArrowRight,
+    IconFilePlus,
     IconLineHeight,
     IconLock,
     IconRotate2,
@@ -92,7 +96,7 @@
 
   function openWidth() {
     widthOpen = !widthOpen;
-    arrangeOpen = false;
+    arrangeOpen = moveOpen = false;
   }
 
   // Drawing order within the layer (see arrange.ts).
@@ -105,7 +109,20 @@
   ];
   function openArrange() {
     arrangeOpen = !arrangeOpen;
-    widthOpen = false;
+    widthOpen = moveOpen = false;
+  }
+
+  // Moving the selection to another page (see movePage.ts).
+  let moveOpen = $state(false);
+  const pageCount = $derived(contentManager.pages.length);
+  const here = $derived(contentManager.currentPage);
+  function openMove() {
+    moveOpen = !moveOpen;
+    widthOpen = arrangeOpen = false;
+  }
+  function moveTo(to: number | "new") {
+    moveOpen = false;
+    lassoManager.moveSelectionToPage(to);
   }
 
   function changeWidth(v: number) {
@@ -122,15 +139,27 @@
   // The popover never covers the ink it changes, nor sits under the main
   // toolbar: with the menu above the selection it goes below the selection,
   // with the menu below it, below the menu.
-  const popoverTop = $derived(
+  const below = $derived(
     position === "top"
       ? height + (lassoManager.boundingBox?.height ?? 0) * contentManager.zoom + 8
       : height + 8,
   );
+  // Where that runs past the page bar at the bottom, it opens above the
+  // menu instead, and failing that it is kept on screen.
+  /** Height of the open popover (only one is open at a time). */
+  let popoverHeight = $state(0);
+  const BOTTOM_BAR = 72;
+  const popoverTop = $derived.by(() => {
+    const limit = canvasManager.height - BOTTOM_BAR;
+    if (topOffset + below + popoverHeight <= limit) return below;
+    const above = -popoverHeight - 8;
+    if (topOffset + above >= 8) return above;
+    return Math.max(8 - topOffset, limit - popoverHeight - topOffset);
+  });
 
   // Close the popovers with the selection.
   $effect(() => {
-    if (!lassoManager.selection) widthOpen = arrangeOpen = false;
+    if (!lassoManager.selection) widthOpen = arrangeOpen = moveOpen = false;
   });
 </script>
 
@@ -218,6 +247,19 @@
       <IconStack2 />
     </button>
     <button
+      class={[
+        "cursor-pointer p-2 rounded-lg active:scale-90 transition-all",
+        moveOpen ? "bg-primary text-base-1" : "hover:bg-overlay/30",
+      ]}
+      onpointerdown={(e) => e.stopPropagation()}
+      onclick={openMove}
+      aria-label="Move to page"
+      aria-expanded={moveOpen}
+      title="Move to another page, at the same position"
+    >
+      <IconFileArrowRight />
+    </button>
+    <button
       class="cursor-pointer p-2 rounded-lg hover:bg-overlay/30 active:scale-90 transition-all"
       onpointerdown={(e) => {
         e.stopPropagation();
@@ -239,10 +281,50 @@
     >
       <IconCopy />
     </button>
+    {#if moveOpen}
+      {@const row =
+        "flex flex-row items-center gap-3 px-3 h-11 rounded-lg text-left hover:bg-overlay/30 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none"}
+      <div
+        class="absolute left-1/2 -translate-x-1/2 w-64 p-1 rounded-xl bg-base-1/90 backdrop-blur-md shadow-lg border border-content-1/10 flex flex-col"
+        style:top="{popoverTop}px"
+        bind:clientHeight={popoverHeight}
+        role="group"
+        aria-label="Move to page"
+        onpointerdown={(e) => e.stopPropagation()}
+      >
+        <button class={row} disabled={here === 0} onclick={() => moveTo(here - 1)}>
+          <IconArrowLeft size={20} /> <span>Previous page</span>
+        </button>
+        <button class={row} disabled={here >= pageCount - 1} onclick={() => moveTo(here + 1)}>
+          <IconArrowRight size={20} /> <span>Next page</span>
+        </button>
+        <button class={row} onclick={() => moveTo("new")}>
+          <IconFilePlus size={20} /> <span>New page after this one</span>
+        </button>
+        {#if pageCount > 2}
+          <div class="mx-2 my-1 border-t border-content-1/10"></div>
+          <span class="px-3 pt-1 text-sm text-content-3">Page</span>
+          <div class="grid grid-cols-5 gap-1 p-1 max-h-48 overflow-y-auto">
+            {#each contentManager.pages as p, i (p.id)}
+              <button
+                class="h-10 rounded-lg tabular-nums hover:bg-overlay/30 active:scale-95 transition-all disabled:bg-primary/15 disabled:text-primary"
+                disabled={i === here}
+                title={i === here ? "This page" : p.name}
+                aria-label="Page {i + 1}"
+                onclick={() => moveTo(i)}
+              >
+                {i + 1}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
     {#if arrangeOpen}
       <div
         class="absolute left-1/2 -translate-x-1/2 w-56 p-1 rounded-xl bg-base-1/90 backdrop-blur-md shadow-lg border border-content-1/10 flex flex-col"
         style:top="{popoverTop}px"
+        bind:clientHeight={popoverHeight}
         role="group"
         aria-label="Arrange"
         onpointerdown={(e) => e.stopPropagation()}
@@ -262,6 +344,7 @@
       <div
         class="absolute left-1/2 -translate-x-1/2 w-64 p-3 rounded-xl bg-base-1/90 backdrop-blur-md shadow-lg border border-content-1/10 flex flex-col gap-1"
         style:top="{popoverTop}px"
+        bind:clientHeight={popoverHeight}
         role="group"
         aria-label="Line width"
         onpointerdown={(e) => e.stopPropagation()}
