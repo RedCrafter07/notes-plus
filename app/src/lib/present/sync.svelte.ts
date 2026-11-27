@@ -55,7 +55,7 @@ export function usePresenterSync() {
     presenter.send({
       kind: "ink",
       points: drawing ? $state.snapshot(canvasManager.points) : [],
-      color: canvasManager.color,
+      color: canvasManager.inkColor,
       thickness: canvasManager.thickness,
       opacity: canvasManager.opacity,
       thinning: canvasManager.thinning,

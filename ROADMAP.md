@@ -175,8 +175,10 @@ say why.
 - **Straight lines and shapes** (M). Hold still at the end of a stroke to snap
   it to a line, rectangle, ellipse or arrow (shape recognition). Plus a ruler
   you can place and rotate with two fingers.
-- **Hold-to-switch tools** (S). Barrel button erases while held and reverts on
-  release; long-press for a radial menu at the pen tip.
+- **Hold-to-switch tools** (done). Settings choose what the barrel button
+  does: lasso (default, stays until nothing is selected), or eraser or
+  highlighter only while held (`penButtons.ts`). Still open: a long-press
+  radial menu at the pen tip.
 - **Dark paper done properly** (M). Adapt ink colours on dark paper, and an
   invert-for-display mode that keeps exports white.
 

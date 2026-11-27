@@ -23,6 +23,19 @@ pub enum PenPressure {
     Strong,
 }
 
+/// What the stylus's barrel (side) button does.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BarrelButton {
+    /// Switches to the lasso, which stays until nothing is selected.
+    #[default]
+    Lasso,
+    /// Erases while held; the tool comes back when the pen lifts.
+    Eraser,
+    /// Highlights while held, with the highlighter's own colour and width.
+    Highlighter,
+}
+
 /// The tools a pen preset can switch to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -68,6 +81,8 @@ pub struct Settings {
     pub transform_anywhere: bool,
     /// Saved pens shown in the toolbar, in order.
     pub pen_presets: Vec<PenPreset>,
+    /// What the stylus's barrel button does (with stylus tool switching on).
+    pub barrel_button: BarrelButton,
 }
 
 impl Default for Settings {
@@ -88,6 +103,7 @@ impl Default for Settings {
             pen_pressure: PenPressure::Light,
             transform_anywhere: false,
             pen_presets: Vec::new(),
+            barrel_button: BarrelButton::Lasso,
         }
     }
 }

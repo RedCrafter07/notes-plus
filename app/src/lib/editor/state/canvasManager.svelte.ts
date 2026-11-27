@@ -493,13 +493,24 @@ class CanvasManager {
 
   /** Width of the stroke being drawn, in content units. */
   get thickness() {
-    const t = this.sizes[this.#tool];
+    const t = this.sizes[this.effectiveTool];
     return this.zoomLock ? t : t / contentManager.zoom;
+  }
+
+  /*
+   * The stroke being drawn uses the tool doing the drawing: a highlighter
+   * held on the barrel button draws with the highlighter's colour, width and
+   * opacity, not the pen's. (`color` and `size` stay with the selected tool:
+   * they are what the toolbar shows and changes.)
+   */
+  /** Colour of the stroke being drawn. */
+  get inkColor() {
+    return this.colors[this.effectiveTool] ?? "#000000";
   }
 
   /** Pressure response of the stroke being drawn: the pen's setting; even for the highlighter. */
   get thinning() {
-    return this.#tool === "pen" ? PRESSURE_THINNING[settingsStore.store.pen_pressure] : 0;
+    return this.effectiveTool === "pen" ? PRESSURE_THINNING[settingsStore.store.pen_pressure] : 0;
   }
 
   get eraserRadius() {
@@ -507,7 +518,7 @@ class CanvasManager {
   }
 
   get opacity() {
-    return toolDef(this.#tool).opacity ?? 1;
+    return toolDef(this.effectiveTool).opacity ?? 1;
   }
 
   // ------------------------------------------------------------------ input
@@ -623,7 +634,7 @@ class CanvasManager {
       {
         type: "Stroke",
         id: newId(),
-        color: this.color,
+        color: this.inkColor,
         thickness: this.thickness,
         opacity: this.opacity,
         points,

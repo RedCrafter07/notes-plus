@@ -182,6 +182,7 @@ export function canvasController(
     if (e.pointerType === "pen") {
       const o = penOverride(e.buttons, canvasManager.tool, {
         disabled: canvasManager.lockTool || settingsStore.store.disable_tool_switch,
+        barrel: settingsStore.store.barrel_button,
       });
       if (o?.mode === "sticky") canvasManager.switchTemporarily(o.tool);
       else if (o?.mode === "hold") held = o.tool;

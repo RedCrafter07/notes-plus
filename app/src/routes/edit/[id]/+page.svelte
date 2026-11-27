@@ -175,7 +175,7 @@
     {/if}
     <path
       d={preview}
-      fill={canvasManager.color}
+      fill={canvasManager.inkColor}
       fill-opacity={canvasManager.opacity}
       clip-path={clip ? "url(#page-clip)" : undefined}
     />

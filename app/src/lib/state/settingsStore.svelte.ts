@@ -17,6 +17,7 @@ export const settingsStore = new Store<Settings>({
   pen_pressure: "light",
   transform_anywhere: false,
   pen_presets: [],
+  barrel_button: "lasso",
 });
 
 /**

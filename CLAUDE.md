@@ -256,12 +256,13 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
       split in two becomes two sections (`splitRepeats`). Folding is view
       state (`State.collapsed_sections`), not an undo step.
 - [ ] Vertical-scroll mode (one continuously growing page)
-- [ ] Pen presets (saved colour + width, one-tap switch)
+- [x] Pen presets (saved colour + width, one-tap switch)
 - [ ] Search across notes (the index carries titles only; `tags` has no UI)
 - [ ] Stroke eraser vs pixel eraser; erase-by-lasso
 - [ ] Selection transforms: move, scale, rotate, cross-page/cross-note paste
 - [ ] Snapping, straight-line snap, stroke stabilization
-- [ ] Hold-to-switch tools (barrel button erases, reverts on release)
+- [x] Hold-to-switch tools: the `barrel_button` setting (lasso, or eraser /
+      highlighter while held)
 
 ### Presenter mode
 

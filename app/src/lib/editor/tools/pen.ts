@@ -2,7 +2,9 @@ import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
 import type { ToolHandler, ToolHandlers } from "./types";
 
 const down: ToolHandler = (p, e) => {
-  if (e.button !== 0) return;
+  // A right click does not draw; but a pen touching down with its barrel
+  // button held also reports button 2, and then a held tool should draw.
+  if (e.button !== 0 && !canvasManager.heldTool) return;
   canvasManager.drawing = true;
   canvasManager.addPoint(p);
 };

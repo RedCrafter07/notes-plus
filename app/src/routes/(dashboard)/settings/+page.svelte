@@ -4,12 +4,21 @@
   import { titleBar } from "#lib/state/titleBar.svelte.ts";
   import { PRESSURE_THINNING, pressurePreview } from "#lib/editor/pressure.ts";
   import { inputToPath } from "#lib/editor/svg.ts";
-  import type { PenPressure } from "#lib/tauri/bindings.ts";
+  import type { BarrelButton, PenPressure } from "#lib/tauri/bindings.ts";
 
   const PRESSURE_OPTIONS: { id: PenPressure; label: string }[] = [
     { id: "off", label: "Off" },
     { id: "light", label: "Light" },
     { id: "strong", label: "Strong" },
+  ];
+  const BARREL_OPTIONS: { id: BarrelButton; label: string; hint: string }[] = [
+    { id: "lasso", label: "Lasso", hint: "Switches to the lasso, which stays until nothing is selected." },
+    { id: "eraser", label: "Eraser while held", hint: "Erases while you hold it; lifting the pen brings your tool back." },
+    {
+      id: "highlighter",
+      label: "Highlighter while held",
+      hint: "Highlights with the highlighter's colour and width while you hold it.",
+    },
   ];
   const PREVIEW_W = 240;
   const PREVIEW_H = 48;
@@ -32,10 +41,38 @@
       <Switch
         id="stylus-tool-switch"
         label="Stylus tool switching"
-        description="The eraser end of your stylus erases while it touches the page, and the side button picks the lasso until nothing is selected. The tip always uses the tool chosen in the toolbar. Turn this off if your stylus has no such buttons, or if it switches unintentionally."
+        description="The eraser end of your stylus erases while it touches the page, and the side button does what you choose below. The tip always uses the tool chosen in the toolbar. Turn this off if your stylus has no such buttons, or if it switches unintentionally."
         checked={!settingsStore.store.disable_tool_switch}
         onChange={(v) => updateSettings({ disable_tool_switch: !v })}
       />
+      <div
+        class={[
+          "flex flex-col gap-2 pl-14 transition-opacity",
+          settingsStore.store.disable_tool_switch && "opacity-40 pointer-events-none",
+        ]}
+      >
+        <span class="text-sm text-content-2">Side button</span>
+        <div class="flex flex-row flex-wrap gap-1 p-1 rounded-xl bg-base-3 w-fit" role="radiogroup" aria-label="Side button">
+          {#each BARREL_OPTIONS as o (o.id)}
+            {@const active = settingsStore.store.barrel_button === o.id}
+            <button
+              class={[
+                "px-4 h-10 rounded-lg font-semibold transition-all active:scale-95",
+                active ? "bg-primary text-base-1" : "text-content-2 hover:bg-overlay/30 hover:text-content-1",
+              ]}
+              role="radio"
+              aria-checked={active}
+              title={o.hint}
+              onclick={() => updateSettings({ barrel_button: o.id })}
+            >
+              {o.label}
+            </button>
+          {/each}
+        </div>
+        <span class="text-sm text-content-3">
+          {BARREL_OPTIONS.find((o) => o.id === settingsStore.store.barrel_button)?.hint}
+        </span>
+      </div>
       <Switch
         id="shift-swaps-scroll-axes"
         label="Shift swaps scroll axes"
