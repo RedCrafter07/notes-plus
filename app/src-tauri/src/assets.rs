@@ -125,6 +125,22 @@ impl AssetStore {
         Ok(())
     }
 
+    /// Copies attachments from one session into another's cache (pages
+    /// copied between notes). Ids stay the same; they are UUIDs. Returns the
+    /// ids `from` does not have.
+    pub fn copy(&self, from: &str, to: &str, ids: &[String]) -> Result<Vec<String>, RnpfError> {
+        let mut missing = Vec::new();
+        for id in ids {
+            let Some((mime, bytes)) = self.read(from, id)? else {
+                missing.push(id.clone());
+                continue;
+            };
+            let file = self.cache_file(to, id, &mime, &bytes)?;
+            self.session(to)?.lock().unwrap().cached.insert(id.clone(), file);
+        }
+        Ok(missing)
+    }
+
     /// One attachment's mime type and bytes, if the session has it.
     pub fn read(&self, session: &str, id: &str) -> Result<Option<(String, Vec<u8>)>, RnpfError> {
         valid_id(id)?;
@@ -278,6 +294,15 @@ mod tests {
         // Reopened in a new session, everything is served from the file.
         let s2 = store.open(&path, &Rnpf::new(&path).unwrap()).unwrap();
         assert_eq!(store.read(&s2, "b").unwrap().unwrap().0, "image/png");
+
+        // Copied into another session (pages pasted into another note):
+        // served from there, and saved with that note.
+        let missing = store.copy(&s2, "s3", &["a".into(), "nope".into()]).unwrap();
+        assert_eq!(missing, vec!["nope".to_string()]);
+        assert_eq!(store.read("s3", "a").unwrap().unwrap().1, b"hi");
+        let other = dir.join("other.rnpf");
+        store.save("s3", &other, &note_with_images(&["a"]), None).unwrap();
+        assert_eq!(Rnpf::new(&other).unwrap().asset("a").unwrap().as_deref(), Some(&b"hi"[..]));
 
         store.close("s1");
         assert!(!dir.join("cache/s1").exists());

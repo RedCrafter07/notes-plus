@@ -162,9 +162,9 @@ class ContentManager {
   }
 
   /** Deletes several pages in one step (keeping at least one page). */
-  public deletePages(indices: number[]) {
+  public deletePages(indices: number[], label?: string) {
     const gone = new Set(indices);
-    this.restructure(gone.size === 1 ? "Delete page" : "Delete pages", (pages) => {
+    this.restructure(label ?? (gone.size === 1 ? "Delete page" : "Delete pages"), (pages) => {
       const rest = pages.filter((_, i) => !gone.has(i));
       return rest.length ? rest : [this.#blankPage(pages[0], "Page 1")];
     });

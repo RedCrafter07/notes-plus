@@ -101,6 +101,10 @@ from the cache and copies the rest from the old file as raw zip entries
 (`AssetSources`). An attachment used but found nowhere fails the save
 (`MissingAsset`) instead of vanishing.
 
+Pages copied between notes take their attachments along: the page
+clipboard (`state/pageClipboard.svelte.ts`) copies them into a session of
+its own, and pasting copies them into the target's (`copy_assets`).
+
 Unused attachments leave the file at save time, never on delete, and the
 session keeps a cache copy, so undo can restore a block whose asset was
 "removed". Closing a tab deletes its cache; the cache is also emptied at
@@ -249,8 +253,9 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 - [x] Page navigator with real thumbnails, reorder, duplicate
 - [x] Page overview (`PageOverview.svelte`, Ctrl+G or the page counter):
       grid of all pages, drag to move (grip, or anywhere with a mouse),
-      select several to duplicate/delete/merge/make a section, context
-      menus.
+      select several to duplicate/delete/merge/copy/cut/make a section,
+      context menus; paste pages from the page clipboard, also from another
+      note.
 - [x] Sections: a section is a run of consecutive pages with the same
       `Page.section` id; every page carries the name, so section edits are
       ordinary `pages` changes and undo works unchanged. Pure helpers in

@@ -5,6 +5,8 @@
     IconArrowDown,
     IconArrowUp,
     IconArrowMerge,
+    IconClipboard,
+    IconScissors,
     IconBookmark,
     IconBookmarkOff,
     IconCheck,
@@ -33,6 +35,7 @@
     type PageGroup,
   } from "#lib/editor/sections.ts";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import { pageClipboard } from "#lib/state/pageClipboard.svelte.ts";
   import { contextMenu, contextMenuState, type MenuItem } from "#lib/state/contextMenu.svelte.ts";
   import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import type { Page, PageSection } from "#lib/tauri/bindings.ts";
@@ -132,6 +135,16 @@
     contentManager.duplicatePages(selectedIndices);
   }
 
+  // Copy / cut / paste pages, also between notes (see pageClipboard).
+  const clip = $derived(pageClipboard.pages.length);
+  const clipLabel = $derived(clip === 1 ? "1 page" : `${clip} pages`);
+  async function cutSelection() {
+    const indices = selectedIndices;
+    selecting = false;
+    selected = new Set();
+    await pageClipboard.cut(indices);
+  }
+
   /** Everything on the selected pages onto the first of them (see movePage.ts). */
   function mergeSelection() {
     contentManager.mergePages(selectedIndices);
@@ -163,6 +176,11 @@
         },
       },
       { label: "Duplicate", icon: IconCopy, onSelect: () => contentManager.duplicatePages([i]) },
+      { label: "Copy page", icon: IconClipboard, onSelect: () => pageClipboard.copy([i]) },
+      { label: "Cut page", icon: IconScissors, onSelect: () => pageClipboard.cut([i]) },
+      ...(clip
+        ? [{ label: `Paste ${clipLabel} after this`, icon: IconClipboard, onSelect: () => pageClipboard.paste(i + 1) }]
+        : []),
       ...(i < pages.length - 1
         ? [
             {
@@ -435,6 +453,12 @@
         <button class={barBtn} disabled={!selected.size} onclick={duplicateSelection}>
           <IconCopy size={20} /> Duplicate
         </button>
+        <button class={barBtn} disabled={!selected.size} onclick={() => pageClipboard.copy(selectedIndices)}>
+          <IconClipboard size={20} /> Copy
+        </button>
+        <button class={barBtn} disabled={!selected.size} onclick={cutSelection}>
+          <IconScissors size={20} /> Cut
+        </button>
         <button
           class={barBtn}
           disabled={selected.size < 2}
@@ -459,6 +483,15 @@
         <h1 class="text-2xl font-display font-medium px-2">Pages</h1>
         <span class="text-content-3 tabular-nums">{pages.length}</span>
         <div class="flex-1"></div>
+        {#if clip}
+          <button
+            class="{barBtn} text-primary"
+            onclick={() => pageClipboard.paste(pages.length)}
+            title="Paste {clipLabel} from “{pageClipboard.source}” at the end (or use a page's menu to paste after it)"
+          >
+            <IconClipboard size={20} /> Paste {clipLabel}
+          </button>
+        {/if}
         <button class={barBtn} onclick={() => (selecting = true)}>
           <IconSquareCheck size={20} /> Select
         </button>

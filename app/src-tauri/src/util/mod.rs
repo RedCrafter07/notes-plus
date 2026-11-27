@@ -28,6 +28,7 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             save_note_to_storage,
             save_note_dialog,
             add_asset,
+            copy_assets,
             close_asset_session,
             get_settings,
             set_settings,

@@ -111,6 +111,24 @@ pub async fn add_asset(app: tauri::AppHandle, session: String, id: String, data_
     }
 }
 
+/// Copies attachments between notes' sessions (pages pasted into another
+/// note, or kept on the page clipboard). False if any could not be copied.
+#[tauri::command]
+#[specta::specta]
+pub async fn copy_assets(app: tauri::AppHandle, from: String, to: String, ids: Vec<String>) -> bool {
+    match app.state::<AssetStore>().copy(&from, &to, &ids) {
+        Ok(missing) if missing.is_empty() => true,
+        Ok(missing) => {
+            display_error(RnpfError::MissingAsset(missing.join(", ")).into());
+            false
+        }
+        Err(e) => {
+            display_error(e.into());
+            false
+        }
+    }
+}
+
 /// Forgets a closed tab's attachments, deleting any unsaved ones.
 #[tauri::command]
 #[specta::specta]

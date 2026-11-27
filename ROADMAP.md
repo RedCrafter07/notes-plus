@@ -224,9 +224,13 @@ say why.
   page overview, or "Merge with next page" in a page's menu; everything
   goes onto the first page at the same positions, a merged page's PDF
   background becomes an image underneath, one undo step.
-- **Copy and move pages between notebooks** (M). A page clipboard. Assets live
-  in per-tab asset sessions, so pasting into another note must copy the asset
-  files across sessions, or the image is missing on save.
+- **Copy and move pages between notebooks** (done). Copy / Cut / Paste in
+  the page overview (selection bar, page menus, "Paste N pages" in the
+  header). `pageClipboard` keeps page snapshots plus an asset session of
+  its own (`copy_assets` copies attachments between sessions), so a paste
+  works after the source note is closed and the next save writes the
+  attachments into the target note. Still open: cross-note paste of a lasso
+  selection (same mechanism).
 - **Drag and drop attachments** (S–M). Drop images and PDFs from the file
   manager onto the editor: images land where they are dropped, PDFs open
   the import dialog. Tauri already catches drops natively (for `.rnpf`,
