@@ -1,4 +1,5 @@
 import type { Point, Stroke } from "#lib/tauri/bindings.ts";
+import { denoise } from "./denoise";
 import getStroke, {
   getStrokeOutlinePoints,
   getStrokePoints,
@@ -32,6 +33,8 @@ export function getSvgPathFromStroke(stroke: [number, number][]) {
  * `simulatePressure` is off: perfect-freehand would otherwise ignore the
  * pen's real pressure and fake one from drawing speed. A mouse reports a
  * constant 0.5, which is the nominal width, so mouse strokes stay even.
+ * `smoothing` 0.5 (perfect-freehand's default; it was 0.25) keeps the
+ * outline from tracing every remaining wobble.
  */
 function strokeOptions(size: number, drawing: boolean, thinning = 0): StrokeOptions {
   return {
@@ -39,18 +42,23 @@ function strokeOptions(size: number, drawing: boolean, thinning = 0): StrokeOpti
     thinning,
     simulatePressure: false,
     last: !drawing,
-    smoothing: 0.25,
+    smoothing: 0.5,
     streamline: 0.25,
   };
 }
 
+/**
+ * Outline of raw input (a stroke as drawn, or the one being drawn), after
+ * removing the pixel staircase from it (`denoise`).
+ */
 export function inputToPath(
   inputPoints: Point[],
   t: number,
   drawing: boolean,
   thinning = 0,
 ): string {
-  return getSvgPathFromStroke(getStroke(inputPoints, strokeOptions(t, drawing, thinning)));
+  const points = denoise(inputPoints);
+  return getSvgPathFromStroke(getStroke(points, strokeOptions(t, drawing, thinning)));
 }
 
 /**
@@ -60,7 +68,8 @@ export function inputToPath(
  * where the ink was.
  */
 export function centerLine(points: Point[], size: number): Point[] {
-  return getStrokePoints(points, strokeOptions(size, false)).map((s) => ({
+  // Denoised like `inputToPath`, or cut pieces would not match the drawn ink.
+  return getStrokePoints(denoise(points), strokeOptions(size, false)).map((s) => ({
     x: s.point[0],
     y: s.point[1],
     pressure: s.pressure,

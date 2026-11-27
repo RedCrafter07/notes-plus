@@ -139,16 +139,14 @@ drag (checked with the mouse: Windows handles the press, the page gets none).
 The core of a handwriting app. Done well, people notice even if they cannot
 say why.
 
-- **Smoother ink** (M). Today every stroke goes through perfect-freehand with
-  fixed options. Options, cheapest first:
-  - Tune streamline and smoothing per input device. A pen at 240 Hz needs much
-    less than a mouse.
-  - Filter the input with a One Euro filter before outlining: low lag when
-    fast, steady when slow.
-  - Build the outline from a Catmull-Rom spline instead of the quadratic
-    midpoints in `getSvgPathFromStroke`.
-  - An own outliner if needed. `asStrokePoints` / `strokeToPath` already show
-    where it would plug in.
+- **Smoother ink** (done, first step). Measured on real handwriting: points
+  are dense, but WebView2 rounds pen positions to whole device pixels, so
+  curves arrive as a staircase (median turn of 18° per point). Fixed by
+  `denoise` (Gaussian along the stroke, about one grid step, the grid read
+  from each stroke) at render time, plus perfect-freehand's `smoothing` at
+  its default 0.5. A spline would have kept the staircase. If more is
+  needed later: sub-pixel pen input (Windows pointer API), or an own
+  outliner (`asStrokePoints` / `strokeToPath` show where it would plug in).
 - **Pressure** (done). `pen_pressure` setting (off / light / strong) with a
   preview; each stroke stores its `thinning`, so old ink keeps its look.
 - **Fractional stroke widths** (done). The pen slider steps by 0.5.

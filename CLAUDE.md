@@ -141,6 +141,12 @@ a CSS transform; the frame and the lasso loop stay SVG. Gestures that change
 many blocks (eraser, lasso drop) work outside the note's deep `$state` and
 assign once at the end; per-move writes into it were the cause of their lag.
 
+Ink: stored points are the input as recorded. At render time `denoise`
+(`lib/editor/denoise.ts`) removes the device-pixel staircase WebView2 puts
+into pen positions, then perfect-freehand outlines the stroke
+(`lib/editor/svg.ts`; `centerLine` for the eraser goes through the same
+steps, so cuts match the ink).
+
 `render/draw.ts` holds pure draw functions shared by the live canvas, page
 thumbnails and export (`render/page.ts`), so what you see is what you export.
 Block-type logic lives behind exhaustive switches in `lib/editor/blocks.ts`.
