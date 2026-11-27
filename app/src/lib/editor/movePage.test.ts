@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Block, Layer, Page } from "#lib/tauri/bindings.ts";
-import { moveBlocksToPage } from "./movePage";
+import { mergePages, moveBlocksToPage } from "./movePage";
 
 const text = (id: string, x: number, y: number): Block => ({
   type: "Text",
@@ -84,5 +84,33 @@ describe("moveBlocksToPage", () => {
     expect(b.x + 100).toBeLessThanOrEqual(559);
     expect(b.y).toBeLessThan(794);
     expect(r.ids).toEqual([b.id]); // a moved block gets a new id
+  });
+});
+
+describe("mergePages", () => {
+  let n = 0;
+  const id = () => `new${++n}`;
+
+  it("puts every page's blocks on the first, removing the others", () => {
+    const pages = [
+      page("1", [layer("a", [text("t1", 0, 0)])]),
+      page("2", [layer("b", [text("t2", 0, 0)]), layer("c", [text("t3", 0, 0)])]),
+      page("3", [layer("d")]),
+      page("4", [layer("e", [text("t4", 0, 0)])]),
+    ];
+    const out = mergePages(pages, [3, 1], id);
+    expect(out.map((p) => p.id)).toEqual(["1", "2", "3"]);
+    expect(blockIds(out[1])).toBe("t2,t4 | t3");
+    expect(out[1].id).toBe("2");
+    expect(mergePages(pages, [2], id)).toBe(pages);
+  });
+
+  it("keeps a merged page's PDF background as an image underneath", () => {
+    const pdf = { ...page("2", [layer("b", [text("ink", 0, 0)])]), background_asset: "scan" };
+    const out = mergePages([page("1", [layer("a", [text("t1", 0, 0)])]), pdf], [0, 1], id);
+    expect(out).toHaveLength(1);
+    const blocks = out[0].layers[0].blocks;
+    expect(blocks.map((b) => b.type)).toEqual(["Image", "Text", "Text"]);
+    expect(blocks[0]).toMatchObject({ asset: "scan", x: 0, y: 0, width: 794, height: 1123 });
   });
 });

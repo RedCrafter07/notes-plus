@@ -1,5 +1,6 @@
 import { sessionAssets } from "#lib/editor/assets.ts";
 import { startSection } from "#lib/editor/sections.ts";
+import { mergePages } from "#lib/editor/movePage.ts";
 import { commands, type ExportRegion, type Layer, type Page } from "#lib/tauri/bindings.ts";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { settingsStore } from "./settingsStore.svelte";
@@ -167,6 +168,19 @@ class ContentManager {
       const rest = pages.filter((_, i) => !gone.has(i));
       return rest.length ? rest : [this.#blankPage(pages[0], "Page 1")];
     });
+  }
+
+  /**
+   * Merges several pages into the first of them, in one step (see
+   * `mergePages`), and opens it.
+   */
+  public mergePages(indices: number[]) {
+    const first = Math.min(...indices);
+    const id = this.pages[first]?.id;
+    if (indices.length < 2 || !id) return;
+    this.restructure("Merge pages", (pages) => mergePages(pages, indices, () => crypto.randomUUID()));
+    const i = this.pages.findIndex((p) => p.id === id);
+    if (i >= 0) this.currentPage = i;
   }
 
   /** Duplicates several pages, each copy right after the last of them. */

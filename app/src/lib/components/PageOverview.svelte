@@ -4,6 +4,7 @@
   import {
     IconArrowDown,
     IconArrowUp,
+    IconArrowMerge,
     IconBookmark,
     IconBookmarkOff,
     IconCheck,
@@ -131,6 +132,13 @@
     contentManager.duplicatePages(selectedIndices);
   }
 
+  /** Everything on the selected pages onto the first of them (see movePage.ts). */
+  function mergeSelection() {
+    contentManager.mergePages(selectedIndices);
+    selecting = false;
+    selected = new Set();
+  }
+
   function rename(id: string, name: string) {
     name = name.trim();
     renaming = undefined;
@@ -155,6 +163,15 @@
         },
       },
       { label: "Duplicate", icon: IconCopy, onSelect: () => contentManager.duplicatePages([i]) },
+      ...(i < pages.length - 1
+        ? [
+            {
+              label: "Merge with next page",
+              icon: IconArrowMerge,
+              onSelect: () => contentManager.mergePages([i, i + 1]),
+            },
+          ]
+        : []),
       { label: "Start a section here", icon: IconBookmark, onSelect: () => sectionFrom(i) },
       {
         label: "Delete page",
@@ -417,6 +434,14 @@
         </button>
         <button class={barBtn} disabled={!selected.size} onclick={duplicateSelection}>
           <IconCopy size={20} /> Duplicate
+        </button>
+        <button
+          class={barBtn}
+          disabled={selected.size < 2}
+          onclick={mergeSelection}
+          title="Put everything on the selected pages onto the first of them"
+        >
+          <IconArrowMerge size={20} /> Merge
         </button>
         <button class={[barBtn, "text-destructive"]} disabled={!selected.size} onclick={deleteSelection}>
           <IconTrash size={20} /> Delete

@@ -65,3 +65,37 @@ function nudgeOnto(blocks: Block[], sheet: ContentBounds | null): [number, numbe
     max - min > hi - lo || min < lo ? lo - min : max > hi ? hi - max : 0;
   return [axis(b.min.x, b.max.x, sheet.min.x, sheet.max.x), axis(b.min.y, b.max.y, sheet.min.y, sheet.max.y)];
 }
+
+/**
+ * Merges the pages at `indices` into the first of them: every other page's
+ * blocks join it at the same position, on the layer at the same position in
+ * the list (or its top layer), drawn above what is there; then those pages
+ * are removed. A merged page's PDF background becomes an image at the
+ * bottom of the first layer, so nothing is lost. Returns `pages` unchanged
+ * for fewer than two pages.
+ */
+export function mergePages(pages: Page[], indices: number[], newId: () => string): Page[] {
+  const order = [...new Set(indices)].filter((i) => pages[i]).sort((a, b) => a - b);
+  if (order.length < 2) return pages;
+  const [first, ...rest] = order;
+  const target = pages[first];
+  const layers = target.layers.map((l) => ({ ...l, blocks: l.blocks.slice() }));
+
+  for (const i of rest) {
+    const p = pages[i];
+    if (p.background_asset && p.width > 0 && p.height > 0)
+      layers[0].blocks.unshift({
+        type: "Image",
+        id: newId(),
+        asset: p.background_asset,
+        x: 0,
+        y: 0,
+        width: p.width,
+        height: p.height,
+      });
+    p.layers.forEach((l, li) => layers[Math.min(li, layers.length - 1)].blocks.push(...l.blocks));
+  }
+
+  const gone = new Set(rest);
+  return pages.flatMap((p, i) => (i === first ? [{ ...target, layers }] : gone.has(i) ? [] : [p]));
+}

@@ -215,12 +215,15 @@ say why.
   left: a way to fix notes imported before that, e.g. "Resize page and
   content" in Page setup (scales the page, its background and every block
   together, one undo step).
-- **Move a selection to another page** (done), and **merge pages** (open).
+- **Move a selection to another page** (done), and **merge pages** (done).
   "Move to page" in the selection menu: previous, next, a new page after
   this one, or any page by number. Same position, same layer (by position
   in the list; locked/hidden ones skipped), nudged onto a smaller sheet; one
   undo step, and the target page opens with the blocks still selected
-  (`movePage.ts`). Merging pages can reuse it.
+  (`movePage.ts`). Merging: "Merge" for several selected pages in the
+  page overview, or "Merge with next page" in a page's menu; everything
+  goes onto the first page at the same positions, a merged page's PDF
+  background becomes an image underneath, one undo step.
 - **Copy and move pages between notebooks** (M). A page clipboard. Assets live
   in per-tab asset sessions, so pasting into another note must copy the asset
   files across sessions, or the image is missing on save.

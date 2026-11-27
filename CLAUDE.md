@@ -249,7 +249,8 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 - [x] Page navigator with real thumbnails, reorder, duplicate
 - [x] Page overview (`PageOverview.svelte`, Ctrl+G or the page counter):
       grid of all pages, drag to move (grip, or anywhere with a mouse),
-      select several to duplicate/delete/make a section, context menus.
+      select several to duplicate/delete/merge/make a section, context
+      menus.
 - [x] Sections: a section is a run of consecutive pages with the same
       `Page.section` id; every page carries the name, so section edits are
       ordinary `pages` changes and undo works unchanged. Pure helpers in
