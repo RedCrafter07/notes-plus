@@ -208,11 +208,26 @@ say why.
   presets and the PDF import resolution so a fitted A4 page writes like
   paper. Check the "stroke width 2 seems huge on PDF imports" case against
   this.
+  Checked on a real lecture note (Nov 2026): its PDF page was a cropped
+  book scan stored at 2074 x 3045 pt (732 x 1074 mm), not a standard paper
+  size, so ink needed widths of 40-50. The PDF import now flags such pages
+  and preselects "A4 width" (factor 0.29, so 50 becomes about 14). What is
+  left: a way to fix notes imported before that, e.g. "Resize page and
+  content" in Page setup (scales the page, its background and every block
+  together, one undo step).
 - **Move a selection to another page** (M), and **merge pages**: cut on one
   page, paste at the same position on the other, as one undo step.
 - **Copy and move pages between notebooks** (M). A page clipboard. Assets live
   in per-tab asset sessions, so pasting into another note must copy the asset
   files across sessions, or the image is missing on save.
+- **Drag and drop attachments** (S–M). Drop images and PDFs from the file
+  manager onto the editor: images land where they are dropped, PDFs open
+  the import dialog. Tauri already catches drops natively (for `.rnpf`,
+  `handle_drag_drop.rs`) and gets file paths plus the drop position, so
+  the backend can add the file to the tab's asset session from its path
+  (no data URL round trip; PDFs could be served to pdf.js through
+  `rnasset://`). Drops from a browser carry no path and need the HTML5
+  route, which Tauri's native handler swallows; out of scope at first.
 - **Date and time on pages** (S). Store `created_at` per page; optionally show
   it in the header margin. Useful for dating lectures.
 - **Templates** (M). Lined, college-ruled, dotted, graph, isometric, Cornell,
