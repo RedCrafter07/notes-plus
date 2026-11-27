@@ -176,8 +176,11 @@ say why.
   stroke and it snaps to a line (level/45° when close; its end then follows
   the pen), rectangle, other quadrilateral, triangle, circle or ellipse
   (`shapes.ts`, `shape_snap` setting). Stored as ordinary strokes drawn as
-  they are (`smoothed`), so the file format is unchanged. Still to do: arrows,
-  and a ruler you can place and rotate with two fingers.
+  they are (`smoothed`), so the file format is unchanged. A ruler (toolbar
+  toggle; `ruler.ts`, `rulerManager`): one finger moves it, two turn it
+  (snaps to 45°), a mouse drags it and the wheel turns it; a pen stroke
+  starting on or next to it runs along the nearer edge. View state, not
+  saved. Still to do: arrows.
 - **Hold-to-switch tools** (done). Settings choose what the barrel button
   does: lasso (default, stays until nothing is selected), or eraser or
   highlighter only while held (`penButtons.ts`). Still open: a long-press

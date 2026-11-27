@@ -242,8 +242,8 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 
 ### Tier 2 — competitive
 
-- [ ] Shapes and straightedge: hold-to-snap shapes done (`shapes.ts`);
-      arrows and a ruler still missing
+- [ ] Shapes and straightedge: hold-to-snap shapes (`shapes.ts`) and the
+      ruler (`ruler.ts`) done; arrows still missing
 - [x] Layer panel
 - [x] Page navigator with real thumbnails, reorder, duplicate
 - [x] Page overview (`PageOverview.svelte`, Ctrl+G or the page counter):

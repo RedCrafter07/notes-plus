@@ -24,6 +24,8 @@ import {
 import { erase } from "../tools/erase";
 import { centerLine } from "../svg";
 import { recognizeShape, shapePoints, snapLineEnd, type Shape } from "../shapes";
+import { along, pointOn, type EdgeLine } from "../ruler";
+import { rulerManager } from "./rulerManager.svelte";
 import { PRESSURE_THINNING } from "../pressure";
 import { lassoManager } from "./lassoManager.svelte";
 import { loadWorkspace, saveWorkspace } from "./workspace";
@@ -87,6 +89,8 @@ class CanvasManager {
    * keeps following the pen until it lifts.
    */
   shape = $state<Shape>();
+  /** The ruler edge the stroke being drawn follows, and how far along it it reaches. */
+  #edge: { line: EdgeLine; min: number; max: number } | undefined;
   #holdAnchor: Point2D | undefined;
   #holdTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -540,6 +544,21 @@ class CanvasManager {
   // ------------------------------------------------------------------ input
 
   addPoint(p: Point) {
+    // A stroke starting on or next to the ruler runs along its edge.
+    if (!this.points.length) {
+      const line = rulerManager.edgeAt(p, this.thickness);
+      const t = line && along(line, p);
+      this.#edge = line && { line, min: t!, max: t! };
+    }
+    if (this.#edge) {
+      const e = this.#edge;
+      const t = along(e.line, p);
+      e.min = Math.min(e.min, t);
+      e.max = Math.max(e.max, t);
+      this.shape = { kind: "line", from: pointOn(e.line, e.min), to: pointOn(e.line, e.max) };
+      this.points = shapePoints(this.shape);
+      return;
+    }
     if (this.shape) {
       if (this.shape.kind === "line") {
         this.shape = { ...this.shape, to: snapLineEnd(this.shape.from, p) };
@@ -666,6 +685,7 @@ class CanvasManager {
     const shape = this.shape;
     this.points = [];
     this.shape = undefined;
+    this.#edge = undefined;
     clearTimeout(this.#holdTimer);
     this.#holdAnchor = undefined;
     if (points.length === 0) return;

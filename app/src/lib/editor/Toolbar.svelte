@@ -12,11 +12,13 @@
     IconSquareDashed,
     IconScribbleOff,
     IconPlus,
+    IconRuler2,
   } from "@tabler/icons-svelte";
   import { fade } from "svelte/transition";
   import ColorEditPopup from "#lib/components/ColorEditPopup.svelte";
   import Slider from "#lib/components/Slider.svelte";
   import { lassoManager } from "./state/lassoManager.svelte";
+  import { rulerManager } from "./state/rulerManager.svelte";
   import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { tabManager } from "#lib/state/tabManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
@@ -371,6 +373,16 @@
       title="Insert image or PDF"
     >
       <IconPhotoPlus />
+    </button>
+    <button
+      class={btnOn(rulerManager.visible)}
+      onclick={() =>
+        rulerManager.toggle(canvasManager.translateToRelative(canvasManager.width / 2, canvasManager.height / 2))}
+      aria-label="Ruler"
+      aria-pressed={rulerManager.visible}
+      title="Ruler: drag with one finger, turn with two (or the mouse wheel); the pen draws along it"
+    >
+      <IconRuler2 />
     </button>
 
     <!-- Pen presets: one tap switches tool, colour and width together. -->

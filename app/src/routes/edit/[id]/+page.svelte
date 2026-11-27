@@ -6,6 +6,7 @@
   import { lassoManager } from "#lib/editor/state/lassoManager.svelte.ts";
   import { tick, untrack } from "svelte";
   import LassoSelection from "#lib/editor/LassoSelection.svelte";
+  import Ruler from "#lib/editor/Ruler.svelte";
   import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
   import { canvasController } from "#lib/editor/canvasController.svelte.ts";
   import LassoMenu from "#lib/editor/LassoMenu.svelte";
@@ -181,6 +182,7 @@
       fill-opacity={canvasManager.opacity}
       clip-path={clip ? "url(#page-clip)" : undefined}
     />
+    <Ruler />
     <LassoSelection />
     {#each laserManager.strokes as s (s.id)}
       <path

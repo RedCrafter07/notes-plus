@@ -5,6 +5,7 @@ import { toolDef, type Tool } from "./tools/registry";
 import type { ToolHandlers } from "./tools/types";
 import { penOverride } from "./penButtons";
 import { lassoManager } from "./state/lassoManager.svelte";
+import { rulerManager } from "./state/rulerManager.svelte";
 import type { Similarity } from "./blocks";
 import type { Point2D } from "#lib/util/canvasBounds.ts";
 
@@ -52,8 +53,11 @@ export function canvasController(
    * fingers changes (`baseline`); each move turns baseline-to-now into one
    * `Similarity` for lassoManager to preview. Once a touch sequence starts
    * in this mode it stays in it until every finger is up.
+   *
+   * The ruler is moved the same way: a touch sequence that starts on it
+   * moves (one finger) and turns (two) the ruler instead of the view.
    */
-  let gestureActive = false;
+  let gestureTarget: "selection" | "ruler" | undefined;
   let baseline: Map<number, Point2D> | undefined;
 
   const transformMode = () =>
@@ -67,11 +71,12 @@ export function canvasController(
 
   /** Applies the gesture so far and starts measuring from the current fingers. */
   function rebaseline() {
-    lassoManager.applyGesture();
+    if (gestureTarget === "ruler") rulerManager.begin();
+    else lassoManager.applyGesture();
     baseline = new Map([...activeTouch].map(([id, p]) => [id, pageAt(p)]));
   }
 
-  function gestureNow(): Similarity | undefined {
+  function gestureNow(lockRotation: boolean): Similarity | undefined {
     if (!baseline) return;
     const ids = [...activeTouch.keys()].filter((id) => baseline!.has(id));
     const before = ids.map((id) => baseline!.get(id)!);
@@ -83,7 +88,7 @@ export function canvasController(
     const d1 = Math.hypot(now[1].x - now[0].x, now[1].y - now[0].y);
     const a0 = Math.atan2(before[1].y - before[0].y, before[1].x - before[0].x);
     const a1 = Math.atan2(now[1].y - now[0].y, now[1].x - now[0].x);
-    const angle = lassoManager.rotationLock ? 0 : a1 - a0;
+    const angle = lockRotation ? 0 : a1 - a0;
     return { from: mid(before[0], before[1]), to: mid(now[0], now[1]), scale: d1 / d0, angle };
   }
 
@@ -98,11 +103,14 @@ export function canvasController(
     initialPinchDistance = undefined;
     prevCenter = undefined;
 
-    if (gestureActive || (activeTouch.size === 1 && transformMode())) {
-      if (!gestureActive) lassoManager.beginGestures();
-      gestureActive = true;
-      rebaseline();
+    if (!gestureTarget && activeTouch.size === 1) {
+      if (rulerManager.hit(pageAt(e))) gestureTarget = "ruler";
+      else if (transformMode()) {
+        lassoManager.beginGestures();
+        gestureTarget = "selection";
+      }
     }
+    if (gestureTarget) rebaseline();
   }
 
   function touchMove(e: PointerEvent) {
@@ -114,8 +122,12 @@ export function canvasController(
     if (tap && o && Math.hypot(e.clientX - o.x, e.clientY - o.y) > TAP_MAX_MOVE)
       tap.moved = true;
 
-    if (gestureActive) {
-      lassoManager.gesture = gestureNow();
+    if (gestureTarget === "ruler") {
+      rulerManager.move(gestureNow(false));
+      return;
+    }
+    if (gestureTarget) {
+      lassoManager.gesture = gestureNow(lassoManager.rotationLock);
       return;
     }
 
@@ -144,14 +156,15 @@ export function canvasController(
     initialPinchDistance = undefined;
     prevCenter = undefined;
 
-    if (gestureActive) {
+    if (gestureTarget) {
       // A touch that never really moved is a tap (two fingers = undo):
       // drop its jitter rather than turning it into an undo step of its own.
-      if (!tap?.moved) lassoManager.gesture = undefined;
+      if (gestureTarget === "selection" && !tap?.moved) lassoManager.gesture = undefined;
       if (activeTouch.size > 0) rebaseline();
       else {
-        lassoManager.endGestures();
-        gestureActive = false;
+        if (gestureTarget === "selection") lassoManager.endGestures();
+        else rulerManager.end();
+        gestureTarget = undefined;
         baseline = undefined;
       }
     }
@@ -167,6 +180,9 @@ export function canvasController(
 
   // ------------------------------------------------------------ pen / mouse
 
+  /** A mouse dragging the ruler (a pen on it draws along it instead). */
+  let rulerDrag: { id: number; from: Point2D } | undefined;
+
   const onPointerDown = (e: PointerEvent) => {
     if (isUIEvent(e)) return;
     elementRect = element.getBoundingClientRect();
@@ -176,6 +192,14 @@ export function canvasController(
     // Suppress the compatibility mousedown, whose default action would move
     // focus to <body> and immediately blur a text box this tap just opened.
     e.preventDefault();
+
+    if (e.pointerType === "mouse" && e.button === 0 && rulerManager.hit(pageAt(e))) {
+      element.setPointerCapture(e.pointerId);
+      rulerDrag = { id: e.pointerId, from: pageAt(e) };
+      rulerManager.begin();
+      return;
+    }
+
     canvasManager.gesture = true;
 
     let held: Tool | undefined;
@@ -203,6 +227,11 @@ export function canvasController(
 
   const onPointerUp = (e: PointerEvent) => {
     if (e.pointerType === "touch") return touchUp(e);
+    if (rulerDrag?.id === e.pointerId) {
+      rulerDrag = undefined;
+      rulerManager.end();
+      return;
+    }
     if (e.pointerId !== inkPointer) return;
 
     const tool = activeTool ?? canvasManager.tool;
@@ -222,6 +251,10 @@ export function canvasController(
 
     updateCursor(true, e.clientX - elementRect.left, e.clientY - elementRect.top);
 
+    if (rulerDrag?.id === e.pointerId) {
+      rulerManager.move({ from: rulerDrag.from, to: pageAt(e), scale: 1, angle: 0 });
+      return;
+    }
     if (e.pointerId !== inkPointer) return;
     if (e.buttons === 0) return; // hovering
 
@@ -251,6 +284,13 @@ export function canvasController(
 
     const x = e.clientX - elementRect.left;
     const y = e.clientY - elementRect.top;
+
+    // Over the ruler, the wheel turns it: 2° a notch, 15° with Shift.
+    if (!e.ctrlKey && rulerManager.hit(pageAt(e))) {
+      const degrees = (e.deltaY / 100) * (e.shiftKey ? 15 : 2);
+      rulerManager.rotateBy((degrees * Math.PI) / 180, pageAt(e));
+      return;
+    }
 
     if (e.ctrlKey) {
       // Trackpad pinches arrive as ctrl+wheel with small deltas; scale with them.
