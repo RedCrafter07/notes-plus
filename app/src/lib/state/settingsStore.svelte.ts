@@ -16,6 +16,7 @@ export const settingsStore = new Store<Settings>({
   present_fullscreen: true,
   pen_pressure: "light",
   transform_anywhere: false,
+  pen_presets: [],
 });
 
 /**

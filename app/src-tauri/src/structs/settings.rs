@@ -23,6 +23,22 @@ pub enum PenPressure {
     Strong,
 }
 
+/// The tools a pen preset can switch to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Type, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PresetTool {
+    Pen,
+    Highlighter,
+}
+
+/// A saved pen: tool, colour and width, switched to with one tap.
+#[derive(Clone, Debug, PartialEq, Type, Serialize, Deserialize)]
+pub struct PenPreset {
+    pub tool: PresetTool,
+    pub color: String,
+    pub size: f32,
+}
+
 #[derive(Clone, Debug, Type, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -50,6 +66,8 @@ pub struct Settings {
     /// With a lasso selection, dragging anywhere moves it (a tap outside
     /// still deselects) and two fingers pinch/twist it instead of the view.
     pub transform_anywhere: bool,
+    /// Saved pens shown in the toolbar, in order.
+    pub pen_presets: Vec<PenPreset>,
 }
 
 impl Default for Settings {
@@ -69,6 +87,7 @@ impl Default for Settings {
             present_fullscreen: true,
             pen_pressure: PenPressure::Light,
             transform_anywhere: false,
+            pen_presets: Vec::new(),
         }
     }
 }

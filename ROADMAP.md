@@ -169,7 +169,9 @@ say why.
 - **Lasso modes** (done). Select what the loop touches or only what it
   contains (toolbar, remembered), e.g. text over an image without it. A
   rotation lock for two-finger gestures sits in the selection menu.
-- **Pen presets** (S). Saved colour, width and pen type; one tap to switch.
+- **Pen presets** (done). Saved pen or highlighter with colour and width,
+  in Settings (same in every notebook); a tap switches, the bookmark button
+  saves the current pen, hold or right-click removes (`presets.ts`).
 - **Straight lines and shapes** (M). Hold still at the end of a stroke to snap
   it to a line, rectangle, ellipse or arrow (shape recognition). Plus a ruler
   you can place and rotate with two fingers.

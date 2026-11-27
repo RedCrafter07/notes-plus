@@ -5,6 +5,8 @@
     IconGripHorizontal,
     IconGripVertical,
     IconPhotoPlus,
+    IconBookmarkPlus,
+    IconTrash,
     IconScissors,
     IconLassoPolygon,
     IconSquareDashed,
@@ -23,7 +25,9 @@
   import { formatSize } from "#lib/util/format.ts";
   import { insertImageFile, pickFiles } from "./import/image";
   import { isPdf, pdfImport } from "./import/pdfImport.svelte";
-  import type { ToolbarDock } from "#lib/tauri/bindings.ts";
+  import type { PenPreset, ToolbarDock } from "#lib/tauri/bindings.ts";
+  import { contextMenu, type MenuItem } from "#lib/state/contextMenu.svelte.ts";
+  import { isCurrentPreset, MAX_PRESETS, presetDot, withoutPreset, withPreset } from "./presets";
 
   /*
    * A horizontal bar at the top centre: away from the palm of a right-handed
@@ -142,6 +146,44 @@
     canvasManager.color = c;
     // Recolour the open text box too; the toolbar does not steal its focus.
     if (textEditor.draft) textEditor.draft.color = c;
+  }
+
+  // Pen presets (presets.ts): stored in Settings, so every notebook and
+  // window has the same ones.
+  const presets = $derived(settingsStore.store.pen_presets);
+  /** The pen in use, as a preset; undefined for tools that have none. */
+  const current = $derived.by((): PenPreset | undefined => {
+    const tool = canvasManager.tool;
+    if (tool !== "pen" && tool !== "highlighter") return undefined;
+    return { tool, color: canvasManager.color, size: canvasManager.size };
+  });
+  const canSavePreset = $derived(
+    !!current && presets.length < MAX_PRESETS && !presets.some((p) => isCurrentPreset(p, current!)),
+  );
+
+  function presetLabel(p: PenPreset) {
+    return `${p.tool === "pen" ? "Pen" : "Highlighter"} ${p.color}, width ${formatSize(p.size)}`;
+  }
+
+  function applyPreset(p: PenPreset) {
+    selectTool(p.tool);
+    canvasManager.color = p.color;
+    canvasManager.size = p.size;
+  }
+
+  function savePreset() {
+    if (current) updateSettings({ pen_presets: withPreset(presets, current) });
+  }
+
+  function presetMenu(i: number): MenuItem[] {
+    return [
+      {
+        label: "Remove preset",
+        icon: IconTrash,
+        destructive: true,
+        onSelect: () => updateSettings({ pen_presets: withoutPreset(presets, i) }),
+      },
+    ];
   }
 
   function setSize(v: number) {
@@ -330,6 +372,37 @@
     >
       <IconPhotoPlus />
     </button>
+
+    <!-- Pen presets: one tap switches tool, colour and width together. -->
+    {#if presets.length || canSavePreset}
+      {@render sep()}
+      {#each presets as p, i (`${i}-${p.tool}-${p.color}-${p.size}`)}
+        {@const active = current && isCurrentPreset(p, current)}
+        <button
+          class={btnOn(!!active)}
+          use:contextMenu={() => ({ title: presetLabel(p), items: presetMenu(i) })}
+          onclick={() => applyPreset(p)}
+          aria-label={presetLabel(p)}
+          aria-pressed={!!active}
+          title={`${presetLabel(p)} (hold or right-click to remove)`}
+        >
+          <span
+            class={["shrink-0", p.tool === "highlighter" ? "rounded-sm opacity-60" : "rounded-full"]}
+            style="background-color: {p.color}; width: {presetDot(p.size)}px; height: {p.tool === 'highlighter' ? Math.max(6, presetDot(p.size) / 2) : presetDot(p.size)}px;"
+          ></span>
+        </button>
+      {/each}
+      {#if canSavePreset}
+        <button
+          class={btn}
+          onclick={savePreset}
+          aria-label="Save this pen as a preset"
+          title="Save this pen as a preset"
+        >
+          <IconBookmarkPlus />
+        </button>
+      {/if}
+    {/if}
 
     {#if palette}
       {@render sep()}
