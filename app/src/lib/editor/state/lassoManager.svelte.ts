@@ -12,6 +12,7 @@ import {
   blockBounds,
   blockColor,
   cloneBlock,
+  newId,
   recolorBlock,
   translateBlock,
 } from "../blocks";
@@ -149,6 +150,59 @@ export class LassoManager {
     return color;
   }
 
+  /** Widths of the selected strokes (text and images have none). */
+  get strokeWidths(): number[] {
+    return Object.values(this.selection ?? {}).flatMap((entries) =>
+      entries.flatMap(({ block }) => (block.type === "Stroke" ? [block.thickness] : [])),
+    );
+  }
+
+  /** The selection as it was when the current width change began. */
+  #widthBase?: LassoSelection;
+
+  /**
+   * Sets the selected strokes to `factor` times the width they had when the
+   * change began (not cumulative, so a slider can go back and forth), keeping
+   * mixed widths in proportion. Text and images stay as they are. A drag is
+   * one undo step: history opens on the first change and `endWidthChange`
+   * closes it.
+   */
+  scaleWidth(factor: number) {
+    if (!this.selection) return;
+    if (!this.#widthBase) {
+      this.#widthBase = this.selection;
+      tabManager.tab?.history.begin("Change width");
+    }
+    const base = this.#widthBase;
+    const next: LassoSelection = {};
+
+    for (const layerId of this.selectedLayers) {
+      const layer = contentManager.layers.find((l) => l.id === layerId);
+      if (!layer) continue;
+      const blocks = [...layer.blocks];
+      const indexOf = new Map(blocks.map((b, i) => [b.id, i]));
+      next[layerId] = this.selection[layerId].map(({ block }, i) => {
+        const original = base[layerId]?.[i]?.block ?? block;
+        const replaced =
+          original.type === "Stroke"
+            ? { ...original, id: newId(), thickness: original.thickness * factor }
+            : block;
+        const index = indexOf.get(block.id) ?? -1;
+        if (index !== -1) blocks[index] = replaced;
+        return { index, block: replaced };
+      });
+      layer.blocks = blocks;
+    }
+    this.selection = next;
+  }
+
+  /** Ends a width change as one undo step. */
+  endWidthChange() {
+    if (!this.#widthBase) return;
+    this.#widthBase = undefined;
+    tabManager.tab?.history.commit();
+  }
+
   colorSelection(color: string) {
     tabManager.transact("Change color", () => {
       this.mapSelection((b) => recolorBlock(b, color));
@@ -166,6 +220,7 @@ export class LassoManager {
   }
 
   reset() {
+    this.endWidthChange();
     this.points = [];
     this.isSelecting = true;
     this.dragOffsetX = 0;

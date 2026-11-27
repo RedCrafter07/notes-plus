@@ -151,10 +151,10 @@ say why.
   preview; each stroke stores its `thinning`, so old ink keeps its look.
 - **Fractional stroke widths** (done). The pen slider steps by 0.5.
 - **Scale, rotate and restyle selections** (M). Corner handles to scale
-  (scaling thickness with it), a rotate handle, and, when the selection
-  contains ink, a width control in the selection menu next to the colour
-  (a `Slider` popover; relative, so mixed widths keep their proportions;
-  one undo step). This also unblocks image resizing.
+  (scaling thickness with it), and a rotate handle. This also unblocks
+  image resizing. Done: the width control in the selection menu (absolute
+  for a common width, a percentage for mixed widths, one undo step per
+  drag; `lassoManager.scaleWidth`).
 - **Pen presets** (S). Saved colour, width and pen type; one tap to switch.
 - **Straight lines and shapes** (M). Hold still at the end of a stroke to snap
   it to a line, rectangle, ellipse or arrow (shape recognition). Plus a ruler
