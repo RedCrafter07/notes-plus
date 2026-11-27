@@ -7,7 +7,10 @@
     IconPlus,
     IconLayoutGrid,
     IconSettings,
+    IconMoon,
+    IconSun,
   } from "@tabler/icons-svelte";
+  import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
@@ -122,6 +125,17 @@
     title={isInfinite(contentManager.page) ? "Fit to content (Ctrl+0)" : "Fit page (Ctrl+0)"}
   >
     <IconFocus2 size={20} />
+  </button>
+  <button
+    class={btn}
+    onclick={() => updateSettings({ dark_pages: !settingsStore.store.dark_pages })}
+    aria-label={settingsStore.store.dark_pages ? "Show pages light" : "Show pages dark"}
+    aria-pressed={settingsStore.store.dark_pages}
+    title={settingsStore.store.dark_pages
+      ? "Show pages in their real colours"
+      : "Show pages dark (only on screen; exports stay as they are)"}
+  >
+    {#if settingsStore.store.dark_pages}<IconSun size={20} />{:else}<IconMoon size={20} />{/if}
   </button>
 </div>
 

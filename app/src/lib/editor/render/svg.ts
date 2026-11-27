@@ -4,7 +4,8 @@ import { assertNever } from "../blocks";
 import { pageRect } from "../pageFormats";
 import { strokeToPath } from "../svg";
 import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT } from "../text";
-import type { Assets } from "./draw";
+import type { Assets, InkColor } from "./draw";
+import { adaptInk } from "../inkColor";
 
 /*
  * Vector export. Mirrors `drawBlock`/`drawPaper` in draw.ts, but produces an
@@ -28,11 +29,11 @@ const esc = (s: string) =>
 
 const n = (v: number) => +v.toFixed(2);
 
-function blockSvg(b: Block, assets: Assets): string {
+function blockSvg(b: Block, assets: Assets, ink: InkColor): string {
   switch (b.type) {
     case "Stroke": {
       const opacity = b.opacity < 1 ? ` fill-opacity="${b.opacity}"` : "";
-      return `<path d="${strokeToPath(b)}" fill="${esc(b.color)}"${opacity}/>`;
+      return `<path d="${strokeToPath(b)}" fill="${esc(ink(b.color))}"${opacity}/>`;
     }
     case "Text": {
       const lh = b.font_size * TEXT_LINE_HEIGHT;
@@ -41,7 +42,7 @@ function blockSvg(b: Block, assets: Assets): string {
         .map((line, i) => `<tspan x="${n(b.x)}" y="${n(b.y + i * lh + lh / 2)}">${esc(line)}</tspan>`)
         .join("");
       return (
-        `<text dominant-baseline="central" xml:space="preserve" fill="${esc(b.color)}" ` +
+        `<text dominant-baseline="central" xml:space="preserve" fill="${esc(ink(b.color))}" ` +
         `font-size="${b.font_size}" font-family="${esc(TEXT_FONT_FAMILY)}">${tspans}</text>`
       );
     }
@@ -107,7 +108,7 @@ export function areaToSvg(
     .filter((l) => l.visible)
     .flatMap((l) => l.blocks)
     .filter((b) => !only || only.has(b.id))
-    .map((b) => blockSvg(b, assets))
+    .map((b) => blockSvg(b, assets, (c) => adaptInk(c, page.background_color)))
     .join("");
 
   return (

@@ -15,22 +15,27 @@ import { strokePath } from "./strokes";
 export type { Assets } from "../assets";
 import type { Assets } from "../assets";
 
+/** The colour to draw an ink colour in (adapted to dark paper, see inkColor.ts). */
+export type InkColor = (color: string) => string;
+const asIs: InkColor = (c) => c;
+
 export function drawBlock(
   ctx: CanvasRenderingContext2D,
   b: Block,
   assets: Assets,
+  ink: InkColor = asIs,
 ) {
   switch (b.type) {
     case "Stroke":
       ctx.globalAlpha = b.opacity;
-      ctx.fillStyle = b.color;
+      ctx.fillStyle = ink(b.color);
       ctx.fill(strokePath(b));
       ctx.globalAlpha = 1;
       return;
     case "Text": {
       const { lines } = layoutText(b.text, b.width, b.font_size);
       ctx.font = textFont(b.font_size);
-      ctx.fillStyle = b.color;
+      ctx.fillStyle = ink(b.color);
       ctx.textBaseline = "top";
       const lh = b.font_size * TEXT_LINE_HEIGHT;
       // Centre the glyphs vertically in each line box, like CSS does.
@@ -58,11 +63,12 @@ export function drawBlocks(
   assets: Assets,
   view?: ContentBounds,
   skip?: Set<string>,
+  ink?: InkColor,
 ) {
   for (const b of blocks) {
     if (skip?.has(b.id)) continue;
     if (view && !blockVisibleIn(b, view)) continue;
-    drawBlock(ctx, b, assets);
+    drawBlock(ctx, b, assets, ink);
   }
 }
 

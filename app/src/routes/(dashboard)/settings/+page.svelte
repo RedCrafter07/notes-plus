@@ -101,6 +101,13 @@
         checked={settingsStore.store.shape_snap}
         onChange={(v) => updateSettings({ shape_snap: v })}
       />
+      <Switch
+        id="dark-pages"
+        label="Dark pages"
+        description="Shows light pages dark while you work, e.g. in a dim lecture hall: white paper turns dark grey, imported PDF pages are inverted, and dark ink is shown light. Your notes keep their colours: exports, thumbnails and the presenter view are unchanged. Ink that is hard to read on dark paper is always shown lighter."
+        checked={settingsStore.store.dark_pages}
+        onChange={(v) => updateSettings({ dark_pages: v })}
+      />
       <div class="flex flex-col gap-2">
         <div class="flex flex-col">
           <span class="font-semibold">Pen pressure</span>

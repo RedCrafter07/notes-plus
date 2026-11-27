@@ -19,6 +19,7 @@ export const settingsStore = new Store<Settings>({
   pen_presets: [],
   barrel_button: "lasso",
   shape_snap: true,
+  dark_pages: false,
 });
 
 /**

@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import { pageRect } from "#lib/editor/pageFormats.ts";
   import { drawBlocks, drawPaper } from "#lib/editor/render/draw.ts";
+  import { adaptInk } from "#lib/editor/inkColor.ts";
   import { loadImage } from "#lib/editor/render/images.ts";
   import { sessionAssets, type Assets } from "#lib/editor/assets.ts";
   import { usedAssets } from "#lib/editor/blocks.ts";
@@ -96,11 +97,13 @@
       ctx.rect(sheet.min.x, sheet.min.y, sheet.width, sheet.height);
       ctx.clip();
     }
-    for (const l of page.layers) if (l.visible) drawBlocks(ctx, l.blocks, assets);
+    const paper = page.background_color;
+    const adapt = (c: string) => adaptInk(c, paper);
+    for (const l of page.layers) if (l.visible) drawBlocks(ctx, l.blocks, assets, undefined, undefined, adapt);
 
     if (ink && ink.points.length) {
       ctx.globalAlpha = ink.opacity;
-      ctx.fillStyle = ink.color;
+      ctx.fillStyle = adapt(ink.color);
       ctx.fill(
         new Path2D(
           ink.shape

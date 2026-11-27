@@ -3,6 +3,7 @@ import type { NoteData, Page } from "#lib/tauri/bindings.ts";
 import { boundsFromRect, padBounds, type ContentBounds } from "#lib/util/canvasBounds.ts";
 import { contentBounds, pageRect } from "../pageFormats";
 import { drawBlocks, drawPaper, type Assets } from "./draw";
+import { adaptInk } from "../inkColor";
 import { loadImage } from "./images";
 
 /** Margin around the drawing when exporting an infinite page. */
@@ -87,9 +88,10 @@ export async function renderArea(
     ctx.clip();
   }
 
+  const ink = (c: string) => adaptInk(c, page.background_color);
   for (const l of page.layers) {
     if (!l.visible) continue;
-    drawBlocks(ctx, only ? l.blocks.filter((b) => only.has(b.id)) : l.blocks, assets);
+    drawBlocks(ctx, only ? l.blocks.filter((b) => only.has(b.id)) : l.blocks, assets, undefined, undefined, ink);
   }
 
   return canvas;

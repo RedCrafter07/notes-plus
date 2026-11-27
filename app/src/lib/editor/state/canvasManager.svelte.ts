@@ -23,6 +23,7 @@ import {
 } from "../tools/registry";
 import { erase } from "../tools/erase";
 import { centerLine } from "../svg";
+import { adaptInk, displayPaper, type PaperColors } from "../inkColor";
 import { recognizeShape, shapePoints, snapLineEnd, type Shape } from "../shapes";
 import { along, pointOn, type EdgeLine } from "../ruler";
 import { rulerManager } from "./rulerManager.svelte";
@@ -184,7 +185,19 @@ class CanvasManager {
     void this.dpr;
     void lassoManager.selectedIds;
     void textEditor.hiddenId;
+    void this.paperShown.background;
     requestRedraw();
+  }
+
+  /** The current page's paper as shown (the "Dark pages" setting may darken it). */
+  get paperShown(): PaperColors {
+    const p = contentManager.page;
+    return displayPaper(p.background_color, p.pattern_color, settingsStore.store.dark_pages);
+  }
+
+  /** How ink of `color` is shown on the current page (see inkColor.ts). */
+  inkShown(color: string): string {
+    return adaptInk(color, this.paperShown.background);
   }
 
   /** The visible area in content space. */
@@ -210,6 +223,8 @@ class CanvasManager {
 
     const skip = new Set(lassoManager.selectedIds);
     if (textEditor.hiddenId) skip.add(textEditor.hiddenId);
+    const paper = this.paperShown.background;
+    const ink = (c: string) => adaptInk(c, paper);
 
     for (const l of page.layers) {
       const ctx = this.layerCtx[l.id];
@@ -241,7 +256,7 @@ class CanvasManager {
       }
 
       const blocks = this.#erasing.get(l.id)?.blocks ?? l.blocks;
-      drawBlocks(ctx, blocks, assets, area ?? view, skip);
+      drawBlocks(ctx, blocks, assets, area ?? view, skip, ink);
       ctx.restore();
     }
     if (area) return; // the selection did not change
@@ -260,7 +275,7 @@ class CanvasManager {
       if (selected.length) {
         this.#toContent(sel);
         const hidden = textEditor.hiddenId ? new Set([textEditor.hiddenId]) : undefined;
-        drawBlocks(sel, selected, assets, undefined, hidden);
+        drawBlocks(sel, selected, assets, undefined, hidden, ink);
       }
     }
   }

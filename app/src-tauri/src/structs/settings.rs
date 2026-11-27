@@ -86,6 +86,9 @@ pub struct Settings {
     /// Resting the pen at the end of a stroke turns it into the line,
     /// rectangle, triangle or ellipse it resembles.
     pub shape_snap: bool,
+    /// Show light pages dark in the editor (ink adapted to match); exports,
+    /// thumbnails and the presenter view keep the real colours.
+    pub dark_pages: bool,
 }
 
 impl Default for Settings {
@@ -108,6 +111,7 @@ impl Default for Settings {
             pen_presets: Vec::new(),
             barrel_button: BarrelButton::Lasso,
             shape_snap: true,
+            dark_pages: false,
         }
     }
 }

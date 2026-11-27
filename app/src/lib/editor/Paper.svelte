@@ -13,6 +13,8 @@
 
   const uid = $props.id();
   const page = $derived(contentManager.page);
+  /** Paper colours as shown: "Dark pages" shows light paper dark. */
+  const shown = $derived(canvasManager.paperShown);
   const rect = $derived(pageRect(page));
   const view = $derived(canvasManager.viewBounds());
   const area = $derived(rect ?? view);
@@ -38,12 +40,12 @@
   <!-- Paper colour and shadow; a div is far cheaper to shadow than SVG. -->
   <div
     class="absolute pointer-events-none shadow-[0_2px_16px_rgba(0,0,0,0.45)]"
-    style="left: {screen.x}px; top: {screen.y}px; width: {screen.w}px; height: {screen.h}px; background-color: {page.background_color};"
+    style="left: {screen.x}px; top: {screen.y}px; width: {screen.w}px; height: {screen.h}px; background-color: {shown.background};"
   ></div>
 {:else}
   <div
     class="absolute inset-0 pointer-events-none"
-    style="background-color: {page.background_color};"
+    style="background-color: {shown.background};"
   ></div>
 {/if}
 
@@ -62,12 +64,12 @@
       y={page.pattern === "Dots" ? -s / 2 : 0}
     >
       {#if page.pattern === "Dots"}
-        <circle cx={s / 2} cy={s / 2} r={1.5} fill={page.pattern_color} />
+        <circle cx={s / 2} cy={s / 2} r={1.5} fill={shown.pattern} />
       {:else if page.pattern === "Lines"}
-        <rect x="0" y="0" width={s} height={px} fill={page.pattern_color} />
+        <rect x="0" y="0" width={s} height={px} fill={shown.pattern} />
       {:else if page.pattern === "Squares"}
-        <rect x="0" y="0" width={s} height={px} fill={page.pattern_color} />
-        <rect x="0" y="0" width={px} height={s} fill={page.pattern_color} />
+        <rect x="0" y="0" width={s} height={px} fill={shown.pattern} />
+        <rect x="0" y="0" width={px} height={s} fill={shown.pattern} />
       {/if}
     </pattern>
   </defs>
@@ -82,6 +84,7 @@
       preserveAspectRatio="none"
       class="transition-opacity"
       opacity={canvasManager.dimmed ? 0.35 : 1}
+      style={shown.inverted ? "filter: invert(0.86) hue-rotate(180deg)" : undefined}
     />
   {/if}
   {#if page.pattern}

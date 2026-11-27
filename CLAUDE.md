@@ -332,8 +332,10 @@ every note below it (`rename_folder`).
 
 ## UI/UX issues
 
-- **Dark paper** exists as a preset, but ink colours are not adapted to it and
-  there is no invert-for-display mode that keeps exports white.
+- **Dark paper:** low-contrast ink is drawn lighter on dark paper, and
+  "Dark pages" shows light pages dark on screen only (`inkColor.ts`). Text
+  and images are not adapted beyond the text colour; photos stay as they
+  are.
 - **Thumbnails** render only once scrolled near the view, and are cached by
   page and content identity (`PageThumbnail.svelte`), shared by the side
   panel and the overview. An edited page still re-renders its thumbnail

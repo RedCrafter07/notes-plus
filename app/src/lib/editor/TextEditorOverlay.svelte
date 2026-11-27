@@ -56,7 +56,7 @@
       spellcheck="true"
       placeholder="Type…"
       class="block w-full resize-none overflow-hidden bg-transparent p-0 m-0 border-0 outline-1 outline-dashed outline-primary/70 outline-offset-4 placeholder:opacity-40"
-      style="font-family: {TEXT_FONT_FAMILY}; font-size: {d.fontSize * zoom}px; line-height: {TEXT_LINE_HEIGHT}; color: {d.color}; white-space: pre-wrap; overflow-wrap: anywhere;"
+      style="font-family: {TEXT_FONT_FAMILY}; font-size: {d.fontSize * zoom}px; line-height: {TEXT_LINE_HEIGHT}; color: {canvasManager.inkShown(d.color)}; white-space: pre-wrap; overflow-wrap: anywhere;"
       onblur={() => textEditor.commit()}
       onkeydown={(e) => {
         if (e.key === "Escape") {
