@@ -243,6 +243,9 @@ export class LassoManager {
    * release, as part of the gesture's undo step.
    */
   scaling = $state<{ anchor: Point2D; corner: Point2D; factor: number }>();
+  /** Whether scaling also changes line widths and font sizes (remembered,
+   *  see workspace.ts). Off: they stay as they are. */
+  scaleWidths = $state(true);
 
   /** The frame's corners, clockwise from the top left. */
   get corners(): Point2D[] {
@@ -282,7 +285,9 @@ export class LassoManager {
     if (this.scaling) {
       const { factor, anchor } = this.scaling;
       this.scaling = undefined;
-      if (Math.abs(factor - 1) > 1e-3) this.mapSelection((b) => scaleBlock(b, factor, anchor));
+      const keepWidths = !this.scaleWidths;
+      if (Math.abs(factor - 1) > 1e-3)
+        this.mapSelection((b) => scaleBlock(b, factor, anchor, { keepWidths }));
       return;
     }
 

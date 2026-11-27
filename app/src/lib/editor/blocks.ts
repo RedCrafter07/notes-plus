@@ -126,11 +126,19 @@ export function cloneBlock(b: Block): Block {
 }
 
 /**
- * Scales a block by `s` around `anchor` (the corner that stays put). Ink
- * gets thicker or thinner with it and text changes its font size, so a
- * scaled note looks like a zoomed copy of the original.
+ * Scales a block by `s` around `anchor` (the corner that stays put).
+ * By default ink gets thicker or thinner with it and text changes its font
+ * size, so the result looks like a zoomed copy. With `keepWidths`, strokes
+ * keep their line width and text its font size: only positions, lengths
+ * and the wrap width change. Images are resized either way.
  */
-export function scaleBlock(b: Block, s: number, anchor: Point2D): Block {
+export function scaleBlock(
+  b: Block,
+  s: number,
+  anchor: Point2D,
+  { keepWidths = false }: { keepWidths?: boolean } = {},
+): Block {
+  const w = keepWidths ? 1 : s;
   const sx = (x: number) => anchor.x + (x - anchor.x) * s;
   const sy = (y: number) => anchor.y + (y - anchor.y) * s;
   switch (b.type) {
@@ -138,7 +146,7 @@ export function scaleBlock(b: Block, s: number, anchor: Point2D): Block {
       return {
         ...b,
         id: newId(),
-        thickness: b.thickness * s,
+        thickness: b.thickness * w,
         points: b.points.map((p) => ({ ...p, x: sx(p.x), y: sy(p.y) })),
       };
     case "Text":
@@ -148,7 +156,7 @@ export function scaleBlock(b: Block, s: number, anchor: Point2D): Block {
         x: sx(b.x),
         y: sy(b.y),
         width: b.width * s,
-        font_size: b.font_size * s,
+        font_size: b.font_size * w,
       };
     case "Image":
       return {

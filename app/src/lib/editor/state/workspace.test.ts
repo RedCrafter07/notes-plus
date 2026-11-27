@@ -28,6 +28,7 @@ describe("workspace", () => {
       sizes: { pen: 6, eraser: 40 },
       eraserMode: "stroke" as const,
       zoomLock: false,
+      scaleWidths: false,
     };
     saveWorkspace(w);
     expect(loadWorkspace()).toEqual(w);
@@ -42,6 +43,7 @@ describe("workspace", () => {
         sizes: { pen: 9999, eraser: 30 },
         eraserMode: "sideways",
         zoomLock: "yes",
+        scaleWidths: 1,
       }),
     );
     expect(loadWorkspace()).toEqual({

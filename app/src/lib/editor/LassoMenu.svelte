@@ -1,6 +1,6 @@
 <script lang="ts">
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
-  import { IconCopy, IconLineHeight, IconTrash } from "@tabler/icons-svelte";
+  import { IconArrowsDiagonal, IconCopy, IconLineHeight, IconTrash } from "@tabler/icons-svelte";
   import Slider from "#lib/components/Slider.svelte";
   import { formatSize } from "#lib/util/format.ts";
   import { toolDef } from "./tools/registry";
@@ -142,6 +142,22 @@
         <IconLineHeight />
       </button>
     {/if}
+    <!-- What the corner handles do with line widths and font sizes. -->
+    <button
+      class={[
+        "cursor-pointer p-2 rounded-lg active:scale-90 transition-all",
+        lassoManager.scaleWidths ? "bg-primary/20 text-primary" : "hover:bg-overlay/30",
+      ]}
+      onpointerdown={(e) => e.stopPropagation()}
+      onclick={() => (lassoManager.scaleWidths = !lassoManager.scaleWidths)}
+      aria-pressed={lassoManager.scaleWidths}
+      aria-label="Scale line widths with the selection"
+      title={lassoManager.scaleWidths
+        ? "Scaling also scales line widths and text (tap to keep them)"
+        : "Scaling keeps line widths and text size (tap to scale them too)"}
+    >
+      <IconArrowsDiagonal />
+    </button>
     <button
       class="cursor-pointer p-2 rounded-lg hover:bg-overlay/30 active:scale-90 transition-all"
       onpointerdown={(e) => {
