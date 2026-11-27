@@ -338,6 +338,12 @@ class CanvasManager {
     this.clampPan();
   }
 
+  /** Sets the zoom exactly (1 = 100 %), keeping the middle of the view in place. */
+  zoomTo(zoom: number) {
+    this.zoomAround(this.width / 2, this.height / 2, zoom / contentManager.zoom);
+    contentManager.zoom = zoom; // no rounding drift from the multiplication
+  }
+
   zoomAround(x: number, y: number, factor: number) {
     const before = this.translateToRelative(x, y);
 

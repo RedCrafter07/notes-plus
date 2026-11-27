@@ -23,6 +23,48 @@
   function zoomBy(f: number) {
     canvasManager.zoomAround(canvasManager.width / 2, canvasManager.height / 2, f);
   }
+
+  /*
+   * The percentage: a tap goes back to 100 % (fitting the page is the focus
+   * button). To type a zoom: double-click or right-click it, or hold it
+   * with a pen or finger (a double tap with a pen is unreliable). Enter or
+   * leaving the field applies; Escape cancels.
+   */
+  const HOLD_MS = 450;
+  let editing = $state(false);
+  let draft = $state("");
+  let holdTimer = 0;
+  let held = false;
+
+  // The field opens empty, with the current zoom as placeholder: typing
+  // enters the new value directly, without depending on a selection to
+  // replace (a lost selection appends: "100" + "150" = 3200 % after
+  // clamping). Empty means no change.
+  function startEdit() {
+    clearTimeout(holdTimer);
+    draft = "";
+    editing = true;
+  }
+
+  function finishEdit(apply: boolean) {
+    if (!editing) return;
+    editing = false;
+    const percent = parseFloat(draft.replace(",", "."));
+    if (apply && Number.isFinite(percent) && percent > 0) canvasManager.zoomTo(percent / 100);
+  }
+
+  function holdStart(e: PointerEvent) {
+    held = false;
+    if (e.pointerType === "mouse") return;
+    holdTimer = window.setTimeout(() => {
+      held = true;
+      startEdit();
+    }, HOLD_MS);
+  }
+
+  function focusField(node: HTMLInputElement) {
+    node.focus();
+  }
 </script>
 
 <!-- Zoom: always visible, so "where did my page go" always has an answer. -->
@@ -32,13 +74,44 @@
   <button class={btn} onclick={() => zoomBy(1 / 1.25)} aria-label="Zoom out" title="Zoom out">
     <IconMinus size={20} />
   </button>
-  <button
-    class="h-11 px-1 min-w-14 rounded-xl text-sm font-semibold tabular-nums text-content-2 hover:bg-overlay/30 active:scale-95 transition-all"
-    onclick={() => canvasManager.fitPage()}
-    title={isInfinite(contentManager.page) ? "Fit to content" : "Fit page"}
-  >
-    {Math.round(contentManager.zoom * 100)}%
-  </button>
+  {#if editing}
+    <label class="h-11 min-w-14 px-1 flex flex-row items-center rounded-xl bg-base-3 ring-2 ring-primary">
+      <input
+        use:focusField
+        class="w-10 bg-transparent text-sm font-semibold tabular-nums text-content-1 text-right outline-none placeholder:text-content-3"
+        inputmode="decimal"
+        aria-label="Zoom in percent"
+        placeholder={String(Math.round(contentManager.zoom * 100))}
+        bind:value={draft}
+        onkeydown={(e) => {
+          if (e.key === "Enter") finishEdit(true);
+          else if (e.key === "Escape") finishEdit(false);
+        }}
+        onblur={() => finishEdit(true)}
+      />
+      <span class="text-sm font-semibold text-content-2">%</span>
+    </label>
+  {:else}
+    <button
+      class="h-11 px-1 min-w-14 rounded-xl text-sm font-semibold tabular-nums text-content-2 hover:bg-overlay/30 active:scale-95 transition-all"
+      onpointerdown={holdStart}
+      onpointerup={() => clearTimeout(holdTimer)}
+      onpointerleave={() => clearTimeout(holdTimer)}
+      onclick={() => {
+        if (held) return; // the hold already opened the field
+        canvasManager.zoomTo(1);
+      }}
+      ondblclick={startEdit}
+      oncontextmenu={(e) => {
+        e.preventDefault();
+        startEdit();
+      }}
+      aria-label="Zoom {Math.round(contentManager.zoom * 100)} percent. Tap for 100 percent, hold or double-click to type a zoom"
+      title="100 % (hold, double- or right-click to type a zoom)"
+    >
+      {Math.round(contentManager.zoom * 100)}%
+    </button>
+  {/if}
   <button class={btn} onclick={() => zoomBy(1.25)} aria-label="Zoom in" title="Zoom in">
     <IconPlus size={20} />
   </button>
