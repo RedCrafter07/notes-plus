@@ -18,6 +18,7 @@ export const settingsStore = new Store<Settings>({
   transform_anywhere: false,
   pen_presets: [],
   barrel_button: "lasso",
+  shape_snap: true,
 });
 
 /**

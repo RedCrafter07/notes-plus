@@ -35,6 +35,8 @@ export type PresentMessage =
       thickness: number;
       opacity: number;
       thinning: number;
+      /** Snapped to a shape: the points are its outline, drawn as they are. */
+      shape: boolean;
     }
   | { kind: "laser"; strokes: LaserStroke[] }
   | { kind: "state"; mode: ViewMode; blank: boolean };

@@ -242,7 +242,8 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 
 ### Tier 2 — competitive
 
-- [ ] Shapes and straightedge (axes, tables, arrows)
+- [ ] Shapes and straightedge: hold-to-snap shapes done (`shapes.ts`);
+      arrows and a ruler still missing
 - [x] Layer panel
 - [x] Page navigator with real thumbnails, reorder, duplicate
 - [x] Page overview (`PageOverview.svelte`, Ctrl+G or the page counter):
@@ -260,7 +261,7 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 - [ ] Search across notes (the index carries titles only; `tags` has no UI)
 - [ ] Stroke eraser vs pixel eraser; erase-by-lasso
 - [ ] Selection transforms: move, scale, rotate, cross-page/cross-note paste
-- [ ] Snapping, straight-line snap, stroke stabilization
+- [ ] Snapping, stroke stabilization (straight-line snap: hold at the end)
 - [x] Hold-to-switch tools: the `barrel_button` setting (lasso, or eraser /
       highlighter while held)
 

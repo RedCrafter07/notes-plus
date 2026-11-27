@@ -8,7 +8,7 @@
   import { sessionAssets, type Assets } from "#lib/editor/assets.ts";
   import { usedAssets } from "#lib/editor/blocks.ts";
   import { pageArea } from "#lib/editor/render/page.ts";
-  import { inputToPath } from "#lib/editor/svg.ts";
+  import { inputToPath, smoothedToPath } from "#lib/editor/svg.ts";
   import {
     PRESENT_EVENT,
     READY_EVENT,
@@ -33,7 +33,7 @@
   let assets: Assets = () => undefined;
   let view = { zoom: 1, panX: 0, panY: 0, width: 1, height: 1 };
   let ink:
-    | { points: Point[]; color: string; thickness: number; opacity: number; thinning: number }
+    | { points: Point[]; color: string; thickness: number; opacity: number; thinning: number; shape: boolean }
     | undefined;
   let laser: LaserStroke[] = [];
   let mode: ViewMode = "fit";
@@ -101,7 +101,13 @@
     if (ink && ink.points.length) {
       ctx.globalAlpha = ink.opacity;
       ctx.fillStyle = ink.color;
-      ctx.fill(new Path2D(inputToPath(ink.points, ink.thickness, true, ink.thinning)));
+      ctx.fill(
+        new Path2D(
+          ink.shape
+            ? smoothedToPath(ink.points, ink.thickness)
+            : inputToPath(ink.points, ink.thickness, true, ink.thinning),
+        ),
+      );
       ctx.globalAlpha = 1;
     }
     ctx.restore();

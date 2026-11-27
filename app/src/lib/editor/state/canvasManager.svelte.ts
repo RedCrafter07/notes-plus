@@ -23,6 +23,7 @@ import {
 } from "../tools/registry";
 import { erase } from "../tools/erase";
 import { centerLine } from "../svg";
+import { recognizeShape, shapePoints, snapLineEnd, type Shape } from "../shapes";
 import { PRESSURE_THINNING } from "../pressure";
 import { lassoManager } from "./lassoManager.svelte";
 import { loadWorkspace, saveWorkspace } from "./workspace";
@@ -43,6 +44,13 @@ function eraseEntry(block: Block): EraseEntry {
   const stroke = block.type === "Stroke" ? block : undefined;
   return { block, stroke, bounds: blockBounds(block) };
 }
+
+/** Resting the pen this long (ms) at the end of a stroke snaps it to a shape. */
+const HOLD_MS = 600;
+/** ...as long as it stays within this many screen px. */
+const HOLD_RADIUS = 4;
+/** Strokes smaller than this on screen (px, bounding-box diagonal) never snap: handwriting. */
+const MIN_SHAPE = 32;
 
 /** Screen pixels kept free around a page when fitting it to the view. */
 const FIT_MARGIN = 32;
@@ -73,6 +81,14 @@ class CanvasManager {
 
   drawing = $state(false);
   points = $state<Point[]>([]);
+  /**
+   * The shape the stroke being drawn snapped to when the pen rested
+   * (`shape_snap` setting); `points` then hold its outline. A line's end
+   * keeps following the pen until it lifts.
+   */
+  shape = $state<Shape>();
+  #holdAnchor: Point2D | undefined;
+  #holdTimer: ReturnType<typeof setTimeout> | undefined;
 
   /*
    * While the eraser is down, each touched layer's blocks live here as plain
@@ -524,8 +540,39 @@ class CanvasManager {
   // ------------------------------------------------------------------ input
 
   addPoint(p: Point) {
+    if (this.shape) {
+      if (this.shape.kind === "line") {
+        this.shape = { ...this.shape, to: snapLineEnd(this.shape.from, p) };
+        this.points = shapePoints(this.shape);
+      }
+      return;
+    }
     const last = this.points[this.points.length - 1];
     if (!last || last.x !== p.x || last.y !== p.y) this.points.push(p);
+    this.#watchHold(p);
+  }
+
+  /** Restarts the hold timer whenever the pen moves more than a few pixels. */
+  #watchHold(p: Point2D) {
+    if (!settingsStore.store.shape_snap) return;
+    const a = this.#holdAnchor;
+    if (a && Math.hypot(p.x - a.x, p.y - a.y) * contentManager.zoom <= HOLD_RADIUS) return;
+    this.#holdAnchor = { x: p.x, y: p.y };
+    clearTimeout(this.#holdTimer);
+    this.#holdTimer = setTimeout(() => this.#snapToShape(), HOLD_MS);
+  }
+
+  #snapToShape() {
+    if (!this.drawing || this.shape) return;
+    const pts = $state.snapshot(this.points);
+    const xs = pts.map((q) => q.x);
+    const ys = pts.map((q) => q.y);
+    const size = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+    if (size * contentManager.zoom < MIN_SHAPE) return;
+    const shape = recognizeShape(pts);
+    if (!shape) return;
+    this.shape = shape;
+    this.points = shapePoints(shape);
   }
 
   eraseAlong(from: Point2D, to: Point2D) {
@@ -616,7 +663,11 @@ class CanvasManager {
 
   finishStroke() {
     const points = $state.snapshot(this.points);
+    const shape = this.shape;
     this.points = [];
+    this.shape = undefined;
+    clearTimeout(this.#holdTimer);
+    this.#holdAnchor = undefined;
     if (points.length === 0) return;
 
     const layer = contentManager.layers[contentManager.activeLayer];
@@ -638,8 +689,10 @@ class CanvasManager {
         thickness: this.thickness,
         opacity: this.opacity,
         points,
+        // A shape is its own clean outline, drawn as it is, at an even width.
+        ...(shape ? { smoothed: true } : {}),
         // Stored with the stroke, so a later change of the setting keeps it.
-        ...(this.thinning ? { thinning: this.thinning } : {}),
+        ...(this.thinning && !shape ? { thinning: this.thinning } : {}),
       },
     ];
   }

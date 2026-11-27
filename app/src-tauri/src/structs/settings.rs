@@ -83,6 +83,9 @@ pub struct Settings {
     pub pen_presets: Vec<PenPreset>,
     /// What the stylus's barrel button does (with stylus tool switching on).
     pub barrel_button: BarrelButton,
+    /// Resting the pen at the end of a stroke turns it into the line,
+    /// rectangle, triangle or ellipse it resembles.
+    pub shape_snap: bool,
 }
 
 impl Default for Settings {
@@ -104,6 +107,7 @@ impl Default for Settings {
             transform_anywhere: false,
             pen_presets: Vec::new(),
             barrel_button: BarrelButton::Lasso,
+            shape_snap: true,
         }
     }
 }

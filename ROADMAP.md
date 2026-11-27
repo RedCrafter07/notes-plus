@@ -172,9 +172,12 @@ say why.
 - **Pen presets** (done). Saved pen or highlighter with colour and width,
   in Settings (same in every notebook); a tap switches, the bookmark button
   saves the current pen, hold or right-click removes (`presets.ts`).
-- **Straight lines and shapes** (M). Hold still at the end of a stroke to snap
-  it to a line, rectangle, ellipse or arrow (shape recognition). Plus a ruler
-  you can place and rotate with two fingers.
+- **Straight lines and shapes** (shapes done). Rest the pen at the end of a
+  stroke and it snaps to a line (level/45° when close; its end then follows
+  the pen), rectangle, other quadrilateral, triangle, circle or ellipse
+  (`shapes.ts`, `shape_snap` setting). Stored as ordinary strokes drawn as
+  they are (`smoothed`), so the file format is unchanged. Still to do: arrows,
+  and a ruler you can place and rotate with two fingers.
 - **Hold-to-switch tools** (done). Settings choose what the barrel button
   does: lasso (default, stays until nothing is selected), or eraser or
   highlighter only while held (`penButtons.ts`). Still open: a long-press

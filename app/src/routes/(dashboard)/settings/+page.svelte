@@ -94,6 +94,13 @@
         checked={settingsStore.store.transform_anywhere}
         onChange={(v) => updateSettings({ transform_anywhere: v })}
       />
+      <Switch
+        id="shape-snap"
+        label="Hold to draw shapes"
+        description="Draw a line, rectangle, triangle, circle or ellipse and keep the pen still at the end: it turns into a clean shape. A line's end then follows the pen until you lift it. Small strokes, like handwriting, never change."
+        checked={settingsStore.store.shape_snap}
+        onChange={(v) => updateSettings({ shape_snap: v })}
+      />
       <div class="flex flex-col gap-2">
         <div class="flex flex-col">
           <span class="font-semibold">Pen pressure</span>

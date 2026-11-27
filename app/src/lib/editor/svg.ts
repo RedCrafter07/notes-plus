@@ -99,10 +99,18 @@ function asStrokePoints(points: Point[]): StrokePoint[] {
   return out;
 }
 
+/**
+ * Outline of points that are already the centre line (eraser pieces,
+ * shapes), drawn as they are: no denoising or streamlining that would
+ * round a shape's corners.
+ */
+export function smoothedToPath(points: Point[], t: number, thinning = 0): string {
+  return getSvgPathFromStroke(getStrokeOutlinePoints(asStrokePoints(points), strokeOptions(t, false, thinning)));
+}
+
 /** SVG path of a committed stroke. */
 export function strokeToPath(s: Stroke): string {
   const thinning = s.thinning ?? 0;
   if (!s.smoothed) return inputToPath(s.points, s.thickness, false, thinning);
-  const opts = strokeOptions(s.thickness, false, thinning);
-  return getSvgPathFromStroke(getStrokeOutlinePoints(asStrokePoints(s.points), opts));
+  return smoothedToPath(s.points, s.thickness, thinning);
 }

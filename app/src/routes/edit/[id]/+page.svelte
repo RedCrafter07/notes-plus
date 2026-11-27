@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { inputToPath } from "#lib/editor/svg.ts";
+  import { inputToPath, smoothedToPath } from "#lib/editor/svg.ts";
   import { useShortcuts } from "#lib/editor/shortcuts.svelte.ts";
   import ToolCursor from "#lib/editor/ToolCursor.svelte";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
@@ -48,12 +48,14 @@
   const clip = $derived(pageRect(contentManager.page));
 
   const preview = $derived(
-    inputToPath(
-      canvasManager.points,
-      canvasManager.thickness,
-      canvasManager.drawing,
-      canvasManager.thinning,
-    ),
+    canvasManager.shape
+      ? smoothedToPath(canvasManager.points, canvasManager.thickness)
+      : inputToPath(
+          canvasManager.points,
+          canvasManager.thickness,
+          canvasManager.drawing,
+          canvasManager.thinning,
+        ),
   );
 
   // Without an open tab there is nothing to edit (e.g. after a reload).
