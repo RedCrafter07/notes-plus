@@ -154,8 +154,9 @@ say why.
 - **Fractional stroke widths** (done). The pen slider steps by 0.5.
 - **Scale, rotate and restyle selections** (M). Corner handles to scale
   (scaling thickness with it), a rotate handle, and, when the selection
-  contains ink, a width and colour picker that applies to the selected
-  strokes. This also unblocks image resizing.
+  contains ink, a width control in the selection menu next to the colour
+  (a `Slider` popover; relative, so mixed widths keep their proportions;
+  one undo step). This also unblocks image resizing.
 - **Pen presets** (S). Saved colour, width and pen type; one tap to switch.
 - **Straight lines and shapes** (M). Hold still at the end of a stroke to snap
   it to a line, rectangle, ellipse or arrow (shape recognition). Plus a ruler
@@ -220,8 +221,23 @@ Features the big apps charge for.
 - **Zoom writing box** (M). A magnified strip at the bottom of the screen that
   you write into, landing small on the page, with auto-advance to the next
   line.
-- **Split view** (M). Two notes or two pages side by side, e.g. lecture slides
-  next to your notes. Drag a selection between them.
+- **Notes side by side** (M, then L). Lecture slides next to your notes,
+  like GoodNotes on the iPad or OneNote on Windows. In two steps:
+  1. **Several windows** (M). "Open in new window" in a tab's menu, or drag
+     a tab out of the bar; Windows Snap or a tiling WM places them side by
+     side. Cheaper than it sounds: each window runs its own copy of the
+     frontend, so the singletons (`tabManager`, `canvasManager`, history)
+     are per window already, and settings changes already reach every
+     window (`settingsUpdate`). Needed: the backend tracks which window has
+     which file open, so a note opens in one window only (opening it again
+     focuses that window; two windows saving the same file would overwrite
+     each other); files from Explorer or the command line open in the last
+     focused window; quitting closes all windows after the unsaved-changes
+     check in each.
+  2. **Split view in one window** (L). Two editor panes in one window, then
+     dragging a selection from one into the other. This needs per-pane view
+     and editor state instead of the singletons, a larger refactor, so it
+     comes after windows have shown what is used.
 - **Study mode** (M). "Tape" over parts of a page that you tap to reveal, and
   flashcards made from selections.
 - **LaTeX and handwriting-to-maths** (L). LaTeX blocks first; convert
