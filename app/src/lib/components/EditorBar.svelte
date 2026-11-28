@@ -16,6 +16,8 @@
     IconLock,
     IconLockOpen,
     IconPlus,
+    IconStar,
+    IconStarFilled,
     IconTrash,
   } from "@tabler/icons-svelte";
   import PageThumbnail from "./PageThumbnail.svelte";
@@ -72,6 +74,30 @@
       >
         <IconLayoutGrid size={20} /> All pages
       </button>
+      {#if contentManager.bookmarks.length}
+        <section class="mb-3 p-1 rounded-xl bg-base-2" aria-label="Bookmarks">
+          <h3 class="px-2 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-content-3">Bookmarks</h3>
+          <ul class="flex flex-col">
+            {#each contentManager.bookmarks as i (contentManager.pages[i].id)}
+              {@const page = contentManager.pages[i]}
+              <li>
+                <button
+                  class={[
+                    "w-full h-10 px-2 flex flex-row items-center gap-2 rounded-lg text-left hover:bg-overlay/30 active:scale-[0.98] transition-all",
+                    contentManager.currentPage === i && "bg-primary/10 text-primary",
+                  ]}
+                  onclick={() => (contentManager.currentPage = i)}
+                  title="Go to page {i + 1}"
+                >
+                  <IconStarFilled size={16} class="shrink-0 text-warning" />
+                  <span class="text-sm text-content-3 tabular-nums w-5">{i + 1}</span>
+                  <span class="flex-1 truncate text-sm">{page.name}</span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        </section>
+      {/if}
       <ol class="flex flex-col gap-3 pb-2">
         {#each groups(contentManager.pages) as g (g.section?.id ?? `none-${g.start}`)}
           {@const collapsed = !!g.section && contentManager.isCollapsed(g.section.id)}
@@ -110,6 +136,15 @@
                 <div class="flex flex-row items-center gap-1 px-2 py-1">
                   <span class="text-sm text-content-3 tabular-nums w-5">{i + 1}</span>
                   <span class="flex-1 truncate text-left text-sm font-medium">{page.name}</span>
+                  <button
+                    class={[iconBtn, page.bookmarked && "text-warning hover:text-warning"]}
+                    onclick={() => contentManager.toggleBookmark(i)}
+                    aria-label={page.bookmarked ? `Remove bookmark from ${page.name}` : `Bookmark ${page.name}`}
+                    aria-pressed={!!page.bookmarked}
+                    title={page.bookmarked ? "Remove bookmark" : "Bookmark"}
+                  >
+                    {#if page.bookmarked}<IconStarFilled size={18} />{:else}<IconStar size={18} />{/if}
+                  </button>
                   <button
                     class={iconBtn}
                     disabled={i === 0}

@@ -9,6 +9,8 @@
     IconSettings,
     IconMoon,
     IconSun,
+    IconStar,
+    IconStarFilled,
   } from "@tabler/icons-svelte";
   import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
@@ -159,6 +161,17 @@
   >
     <IconLayoutGrid size={18} class="opacity-60" />
     <span class="tabular-nums">{current + 1} / {pageCount}</span>
+  </button>
+  <button
+    class={[btn, contentManager.page.bookmarked && "text-warning"]}
+    onclick={() => contentManager.toggleBookmark(current)}
+    aria-label={contentManager.page.bookmarked ? "Remove bookmark" : "Bookmark this page"}
+    aria-pressed={!!contentManager.page.bookmarked}
+    title={contentManager.page.bookmarked
+      ? "Remove the bookmark"
+      : "Bookmark this page (jump to it from the Pages panel)"}
+  >
+    {#if contentManager.page.bookmarked}<IconStarFilled size={20} />{:else}<IconStar size={20} />{/if}
   </button>
   <button
     class={btn}

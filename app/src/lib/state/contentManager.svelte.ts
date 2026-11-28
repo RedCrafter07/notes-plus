@@ -21,6 +21,7 @@ export type PageProps = Partial<
     | "pattern_color"
     | "background_color"
     | "name"
+    | "bookmarked"
   >
 >;
 
@@ -218,6 +219,18 @@ class ContentManager {
         i === "all" || i === j ? { ...p, ...props } : p,
       );
     });
+  }
+
+  /** Stars or unstars page `i` (one undo step); starred pages are listed under Bookmarks. */
+  public toggleBookmark(i: number) {
+    const p = this.pages[i];
+    if (!p) return;
+    this.setPageProps(i, { bookmarked: !p.bookmarked }, p.bookmarked ? "Remove bookmark" : "Bookmark page");
+  }
+
+  /** Indices of the starred pages, in page order. */
+  get bookmarks(): number[] {
+    return this.pages.flatMap((p, i) => (p.bookmarked ? [i] : []));
   }
 
   /** Scales pages and everything on them by `k` (one undo step, see resizePage.ts). */

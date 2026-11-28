@@ -251,8 +251,10 @@ say why.
   staff paper, weekly planner. Rulings are SVG in `Paper.svelte` already.
 - **Vertical scroll mode** (L). One continuous growing page, like OneNote,
   plus continuous scrolling through fixed pages, GoodNotes style.
-- **Outline and bookmarks** (S). Star a page; jump to it from the sidebar.
-  Sections already exist.
+- **Outline and bookmarks** (done). Star a page (button by the page
+  counter, the Pages panel or the overview's page menu; `Page.bookmarked`)
+  and jump to it from "Bookmarks" at the top of the Pages panel. Sections
+  are the outline.
 
 ## Phase 4 — Finding things
 

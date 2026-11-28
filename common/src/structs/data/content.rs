@@ -170,6 +170,9 @@ pub struct Page {
     /// from before it was recorded.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<f64>,
+    /// Starred, to jump to it from the bookmarks list. Absent means not.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bookmarked: Option<bool>,
 }
 
 /// A named group of consecutive pages, e.g. one lecture or chapter.
@@ -207,6 +210,7 @@ impl Page {
             regions: Vec::new(),
             section: None,
             created_at: Some(now_ms()),
+            bookmarked: None,
         }
     }
 
@@ -232,6 +236,7 @@ impl Default for Page {
             regions: Vec::new(),
             section: None,
             created_at: Some(now_ms()),
+            bookmarked: None,
         }
     }
 }

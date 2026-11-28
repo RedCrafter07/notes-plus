@@ -7,6 +7,8 @@
     IconArrowMerge,
     IconClipboard,
     IconScissors,
+    IconStar,
+    IconStarFilled,
     IconBookmark,
     IconBookmarkOff,
     IconCheck,
@@ -175,6 +177,11 @@
           selecting = true;
           selected = new Set([page.id]);
         },
+      },
+      {
+        label: page.bookmarked ? "Remove bookmark" : "Bookmark page",
+        icon: page.bookmarked ? IconStar : IconStarFilled,
+        onSelect: () => contentManager.toggleBookmark(i),
       },
       { label: "Duplicate", icon: IconCopy, onSelect: () => contentManager.duplicatePages([i]) },
       { label: "Copy page", icon: IconClipboard, onSelect: () => pageClipboard.copy([i]) },
@@ -412,6 +419,9 @@
         <IconGripVertical size={18} />
       </span>
       <span class="text-sm text-content-3 tabular-nums">{i + 1}</span>
+      {#if page.bookmarked}
+        <IconStarFilled size={14} class="shrink-0 text-warning" aria-label="Bookmarked" />
+      {/if}
       <span class="flex-1 min-w-0 truncate text-sm font-medium">{page.name}</span>
       <button
         class="w-8 h-8 shrink-0 grid place-items-center rounded-lg text-content-3 hover:text-content-1 hover:bg-overlay/30 active:scale-90 transition-all"
