@@ -134,6 +134,50 @@
   const colors = $derived(palette ? (settingsStore.store[palette] ?? []) : []);
   const history = $derived(tabManager.tab?.history);
 
+  /*
+   * The swatches scroll in their own strip, about six long, so a long
+   * palette does not push the rest of the toolbar away. Its ends fade where
+   * more swatches are hidden; the active one is scrolled into view, and a
+   * mouse wheel scrolls a horizontal strip sideways.
+   */
+  let strip = $state<HTMLElement>();
+  const FADE = 16;
+  function updateFade() {
+    if (!strip) return;
+    const pos = vertical ? strip.scrollTop : strip.scrollLeft;
+    const max = vertical ? strip.scrollHeight - strip.clientHeight : strip.scrollWidth - strip.clientWidth;
+    strip.style.setProperty("--fade-start", pos > 1 ? `${FADE}px` : "0px");
+    strip.style.setProperty("--fade-end", pos < max - 1 ? `${FADE}px` : "0px");
+  }
+  $effect(() => {
+    void colors.length;
+    void vertical;
+    void canvasManager.color;
+    if (!strip) return;
+    // Only the strip scrolls: scrollIntoView would also scroll the toolbar
+    // itself (in a small window) and push the tools out of sight.
+    const active = strip.querySelector('[aria-pressed="true"]');
+    if (active) {
+      const a = active.getBoundingClientRect();
+      const s = strip.getBoundingClientRect();
+      if (vertical) strip.scrollTop += Math.min(0, a.top - s.top) + Math.max(0, a.bottom - s.bottom);
+      else strip.scrollLeft += Math.min(0, a.left - s.left) + Math.max(0, a.right - s.right);
+    }
+    updateFade();
+  });
+  // Not `onwheel`: Svelte adds that as passive, which ignores preventDefault.
+  $effect(() => {
+    const el = strip;
+    if (!el) return;
+    el.addEventListener("wheel", stripWheel, { passive: false });
+    return () => el.removeEventListener("wheel", stripWheel);
+  });
+  function stripWheel(e: WheelEvent) {
+    if (vertical || !strip || e.deltaX || strip.scrollWidth <= strip.clientWidth) return;
+    e.preventDefault();
+    strip.scrollLeft += e.deltaY;
+  }
+
   /** Index of the swatch open in the edit popup, or null when closed. */
   let editingIndex = $state<number | null>(null);
   let sizeOpen = $state(false);
@@ -430,6 +474,16 @@
 
     {#if palette}
       {@render sep()}
+      <div
+        bind:this={strip}
+        class={[
+          "flex items-center gap-1 shrink-0 hide-scrollbars",
+          vertical ? "flex-col max-h-72 overflow-y-auto scroll-fade-y" : "flex-row max-w-72 overflow-x-auto scroll-fade-x",
+        ]}
+        onscroll={updateFade}
+        role="group"
+        aria-label="Colours"
+      >
       {#each colors as color, i (`${i}-${color}`)}
         {@const active = color === canvasManager.color}
         <button
@@ -451,6 +505,7 @@
           ></span>
         </button>
       {/each}
+      </div>
       <button
         class={btn}
         onclick={addColor}

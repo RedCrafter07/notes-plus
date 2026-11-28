@@ -27,6 +27,15 @@ button *,
   display: none;
 }
 
+/* A scrolling strip that fades out at the ends where more content is
+   hidden; --fade-start / --fade-end are set from its scroll position. */
+.scroll-fade-x {
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-start, 0px), #000 calc(100% - var(--fade-end, 0px)), transparent);
+}
+.scroll-fade-y {
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-start, 0px), #000 calc(100% - var(--fade-end, 0px)), transparent);
+}
+
 .hide-cursor,
 .hide-cursor * {
   cursor: none !important;
