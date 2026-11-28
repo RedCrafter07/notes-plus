@@ -8,6 +8,7 @@ import { canvasManager } from "./state/canvasManager.svelte";
 import { lassoManager } from "./state/lassoManager.svelte";
 import type { Tool } from "./tools/registry";
 import { presenter } from "#lib/present/presenter.svelte.ts";
+import { blockClipboard } from "#lib/state/blockClipboard.svelte.ts";
 
 /** Single-key tool shortcuts (only when not typing). */
 const TOOL_KEYS: Record<string, Tool> = {
@@ -32,6 +33,12 @@ export function useShortcuts() {
       const key = e.key.toLowerCase();
 
       if (e.ctrlKey) {
+        // Copy/cut a lasso selection; in a text field these stay the field's own.
+        if ((key === "c" || key === "x") && !isTyping(e) && lassoManager.selection) {
+          e.preventDefault();
+          await (key === "c" ? blockClipboard.copy() : blockClipboard.cut());
+          return;
+        }
         if (key === "s") {
           e.preventDefault();
           await handleSave(e.shiftKey);

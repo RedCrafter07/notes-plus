@@ -8,6 +8,7 @@
     IconBookmarkPlus,
     IconTrash,
     IconScissors,
+    IconClipboard,
     IconLassoPolygon,
     IconSquareDashed,
     IconScribbleOff,
@@ -18,6 +19,7 @@
   import ColorEditPopup from "#lib/components/ColorEditPopup.svelte";
   import Slider from "#lib/components/Slider.svelte";
   import { lassoManager } from "./state/lassoManager.svelte";
+  import { blockClipboard } from "#lib/state/blockClipboard.svelte.ts";
   import { rulerManager } from "./state/rulerManager.svelte";
   import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { tabManager } from "#lib/state/tabManager.svelte.ts";
@@ -374,6 +376,16 @@
     >
       <IconPhotoPlus />
     </button>
+    {#if blockClipboard.blocks.length}
+      <button
+        class={btn}
+        onclick={() => blockClipboard.paste()}
+        aria-label="Paste"
+        title="Paste {blockClipboard.blocks.length === 1 ? 'the copied element' : `${blockClipboard.blocks.length} copied elements`} (Ctrl+V)"
+      >
+        <IconClipboard />
+      </button>
+    {/if}
     <button
       class={btnOn(rulerManager.visible)}
       onclick={() =>

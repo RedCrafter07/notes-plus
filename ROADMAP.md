@@ -231,8 +231,10 @@ say why.
   header). `pageClipboard` keeps page snapshots plus an asset session of
   its own (`copy_assets` copies attachments between sessions), so a paste
   works after the source note is closed and the next save writes the
-  attachments into the target note. Still open: cross-note paste of a lasso
-  selection (same mechanism).
+  attachments into the target note. A lasso selection works the same way
+  (done): Copy / Cut in the selection menu or Ctrl+C / Ctrl+X, paste with
+  Ctrl+V or the toolbar's paste button, also into another note
+  (`blockClipboard.svelte.ts`).
 - **Drag and drop attachments** (done). Images and PDFs dropped from the
   file manager: images land where they are dropped (several fan out),
   PDFs open the import dialog, notes still open; the overlay says which.

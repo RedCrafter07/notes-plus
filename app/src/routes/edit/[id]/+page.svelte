@@ -17,6 +17,7 @@
   import { pageRect } from "#lib/editor/pageFormats.ts";
   import { tabManager } from "#lib/state/tabManager.svelte.ts";
   import { insertImageFile } from "#lib/editor/import/image.ts";
+  import { blockClipboard } from "#lib/state/blockClipboard.svelte.ts";
   import { goto } from "$app/navigation";
   import { laserManager } from "#lib/editor/state/laserManager.svelte.ts";
   import PresenterBar from "#lib/present/PresenterBar.svelte";
@@ -101,7 +102,8 @@
     });
   });
 
-  // Paste images from the clipboard.
+  // Paste: an image from the system clipboard, else what was copied with
+  // the lasso (blockClipboard).
   $effect(() => {
     const onPaste = (e: ClipboardEvent) => {
       if (!tabManager.tab) return;
@@ -109,9 +111,13 @@
       const file = [...(e.clipboardData?.files ?? [])].find((f) =>
         f.type.startsWith("image/"),
       );
-      if (!file) return;
-      e.preventDefault();
-      insertImageFile(file);
+      if (file) {
+        e.preventDefault();
+        insertImageFile(file);
+      } else if (blockClipboard.blocks.length) {
+        e.preventDefault();
+        blockClipboard.paste();
+      }
     };
     document.addEventListener("paste", onPaste);
     return () => document.removeEventListener("paste", onPaste);

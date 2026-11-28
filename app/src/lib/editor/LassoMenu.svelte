@@ -3,6 +3,8 @@
   import {
     IconArrowsDiagonal,
     IconCopy,
+    IconClipboard,
+    IconScissors,
     IconFileArrowRight,
     IconArrowLeft,
     IconArrowRight,
@@ -27,6 +29,7 @@
   import { fade } from "svelte/transition";
   import { onMount } from "svelte";
   import ColorSwatch from "#lib/components/ColorSwatch.svelte";
+  import { blockClipboard } from "#lib/state/blockClipboard.svelte.ts";
 
   let color = $state<string>("#000000");
 
@@ -258,6 +261,24 @@
       title="Move to another page, at the same position"
     >
       <IconFileArrowRight />
+    </button>
+    <button
+      class="cursor-pointer p-2 rounded-lg hover:bg-overlay/30 active:scale-90 transition-all"
+      onpointerdown={(e) => e.stopPropagation()}
+      onclick={() => blockClipboard.copy()}
+      aria-label="Copy selection"
+      title="Copy (Ctrl+C), also to paste into another notebook"
+    >
+      <IconClipboard />
+    </button>
+    <button
+      class="cursor-pointer p-2 rounded-lg hover:bg-overlay/30 active:scale-90 transition-all"
+      onpointerdown={(e) => e.stopPropagation()}
+      onclick={() => blockClipboard.cut()}
+      aria-label="Cut selection"
+      title="Cut (Ctrl+X)"
+    >
+      <IconScissors />
     </button>
     <button
       class="cursor-pointer p-2 rounded-lg hover:bg-overlay/30 active:scale-90 transition-all"
