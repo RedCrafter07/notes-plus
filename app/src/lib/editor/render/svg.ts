@@ -2,6 +2,7 @@ import type { Block, Page } from "#lib/tauri/bindings.ts";
 import type { ContentBounds } from "#lib/util/canvasBounds.ts";
 import { assertNever } from "../blocks";
 import { pageRect } from "../pageFormats";
+import { dotCopies, lineCopies, paperGuides, paperTile } from "../paper";
 import { strokeToPath } from "../svg";
 import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT } from "../text";
 import type { Assets, InkColor } from "./draw";
@@ -65,28 +66,25 @@ function paperSvg(page: Page, area: ContentBounds, assets: Assets): string {
   if (bg && page.width > 0)
     parts.push(`<image href="${bg}" x="0" y="0" width="${page.width}" height="${page.height}" preserveAspectRatio="none"/>`);
 
-  const s = page.pattern_scale;
   const c = esc(page.pattern_color);
-  let tile = "";
-  switch (page.pattern) {
-    case "Lines":
-      tile = `<rect width="${s}" height="1" fill="${c}"/>`;
-      break;
-    case "Squares":
-      tile = `<rect width="${s}" height="1" fill="${c}"/><rect width="1" height="${s}" fill="${c}"/>`;
-      break;
-    case "Dots":
-      tile = `<circle cx="0" cy="0" r="1.5" fill="${c}"/><circle cx="${s}" cy="0" r="1.5" fill="${c}"/><circle cx="0" cy="${s}" r="1.5" fill="${c}"/><circle cx="${s}" cy="${s}" r="1.5" fill="${c}"/>`;
-      break;
-    case null:
-      break;
-    default:
-      assertNever(page.pattern);
-  }
-  if (tile)
+  const t = paperTile(page.pattern, page.pattern_scale);
+  if (t) {
+    const tile = [
+      ...t.rules.map((y) => `<rect y="${n(y)}" width="${n(t.width)}" height="1" fill="${c}"/>`),
+      ...t.columns.map((x) => `<rect x="${n(x)}" width="1" height="${n(t.height)}" fill="${c}"/>`),
+      ...lineCopies(t).map(
+        ([x1, y1, x2, y2]) => `<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="${c}" stroke-width="1"/>`,
+      ),
+      ...dotCopies(t).map(([x, y]) => `<circle cx="${n(x)}" cy="${n(y)}" r="1.5" fill="${c}"/>`),
+    ].join("");
     parts.push(
-      `<defs><pattern id="paper" patternUnits="userSpaceOnUse" width="${s}" height="${s}">${tile}</pattern></defs>`,
+      `<defs><pattern id="paper" patternUnits="userSpaceOnUse" width="${n(t.width)}" height="${n(t.height)}">${tile}</pattern></defs>`,
       `<rect x="${n(area.min.x)}" y="${n(area.min.y)}" width="${n(area.width)}" height="${n(area.height)}" fill="url(#paper)"/>`,
+    );
+  }
+  for (const g of paperGuides(page))
+    parts.push(
+      `<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${esc(g.color ?? page.pattern_color)}" stroke-width="${g.weight}"/>`,
     );
 
   return parts.join("");

@@ -4,6 +4,7 @@ import { assertNever, blockVisibleIn } from "../blocks";
 import { layoutText, textFont, TEXT_LINE_HEIGHT } from "../text";
 import { getImage } from "./images";
 import { PAGE_DATE } from "../pageDate";
+import { lineBand, paperGuides, paperTile } from "../paper";
 import { strokePath } from "./strokes";
 
 /*
@@ -102,43 +103,55 @@ export function drawPaper(
     ctx.restore();
   }
 
-  const s = page.pattern_scale;
-  if (!page.pattern || s <= 0) return;
-
-  const x0 = Math.floor(area.min.x / s) * s;
-  const y0 = Math.floor(area.min.y / s) * s;
+  const tile = paperTile(page.pattern, page.pattern_scale);
+  if (!tile) return;
   const line = 1 / zoom;
+  const tx0 = Math.floor(area.min.x / tile.width) * tile.width;
+  const ty0 = Math.floor(area.min.y / tile.height) * tile.height;
 
   ctx.save();
   ctx.beginPath();
   ctx.rect(area.min.x, area.min.y, area.width, area.height);
   ctx.clip();
   ctx.fillStyle = page.pattern_color;
+  ctx.strokeStyle = page.pattern_color;
+  ctx.lineWidth = line;
 
-  switch (page.pattern) {
-    case "Lines":
-      for (let y = y0; y <= area.max.y; y += s)
-        ctx.fillRect(area.min.x, y, area.width, line);
-      break;
-    case "Squares":
-      for (let y = y0; y <= area.max.y; y += s)
-        ctx.fillRect(area.min.x, y, area.width, line);
-      for (let x = x0; x <= area.max.x; x += s)
-        ctx.fillRect(x, area.min.y, line, area.height);
-      break;
-    case "Dots": {
+  for (let ty = ty0; ty <= area.max.y; ty += tile.height) {
+    for (const r of tile.rules) ctx.fillRect(area.min.x, ty + r, area.width, line);
+    if (tile.lines.length) {
+      // Each tile draws its band of the lines, so none is drawn twice.
+      ctx.beginPath();
+      for (let tx = tx0 - tile.width; tx <= area.max.x + tile.width; tx += tile.width)
+        for (const l of tile.lines) {
+          const [x1, y1, x2, y2] = lineBand(l, 0, tile.height);
+          ctx.moveTo(tx + x1, ty + y1);
+          ctx.lineTo(tx + x2, ty + y2);
+        }
+      ctx.stroke();
+    }
+    if (tile.dots.length) {
       const r = 1.5;
       ctx.beginPath();
-      for (let y = y0; y <= area.max.y; y += s)
-        for (let x = x0; x <= area.max.x; x += s) {
-          ctx.moveTo(x + r, y);
-          ctx.arc(x, y, r, 0, Math.PI * 2);
+      for (let tx = tx0; tx <= area.max.x; tx += tile.width)
+        for (const [dx, dy] of tile.dots) {
+          ctx.moveTo(tx + dx + r, ty + dy);
+          ctx.arc(tx + dx, ty + dy, r, 0, Math.PI * 2);
         }
       ctx.fill();
-      break;
     }
-    default:
-      assertNever(page.pattern);
+  }
+  for (const c of tile.columns)
+    for (let tx = tx0; tx <= area.max.x; tx += tile.width) ctx.fillRect(tx + c, area.min.y, line, area.height);
+
+  // Guides (Cornell, margin), stronger than the ruling.
+  for (const g of paperGuides(page)) {
+    ctx.lineWidth = g.weight * line;
+    ctx.strokeStyle = g.color ?? page.pattern_color;
+    ctx.beginPath();
+    ctx.moveTo(g.x1, g.y1);
+    ctx.lineTo(g.x2, g.y2);
+    ctx.stroke();
   }
   ctx.restore();
 }

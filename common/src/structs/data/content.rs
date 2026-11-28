@@ -87,6 +87,14 @@ pub enum BackgroundPattern {
     Dots,
     Lines,
     Squares,
+    /// Triangle grid for 3D sketches (since format v6).
+    Isometric,
+    /// Music staves: five lines a third of the spacing apart.
+    Staff,
+    /// Ruled, with a cue column on the left and a summary area at the bottom.
+    Cornell,
+    /// Ruled, with a red margin line on the left.
+    Margin,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

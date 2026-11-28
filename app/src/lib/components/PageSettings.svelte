@@ -60,6 +60,10 @@
     { id: "Lines", label: "Ruled" },
     { id: "Squares", label: "Grid" },
     { id: "Dots", label: "Dots" },
+    { id: "Margin", label: "Margin" },
+    { id: "Cornell", label: "Cornell" },
+    { id: "Isometric", label: "Isometric" },
+    { id: "Staff", label: "Staff" },
   ];
 
   /** Line spacing while its slider is being dragged; applied on release. */

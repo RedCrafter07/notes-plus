@@ -247,8 +247,12 @@ say why.
   top right margin, also in exports and thumbnails (`pageDate.ts`); the
   page overview always lists it. Not in the presenter view yet. Older
   pages have no date; editing a page's date could come later.
-- **Templates** (M). Lined, college-ruled, dotted, graph, isometric, Cornell,
-  staff paper, weekly planner. Rulings are SVG in `Paper.svelte` already.
+- **Templates** (done, apart from a weekly planner). Paper patterns now:
+  blank, ruled, grid, dots, ruled with a red margin, Cornell (cue column
+  and summary line), isometric and staff. `lib/editor/paper.ts` describes
+  each once (a repeating tile, plus guide lines placed on the page) for
+  the editor, canvas renders, SVG export and the Page setup previews.
+  Format v6 (no data change; older builds report a newer file).
 - **Vertical scroll mode** (L). One continuous growing page, like OneNote,
   plus continuous scrolling through fixed pages, GoodNotes style.
 - **Outline and bookmarks** (done). Star a page (button by the page

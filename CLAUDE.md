@@ -84,7 +84,8 @@ A zip archive (`common/src/io/archive.rs`) containing `meta`, `data`, `state`,
 `version`, `assets/index` + `assets/<id>` (raw attachment bytes), and an
 optional `preview` (PNG of the first page, rewritten on every save, read by the
 file browser; absent in older files, which show an icon). Current
-version is **5** (v5 added page ids and sections). `common/src/io/migrate.rs` upgrades older `data` JSON step by
+version is **6** (v5 added page ids and sections; v6 the paper patterns
+Isometric, Staff, Cornell and Margin, with no data change). `common/src/io/migrate.rs` upgrades older `data` JSON step by
 step before deserializing; to change the format, bump `CURRENT_VERSION` and add
 a `vN_to_vN+1`.
 
@@ -295,7 +296,8 @@ display role / Android `Presentation`).
 - [ ] Audio recording synced to strokes (tap a stroke, hear that moment)
 - [ ] Mobile/tablet builds
 - [ ] Sync (folder-based may be enough, given the file format)
-- [ ] Templates: Cornell, graph, isometric, staff paper
+- [x] Templates: margin, Cornell, isometric, staff paper (`paper.ts`);
+      a weekly planner is still missing
 - [ ] LaTeX blocks, shape/handwriting recognition
 - [ ] Note linking and backlinks, custom themes
 

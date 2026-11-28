@@ -3,6 +3,7 @@
   import { canvasManager } from "./state/canvasManager.svelte";
   import { pageRect } from "./pageFormats";
   import { PAGE_DATE, pageDateLabel } from "./pageDate";
+  import { dotCopies, lineCopies, paperGuides, paperTile } from "./paper";
   import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
 
   /*
@@ -22,7 +23,7 @@
   const view = $derived(canvasManager.viewBounds());
   const area = $derived(rect ?? view);
   const zoom = $derived(contentManager.zoom);
-  const s = $derived(page.pattern_scale);
+  const tile = $derived(paperTile(page.pattern, page.pattern_scale));
   /** One screen pixel, in content units. */
   const px = $derived(1 / zoom);
   const background = $derived(
@@ -58,23 +59,22 @@
   preserveAspectRatio="none"
 >
   <defs>
-    <pattern
-      id="paper-{uid}"
-      patternUnits="userSpaceOnUse"
-      width={s}
-      height={s}
-      x={page.pattern === "Dots" ? -s / 2 : 0}
-      y={page.pattern === "Dots" ? -s / 2 : 0}
-    >
-      {#if page.pattern === "Dots"}
-        <circle cx={s / 2} cy={s / 2} r={1.5} fill={shown.pattern} />
-      {:else if page.pattern === "Lines"}
-        <rect x="0" y="0" width={s} height={px} fill={shown.pattern} />
-      {:else if page.pattern === "Squares"}
-        <rect x="0" y="0" width={s} height={px} fill={shown.pattern} />
-        <rect x="0" y="0" width={px} height={s} fill={shown.pattern} />
-      {/if}
-    </pattern>
+    {#if tile}
+      <pattern id="paper-{uid}" patternUnits="userSpaceOnUse" width={tile.width} height={tile.height}>
+        {#each tile.rules as y, i (i)}
+          <rect x="0" {y} width={tile.width} height={px} fill={shown.pattern} />
+        {/each}
+        {#each tile.columns as x, i (i)}
+          <rect {x} y="0" width={px} height={tile.height} fill={shown.pattern} />
+        {/each}
+        {#each lineCopies(tile) as [x1, y1, x2, y2], i (i)}
+          <line {x1} {y1} {x2} {y2} stroke={shown.pattern} stroke-width={px} />
+        {/each}
+        {#each dotCopies(tile) as [cx, cy], i (i)}
+          <circle {cx} {cy} r={1.5} fill={shown.pattern} />
+        {/each}
+      </pattern>
+    {/if}
   </defs>
 
   {#if background && rect}
@@ -90,7 +90,7 @@
       style={shown.inverted ? "filter: invert(0.86) hue-rotate(180deg)" : undefined}
     />
   {/if}
-  {#if page.pattern}
+  {#if tile}
     <rect
       x={area.min.x}
       y={area.min.y}
@@ -99,6 +99,16 @@
       fill="url(#paper-{uid})"
     />
   {/if}
+  {#each paperGuides(page) as g, i (i)}
+    <line
+      x1={g.x1}
+      y1={g.y1}
+      x2={g.x2}
+      y2={g.y2}
+      stroke={g.color ?? shown.pattern}
+      stroke-width={g.weight * px}
+    />
+  {/each}
   {#if dateLabel && rect}
     <text
       x={rect.max.x - PAGE_DATE.right}

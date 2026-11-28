@@ -13,7 +13,7 @@ use serde_json::{Map, Value, json};
 
 use crate::io::archive::RnpfError;
 
-pub const CURRENT_VERSION: u32 = 5;
+pub const CURRENT_VERSION: u32 = 6;
 /// The oldest version that can still be upgraded.
 pub const OLDEST_SUPPORTED_VERSION: u32 = 2;
 
@@ -36,6 +36,7 @@ pub fn migrate_content(mut content: Value, from: u32) -> Result<Value, RnpfError
             2 => v2_to_v3(content)?,
             3 => v3_to_v4(content)?,
             4 => v4_to_v5(content)?,
+            5 => v5_to_v6(content),
             _ => return Err(RnpfError::InvalidVersion),
         };
         version += 1;
@@ -109,6 +110,15 @@ fn v4_to_v5(mut content: Value) -> Result<Value, RnpfError> {
     }
 
     Ok(content)
+}
+
+/// v5 -> v6: new paper patterns (`Isometric`, `Staff`, `Cornell`, `Margin`).
+/// Nothing to rewrite: v5 data is valid v6. The bump only makes older
+/// builds report a file from a newer version instead of failing on a
+/// pattern they do not know. (Pages also gained the optional `created_at`
+/// and `bookmarked`, which older builds simply ignore.)
+fn v5_to_v6(content: Value) -> Value {
+    content
 }
 
 fn retag_block(block: Value) -> Result<Value, RnpfError> {
@@ -204,5 +214,11 @@ mod tests {
     fn current_version_is_untouched() {
         let v = json!({ "pages": [] });
         assert_eq!(migrate_content(v.clone(), CURRENT_VERSION).unwrap(), v);
+    }
+
+    #[test]
+    fn v5_files_open_unchanged() {
+        let v5 = json!({ "pages": [{ "id": "p", "section": null, "pattern": "Lines" }] });
+        assert_eq!(migrate_content(v5.clone(), 5).unwrap(), v5);
     }
 }
