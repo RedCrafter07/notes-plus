@@ -31,6 +31,14 @@ import { PRESSURE_THINNING } from "../pressure";
 import { lassoManager } from "./lassoManager.svelte";
 import { loadWorkspace, saveWorkspace } from "./workspace";
 import { textEditor } from "./textEditor.svelte";
+import {
+  columnBounds,
+  columnLayout,
+  offsetFrom,
+  pageAtPoint,
+  pageAtY,
+  type Slot,
+} from "../scrollLayout";
 
 export type { Tool } from "../tools/registry";
 
@@ -396,11 +404,85 @@ class CanvasManager {
     this.clampPan();
   }
 
+  // ------------------------------------------------------------ scroll mode
+
+  /** The page column when scroll mode is on (null when off, or when a page is infinite). */
+  get column(): Slot[] | null {
+    if (!contentManager.scroll) return null;
+    return columnLayout(contentManager.pages);
+  }
+
+  /** Whether the note can scroll at all: no infinite pages. */
+  get canScroll(): boolean {
+    return columnLayout(contentManager.pages) !== null;
+  }
+
+  /**
+   * The page the last scroll switched to. The editor fits a page into view
+   * when the page changes, but not for this one: the view was shifted to
+   * stay exactly where it was.
+   */
+  scrolledTo: number | undefined;
+
+  /** Turns scroll mode on or off for this note, fitting the view anew. */
+  setScroll(on: boolean) {
+    if (on && !this.canScroll) return;
+    contentManager.scroll = on;
+    this.fitPage();
+  }
+
+  /**
+   * Makes page `j` current without moving anything on screen: the view
+   * shifts by `j`'s offset from the current page. A selection or open text
+   * box belongs to the page being left, so it is let go first.
+   */
+  switchToPage(j: number) {
+    const slots = this.column;
+    const cur = contentManager.currentPage;
+    if (!slots || j === cur || !slots[j]) return;
+    textEditor.commit();
+    if (lassoManager.selection || !lassoManager.isSelecting) lassoManager.reset();
+    const d = offsetFrom(slots, cur, j);
+    contentManager.panX += d.x;
+    contentManager.panY += d.y;
+    this.scrolledTo = j;
+    contentManager.currentPage = j;
+  }
+
+  /** The page under a point of the current page's coordinates, in scroll mode. */
+  pageAt(p: Point2D): number | undefined {
+    const slots = this.column;
+    return slots ? pageAtPoint(slots, contentManager.currentPage, p) : undefined;
+  }
+
+  /**
+   * In scroll mode the whole column, not one sheet, is kept from going out
+   * of sight; and the page under the middle of the view becomes current.
+   */
+  #clampColumn(slots: Slot[]) {
+    const cur = contentManager.currentPage;
+    if (!slots[cur]) return;
+    const b = columnBounds(slots, cur);
+    const z = contentManager.zoom;
+    const keep = KEEP_VISIBLE / z;
+    const hx = this.width / 2 / z;
+    const hy = this.height / 2 / z;
+    const cx = clamp(-contentManager.panX, b.left + keep - hx, b.right + hx - keep);
+    const cy = clamp(-contentManager.panY, b.top + keep - hy, b.bottom + hy - keep);
+    contentManager.panX = -cx;
+    contentManager.panY = -cy;
+    const j = pageAtY(slots, cur, cy);
+    if (j !== cur) this.switchToPage(j);
+  }
+
   /**
    * Keeps a fixed-size page from being panned out of sight. Infinite pages
    * are left alone; "Fit" is the way back there.
    */
   clampPan() {
+    if (this.width === 0) return;
+    const slots = this.column;
+    if (slots) return this.#clampColumn(slots);
     const page = contentManager.page;
     if (isInfinite(page) || this.width === 0) return;
 
@@ -436,7 +518,8 @@ class CanvasManager {
     const m = this.insets();
     const zoomW = (this.width - m.left - m.right) / r.width;
     const zoomH = (this.height - m.top - m.bottom) / r.height;
-    const tall = !isInfinite(page) && r.height > r.width && zoomW < zoomH * 2;
+    // Scroll mode always fits the width and starts at the top, like a PDF viewer.
+    const tall = !!this.column || (!isInfinite(page) && r.height > r.width && zoomW < zoomH * 2);
 
     const z = tall
       ? Math.min(zoomW, MAX_FIT_ZOOM)

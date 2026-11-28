@@ -403,6 +403,14 @@ class ContentManager {
     this.#note.state.pan_y = y;
   }
 
+  /** Scroll mode (pages in a column), saved per note; see scrollLayout.ts. */
+  get scroll() {
+    return this.#note.state.scroll ?? false;
+  }
+  set scroll(on: boolean) {
+    this.#note.state.scroll = on;
+  }
+
   get folder() {
     return this.#note.meta.folder;
   }

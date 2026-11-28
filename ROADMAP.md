@@ -255,8 +255,16 @@ say why.
   each once (a repeating tile, plus guide lines placed on the page) for
   the editor, canvas renders, SVG export and the Page setup previews.
   Format v6 (no data change; older builds report a newer file).
-- **Vertical scroll mode** (L). One continuous growing page, like OneNote,
-  plus continuous scrolling through fixed pages, GoodNotes style.
+- **Vertical scroll mode** (done for fixed pages). Per note (button by the
+  page counter, `State.scroll`): pages in a centred column with a gap,
+  fitted to the width, scrolled through continuously. Only the current
+  page is live; the others are rendered images (`ScrollPages.svelte`,
+  `render/pageImages.ts`, a few kept), sharpened after a zoom settles.
+  Scrolling past the middle of the view makes the next page current, and
+  the view shifts by its offset so nothing moves (`scrollLayout.ts`); a pen
+  landing on another page switches to it first, and ink stays on its page.
+  Still open: one endlessly growing page (OneNote style); notes with an
+  infinite page cannot scroll.
 - **Outline and bookmarks** (done). Star a page (button by the page
   counter, the Pages panel or the overview's page menu; `Page.bookmarked`)
   and jump to it from "Bookmarks" at the top of the Pages panel. Sections

@@ -12,6 +12,10 @@ pub struct State {
     /// Absent in files from before sections existed.
     #[serde(default)]
     pub collapsed_sections: Vec<String>,
+    /// Scroll mode: the pages one below the other, scrolled through
+    /// continuously, instead of one page at a time. Absent means off.
+    #[serde(default)]
+    pub scroll: bool,
 }
 
 impl Default for State {
@@ -23,6 +27,7 @@ impl Default for State {
             current_page: 0,
             current_layer: 0,
             collapsed_sections: Vec::new(),
+            scroll: false,
         }
     }
 }

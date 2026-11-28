@@ -266,7 +266,9 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
       fn)` applies one as an undo step and stays on the same page. A run
       split in two becomes two sections (`splitRepeats`). Folding is view
       state (`State.collapsed_sections`), not an undo step.
-- [ ] Vertical-scroll mode (one continuously growing page)
+- [x] Scroll mode for fixed pages (`scrollLayout.ts`, `ScrollPages.svelte`):
+      the current page is live, the others are images; see "Scroll mode"
+      below. One endlessly growing page is still missing.
 - [x] Pen presets (saved colour + width, one-tap switch)
 - [ ] Search across notes (the index carries titles only; `tags` has no UI)
 - [ ] Stroke eraser vs pixel eraser; erase-by-lasso
@@ -275,6 +277,19 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 - [ ] Snapping, stroke stabilization (straight-line snap: hold at the end)
 - [x] Hold-to-switch tools: the `barrel_button` setting (lasso, or eraser /
       highlighter while held)
+
+### Scroll mode
+
+Per note (`State.scroll`, button by the page counter). The pages form a
+centred column (`scrollLayout.ts`). Everything still works on **one current
+page** in its own coordinates; the others are shown as rendered images at
+their offset (`ScrollPages.svelte`, LRU cache in `render/pageImages.ts`).
+`canvasManager.clampPan` clamps to the whole column and, when another page
+reaches the middle of the view, `switchToPage` makes it current and shifts
+the pan by its offset, so the view does not move; `scrolledTo` tells the
+editor's page-change effect not to refit. A pen landing on another page
+switches first (`canvasController`). A note with an infinite page cannot
+scroll.
 
 ### Presenter mode
 

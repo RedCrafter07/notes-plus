@@ -37,6 +37,8 @@ export interface RenderOptions {
   scale?: number;
   /** Alternatively: fit the longest edge into this many pixels. */
   maxSize?: number;
+  /** Show a PDF background inverted (the editor's "Dark pages"). */
+  invertBackground?: boolean;
 }
 
 export interface AreaOptions {
@@ -49,6 +51,8 @@ export interface AreaOptions {
   fill?: string;
   /** Only draw blocks with these ids (e.g. an exported selection). */
   only?: Set<string>;
+  /** Show a PDF background inverted (the editor's "Dark pages"). */
+  invertBackground?: boolean;
 }
 
 /**
@@ -59,7 +63,7 @@ export async function renderArea(
   page: Page,
   assets: Assets,
   area: ContentBounds,
-  { width, height, paper = true, fill, only }: AreaOptions,
+  { width, height, paper = true, fill, only, invertBackground = false }: AreaOptions,
 ): Promise<HTMLCanvasElement | null> {
   await preload(page, assets);
 
@@ -83,7 +87,7 @@ export async function renderArea(
   const sheet = pageRect(page);
   const paperArea = sheet ? intersect(area, sheet) : area;
   const date = settingsStore.store.page_dates ? pageDateLabel(page) : undefined;
-  if (paper && paperArea) drawPaper(ctx, page, paperArea, assets, Math.min(kx, ky), date);
+  if (paper && paperArea) drawPaper(ctx, page, paperArea, assets, Math.min(kx, ky), date, invertBackground);
 
   if (sheet) {
     ctx.beginPath();
@@ -108,7 +112,7 @@ export async function renderArea(
 export async function renderPage(
   page: Page,
   assets: Assets,
-  { scale, maxSize }: RenderOptions = {},
+  { scale, maxSize, invertBackground }: RenderOptions = {},
 ): Promise<HTMLCanvasElement | null> {
   const area = pageArea(page);
   if (!area) return null;
@@ -117,6 +121,7 @@ export async function renderPage(
   return renderArea(page, assets, area, {
     width: area.width * k,
     height: area.height * k,
+    invertBackground,
   });
 }
 

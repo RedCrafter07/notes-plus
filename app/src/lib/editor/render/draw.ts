@@ -85,13 +85,19 @@ export function drawPaper(
   assets: Assets,
   zoom = 1,
   dateLabel?: string,
+  /** Show a PDF background inverted, as "Dark pages" does on screen. */
+  invertBackground = false,
 ) {
   ctx.fillStyle = page.background_color;
   ctx.fillRect(area.min.x, area.min.y, area.width, area.height);
 
   if (page.background_asset && page.width > 0) {
     const img = getImage(page.background_asset, assets(page.background_asset));
-    if (img) ctx.drawImage(img, 0, 0, page.width, page.height);
+    if (img) {
+      if (invertBackground) ctx.filter = "invert(0.86) hue-rotate(180deg)";
+      ctx.drawImage(img, 0, 0, page.width, page.height);
+      ctx.filter = "none";
+    }
   }
 
   if (dateLabel && page.width > 0) {

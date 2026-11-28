@@ -1,6 +1,7 @@
 import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
 import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
 import { tabManager } from "#lib/state/tabManager.svelte.ts";
+import { contentManager } from "#lib/state/contentManager.svelte.ts";
 import { toolDef, type Tool } from "./tools/registry";
 import type { ToolHandlers } from "./tools/types";
 import { penOverride } from "./penButtons";
@@ -199,6 +200,11 @@ export function canvasController(
       rulerManager.begin();
       return;
     }
+
+    // Scroll mode: a pen or mouse landing on another page in the column
+    // makes that page current first, so the stroke goes onto it.
+    const landed = canvasManager.pageAt(pageAt(e));
+    if (landed !== undefined && landed !== contentManager.currentPage) canvasManager.switchToPage(landed);
 
     canvasManager.gesture = true;
 

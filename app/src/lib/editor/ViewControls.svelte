@@ -11,6 +11,7 @@
     IconSun,
     IconStar,
     IconStarFilled,
+    IconLayoutRows,
   } from "@tabler/icons-svelte";
   import { settingsStore, updateSettings } from "#lib/state/settingsStore.svelte.ts";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
@@ -161,6 +162,20 @@
   >
     <IconLayoutGrid size={18} class="opacity-60" />
     <span class="tabular-nums">{current + 1} / {pageCount}</span>
+  </button>
+  <button
+    class={[btn, contentManager.scroll && "text-primary bg-primary/15"]}
+    disabled={!contentManager.scroll && !canvasManager.canScroll}
+    onclick={() => canvasManager.setScroll(!contentManager.scroll)}
+    aria-label="Scroll through pages"
+    aria-pressed={contentManager.scroll}
+    title={canvasManager.canScroll
+      ? contentManager.scroll
+        ? "Show one page at a time"
+        : "Scroll through the pages, one below the other"
+      : "Scrolling needs pages of a fixed size (this note has an infinite one)"}
+  >
+    <IconLayoutRows size={20} />
   </button>
   <button
     class={[btn, contentManager.page.bookmarked && "text-warning"]}

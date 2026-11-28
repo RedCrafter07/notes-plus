@@ -13,6 +13,7 @@
   import Toolbar from "#lib/editor/Toolbar.svelte";
   import ViewControls from "#lib/editor/ViewControls.svelte";
   import Paper from "#lib/editor/Paper.svelte";
+  import ScrollPages from "#lib/editor/ScrollPages.svelte";
   import TextEditorOverlay from "#lib/editor/TextEditorOverlay.svelte";
   import { pageRect } from "#lib/editor/pageFormats.ts";
   import { tabManager } from "#lib/state/tabManager.svelte.ts";
@@ -89,7 +90,10 @@
         contentManager.zoom === 1 &&
         contentManager.panX === 0 &&
         contentManager.panY === 0;
-      const changedPage = shown?.note === note && shown.page !== page;
+      // A switch made by scrolling (scroll mode) already kept the view in place.
+      const scrolled = canvasManager.scrolledTo === page;
+      canvasManager.scrolledTo = undefined;
+      const changedPage = shown?.note === note && shown.page !== page && !scrolled;
 
       if (shown?.note !== note || changedPage) {
         if (changedPage || pristine)
@@ -146,6 +150,7 @@
   }}
   role="document"
 >
+  <ScrollPages />
   <Paper />
   <div
     class={[
