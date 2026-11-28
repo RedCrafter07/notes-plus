@@ -2,6 +2,8 @@
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
   import { canvasManager } from "./state/canvasManager.svelte";
   import { pageRect } from "./pageFormats";
+  import { PAGE_DATE, pageDateLabel } from "./pageDate";
+  import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
 
   /*
    * The sheet under the ink: paper colour, imported PDF page, and ruling.
@@ -15,6 +17,7 @@
   const page = $derived(contentManager.page);
   /** Paper colours as shown: "Dark pages" shows light paper dark. */
   const shown = $derived(canvasManager.paperShown);
+  const dateLabel = $derived(settingsStore.store.page_dates ? pageDateLabel(page) : undefined);
   const rect = $derived(pageRect(page));
   const view = $derived(canvasManager.viewBounds());
   const area = $derived(rect ?? view);
@@ -95,5 +98,17 @@
       height={area.height}
       fill="url(#paper-{uid})"
     />
+  {/if}
+  {#if dateLabel && rect}
+    <text
+      x={rect.max.x - PAGE_DATE.right}
+      y={rect.min.y + PAGE_DATE.top}
+      text-anchor="end"
+      font-size={PAGE_DATE.size}
+      font-family="sans-serif"
+      fill={PAGE_DATE.color}
+    >
+      {dateLabel}
+    </text>
   {/if}
 </svg>

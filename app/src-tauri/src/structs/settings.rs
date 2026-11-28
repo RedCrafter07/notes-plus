@@ -89,6 +89,9 @@ pub struct Settings {
     /// Show light pages dark in the editor (ink adapted to match); exports,
     /// thumbnails and the presenter view keep the real colours.
     pub dark_pages: bool,
+    /// Show the date and time a page was added in its top margin (also in
+    /// exports, thumbnails and the presenter view).
+    pub page_dates: bool,
 }
 
 impl Default for Settings {
@@ -112,6 +115,7 @@ impl Default for Settings {
             barrel_button: BarrelButton::Lasso,
             shape_snap: true,
             dark_pages: false,
+            page_dates: false,
         }
     }
 }

@@ -49,6 +49,7 @@ class ContentManager {
       regions: [],
       layers: [{ ...$state.snapshot(defaultsStore.store.layer), id: crypto.randomUUID(), blocks: [] }],
       name,
+      created_at: Date.now(),
     };
   }
 
@@ -101,6 +102,7 @@ class ContentManager {
       ...$state.snapshot(src),
       id: crypto.randomUUID(),
       name: `${src.name} (copy)`,
+      created_at: Date.now(),
       // Block ids key the render caches, so copies need their own.
       layers: src.layers.map((l) => ({
         ...$state.snapshot(l),

@@ -20,6 +20,7 @@ export const settingsStore = new Store<Settings>({
   barrel_button: "lasso",
   shape_snap: true,
   dark_pages: false,
+  page_dates: false,
 });
 
 /**

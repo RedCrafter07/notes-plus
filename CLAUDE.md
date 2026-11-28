@@ -60,7 +60,8 @@ NoteData { meta, content, state }
     Page  -> id (unique, stable), section: Option<PageSection { id, name }>,
              layers, width, height, pattern, pattern_scale, colors, name,
              background_asset (imported PDF page),
-             regions: Vec<ExportRegion> (export order; format id or "free")
+             regions: Vec<ExportRegion> (export order; format id or "free"),
+             created_at (optional, ms; shown with the `page_dates` setting)
              default is A4 (794 x 1123 units, 96 units per inch);
              width/height of -1.0 means INFINITE
     Layer -> id, blocks, visible, locked, name

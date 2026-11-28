@@ -35,6 +35,7 @@
     type PageGroup,
   } from "#lib/editor/sections.ts";
   import { contentManager } from "#lib/state/contentManager.svelte.ts";
+  import { pageDateLabel } from "#lib/editor/pageDate.ts";
   import { pageClipboard } from "#lib/state/pageClipboard.svelte.ts";
   import { contextMenu, contextMenuState, type MenuItem } from "#lib/state/contextMenu.svelte.ts";
   import { overlayManager } from "#lib/state/overlayManager.svelte.ts";
@@ -420,6 +421,9 @@
         <IconDots size={18} />
       </button>
     </div>
+    {#if page.created_at}
+      <span class="px-2 -mt-1 text-xs text-content-3 truncate">{pageDateLabel(page)}</span>
+    {/if}
     {#if selecting}
       <span
         class={[

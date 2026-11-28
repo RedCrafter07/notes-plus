@@ -102,6 +102,13 @@
         onChange={(v) => updateSettings({ shape_snap: v })}
       />
       <Switch
+        id="page-dates"
+        label="Show the date on pages"
+        description="Writes the day and time each page was added in its top right margin, to date your lectures. Also in exports and thumbnails. Pages from before this was recorded have no date."
+        checked={settingsStore.store.page_dates}
+        onChange={(v) => updateSettings({ page_dates: v })}
+      />
+      <Switch
         id="dark-pages"
         label="Dark pages"
         description="Shows light pages dark while you work, e.g. in a dim lecture hall: white paper turns dark grey, imported PDF pages are inverted, and dark ink is shown light. Your notes keep their colours: exports, thumbnails and the presenter view are unchanged. Ink that is hard to read on dark paper is always shown lighter."

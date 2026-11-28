@@ -1,5 +1,6 @@
 <script module lang="ts">
   import type { Page } from "#lib/tauri/bindings.ts";
+  import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
 
   /*
    * Rendered thumbnails, shared by the side panel and the page overview, so
@@ -18,6 +19,7 @@
       page.pattern_color,
       page.background_color,
       page.background_asset,
+      settingsStore.store.page_dates && page.created_at,
       ...page.layers.flatMap((l) => [l.blocks, l.visible]),
     ];
   }

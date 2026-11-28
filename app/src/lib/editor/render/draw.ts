@@ -3,6 +3,7 @@ import type { ContentBounds } from "#lib/util/canvasBounds.ts";
 import { assertNever, blockVisibleIn } from "../blocks";
 import { layoutText, textFont, TEXT_LINE_HEIGHT } from "../text";
 import { getImage } from "./images";
+import { PAGE_DATE } from "../pageDate";
 import { strokePath } from "./strokes";
 
 /*
@@ -72,13 +73,17 @@ export function drawBlocks(
   }
 }
 
-/** Fills the paper colour, background image and ruling inside `area`. */
+/**
+ * Fills the paper colour, background image and ruling inside `area`, and
+ * the page's date in its top margin if `dateLabel` is given (see pageDate.ts).
+ */
 export function drawPaper(
   ctx: CanvasRenderingContext2D,
   page: Page,
   area: ContentBounds,
   assets: Assets,
   zoom = 1,
+  dateLabel?: string,
 ) {
   ctx.fillStyle = page.background_color;
   ctx.fillRect(area.min.x, area.min.y, area.width, area.height);
@@ -86,6 +91,15 @@ export function drawPaper(
   if (page.background_asset && page.width > 0) {
     const img = getImage(page.background_asset, assets(page.background_asset));
     if (img) ctx.drawImage(img, 0, 0, page.width, page.height);
+  }
+
+  if (dateLabel && page.width > 0) {
+    ctx.save();
+    ctx.fillStyle = PAGE_DATE.color;
+    ctx.font = `${PAGE_DATE.size}px sans-serif`;
+    ctx.textAlign = "right";
+    ctx.fillText(dateLabel, page.width - PAGE_DATE.right, PAGE_DATE.top);
+    ctx.restore();
   }
 
   const s = page.pattern_scale;

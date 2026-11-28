@@ -164,6 +164,12 @@ pub struct Page {
     /// section change is a change of the `pages` array (and undoable like
     /// one). Pages before the first section have none.
     pub section: Option<PageSection>,
+    /// When the page was added (ms since 1970, the time a lecture was
+    /// written), shown on the page with the `page_dates` setting. Copies of
+    /// a page get their own; pages moved or pasted keep it. Absent on pages
+    /// from before it was recorded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<f64>,
 }
 
 /// A named group of consecutive pages, e.g. one lecture or chapter.
@@ -200,6 +206,7 @@ impl Page {
             background_asset: None,
             regions: Vec::new(),
             section: None,
+            created_at: Some(now_ms()),
         }
     }
 
@@ -224,8 +231,16 @@ impl Default for Page {
             background_asset: None,
             regions: Vec::new(),
             section: None,
+            created_at: Some(now_ms()),
         }
     }
+}
+
+fn now_ms() -> f64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as f64)
+        .unwrap_or_default()
 }
 
 fn new_id() -> String {

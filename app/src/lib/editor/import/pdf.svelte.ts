@@ -178,6 +178,7 @@ export async function importPdfPages(
       background_color: "#ffffff",
       background_asset: r.asset,
       regions: [],
+      created_at: Date.now(),
       layers: [{ id: crypto.randomUUID(), name: "Layer 1", blocks: [], visible: true, locked: false }],
     }));
     const at = dest.at === "after" ? contentManager.currentPage + 1 : contentManager.pages.length;

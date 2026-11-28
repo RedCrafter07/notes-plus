@@ -241,8 +241,12 @@ say why.
   the toolbar's insert paths. Still open: drops from a web browser, which
   carry no file path (HTML5 drag data, swallowed by Tauri's native
   handler).
-- **Date and time on pages** (S). Store `created_at` per page; optionally show
-  it in the header margin. Useful for dating lectures.
+- **Date and time on pages** (done). `Page.created_at` (optional, ms; no
+  format bump needed) is set on new, imported and duplicated pages; moved
+  and pasted pages keep theirs. The `page_dates` setting writes it in the
+  top right margin, also in exports and thumbnails (`pageDate.ts`); the
+  page overview always lists it. Not in the presenter view yet. Older
+  pages have no date; editing a page's date could come later.
 - **Templates** (M). Lined, college-ruled, dotted, graph, isometric, Cornell,
   staff paper, weekly planner. Rulings are SVG in `Paper.svelte` already.
 - **Vertical scroll mode** (L). One continuous growing page, like OneNote,

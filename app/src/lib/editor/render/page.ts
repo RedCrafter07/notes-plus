@@ -5,6 +5,8 @@ import { contentBounds, pageRect } from "../pageFormats";
 import { drawBlocks, drawPaper, type Assets } from "./draw";
 import { adaptInk } from "../inkColor";
 import { loadImage } from "./images";
+import { pageDateLabel } from "../pageDate";
+import { settingsStore } from "#lib/state/settingsStore.svelte.ts";
 
 /** Margin around the drawing when exporting an infinite page. */
 const CONTENT_MARGIN = 24;
@@ -80,7 +82,8 @@ export async function renderArea(
   // On a fixed page there is no paper beyond the sheet's edge.
   const sheet = pageRect(page);
   const paperArea = sheet ? intersect(area, sheet) : area;
-  if (paper && paperArea) drawPaper(ctx, page, paperArea, assets, Math.min(kx, ky));
+  const date = settingsStore.store.page_dates ? pageDateLabel(page) : undefined;
+  if (paper && paperArea) drawPaper(ctx, page, paperArea, assets, Math.min(kx, ky), date);
 
   if (sheet) {
     ctx.beginPath();
