@@ -20,6 +20,7 @@
   import { jotStore } from "#lib/state/jotStore.svelte.ts";
   import { handleDialog } from "#lib/util/dialog.ts";
   import DropOverlay from "#lib/components/DropOverlay.svelte";
+  import { handleDroppedFiles } from "#lib/editor/import/drop.ts";
   import { useAutosave } from "#lib/editor/autosave.svelte.ts";
   import { saveTab } from "#lib/editor/handleSave.svelte.ts";
   import { clearTextLayouts } from "#lib/editor/text.ts";
@@ -67,6 +68,7 @@
   onMount(() => {
     const listeners = listenAll(
       events.open.listen((e) => openNote(e.payload)),
+      events.droppedFiles.listen((e) => handleDroppedFiles(e.payload)),
       events.settingsUpdate.listen((e) => {
         settingsStore.store = e.payload;
       }),

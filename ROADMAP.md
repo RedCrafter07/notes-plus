@@ -233,14 +233,14 @@ say why.
   works after the source note is closed and the next save writes the
   attachments into the target note. Still open: cross-note paste of a lasso
   selection (same mechanism).
-- **Drag and drop attachments** (S–M). Drop images and PDFs from the file
-  manager onto the editor: images land where they are dropped, PDFs open
-  the import dialog. Tauri already catches drops natively (for `.rnpf`,
-  `handle_drag_drop.rs`) and gets file paths plus the drop position, so
-  the backend can add the file to the tab's asset session from its path
-  (no data URL round trip; PDFs could be served to pdf.js through
-  `rnasset://`). Drops from a browser carry no path and need the HTML5
-  route, which Tauri's native handler swallows; out of scope at first.
+- **Drag and drop attachments** (done). Images and PDFs dropped from the
+  file manager: images land where they are dropped (several fan out),
+  PDFs open the import dialog, notes still open; the overlay says which.
+  `handle_drag_drop.rs` copies the files into a temporary asset session
+  and emits `DroppedFiles`; `import/drop.ts` reads them by URL and uses
+  the toolbar's insert paths. Still open: drops from a web browser, which
+  carry no file path (HTML5 drag data, swallowed by Tauri's native
+  handler).
 - **Date and time on pages** (S). Store `created_at` per page; optionally show
   it in the header margin. Useful for dating lectures.
 - **Templates** (M). Lined, college-ruled, dotted, graph, isometric, Cornell,

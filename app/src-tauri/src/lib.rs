@@ -67,7 +67,7 @@ pub fn run() {
             });
         })
         .on_window_event(|window, event| match event {
-            WindowEvent::DragDrop(event) => handle_drag_drop(window.app_handle(), event),
+            WindowEvent::DragDrop(event) => handle_drag_drop(window, event),
             WindowEvent::Destroyed if window.label() == commands::AUDIENCE => {
                 use tauri_specta::Event;
                 events::PresentEnded.emit(window.app_handle()).ok();

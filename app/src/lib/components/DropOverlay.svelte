@@ -4,14 +4,33 @@
   import { cubicOut } from "svelte/easing";
   import { fade, scale } from "svelte/transition";
 
-  let count = $state(0);
+  import { page } from "$app/state";
+
+  let notebooks = $state(0);
+  let attachments = $state(0);
+  const count = $derived(notebooks + attachments);
+  const inEditor = $derived(page.route.id?.startsWith("/edit") ?? false);
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  /** What dropping will do, e.g. "Drop to add 2 images or PDFs and open 1 notebook". */
+  const label = $derived.by(() => {
+    const parts = [];
+    if (attachments)
+      parts.push(
+        inEditor
+          ? `add ${plural(attachments, "image or PDF", "images or PDFs")}`
+          : "add images or PDFs: open a notebook first",
+      );
+    if (notebooks) parts.push(`open ${plural(notebooks, "notebook", "notebooks")}`);
+    return `Drop to ${parts.join(" and ")}`;
+  });
 
   $effect(() => {
     let unlisten: UnlistenFn;
 
     (async () => {
       unlisten = await events.dragDropFileEvent.listen((e) => {
-        count = e.payload;
+        notebooks = e.payload.notebooks;
+        attachments = e.payload.attachments;
       });
     })();
 
@@ -48,7 +67,7 @@
       class="text-2xl font-bold"
       in:scale={{ duration: 200, start: 0.9, easing: cubicOut }}
     >
-      Drop to open {count} notebook{count === 1 ? "" : "s"}
+      {label}
     </p>
   </div>
 {/if}

@@ -228,7 +228,8 @@ is clipped to the sheet, and panning is clamped so the sheet cannot be lost.
 
 - [x] **Autosave.** 1.5 s after the last change; also on quit. Setting to turn off.
 - [x] **Text blocks.** Text tool, textarea overlay, wrap shared with the canvas.
-- [x] **Images and attachments.** Toolbar or paste; stored as archive assets.
+- [x] **Images and attachments.** Toolbar, paste, or drag and drop from the
+      file manager (`import/drop.ts`); stored as archive assets.
       Missing: resizing (needs selection scaling, see Tier 2).
 - [x] **PDF import + annotation.** A dialog (`import/PdfImportDialog.svelte`)
       shows page thumbnails; pick pages by tapping or ranges ("1-3, 7"), then

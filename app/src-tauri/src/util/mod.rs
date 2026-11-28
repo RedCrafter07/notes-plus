@@ -49,6 +49,7 @@ pub(crate) fn get_builder() -> tauri_specta::Builder {
             events::SettingsUpdate,
             events::DialogEvent,
             events::DragDropFileEvent,
+            events::DroppedFiles,
             events::PresentEnded
         ])
         .typ::<common::structs::data::NoteData>()

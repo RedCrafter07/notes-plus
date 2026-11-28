@@ -7,6 +7,7 @@ import { popupManager } from "#lib/state/popupManager.svelte.ts";
 import { tabManager } from "#lib/state/tabManager.svelte.ts";
 import { newId } from "../blocks";
 import { pageRect } from "../pageFormats";
+import type { Point2D } from "#lib/util/canvasBounds.ts";
 
 /** Longest edge, in pixels, an inserted image is stored at. */
 const MAX_PIXELS = 2400;
@@ -48,10 +49,11 @@ async function normalize(file: File): Promise<{ src: string; w: number; h: numbe
 }
 
 /**
- * Places an image in the middle of the visible part of the page, sized to
- * fit comfortably, then selects it so it can be moved right away.
+ * Places an image centred on `at` (where it was dropped) or else in the
+ * middle of the visible part of the page, sized to fit comfortably, then
+ * selects it so it can be moved right away.
  */
-export async function insertImageFile(file: File) {
+export async function insertImageFile(file: File, at?: Point2D) {
   const layer = contentManager.layers[contentManager.activeLayer];
   if (!layer || layer.locked || !layer.visible) {
     popupManager.add({ type: "warning", message: "The active layer is locked or hidden." });
@@ -78,8 +80,8 @@ export async function insertImageFile(file: File) {
   const scale = Math.min(1, maxW / image.w, maxH / image.h);
   const width = image.w * scale;
   const height = image.h * scale;
-  const cx = (view.min.x + view.max.x) / 2;
-  const cy = (view.min.y + view.max.y) / 2;
+  const cx = at?.x ?? (view.min.x + view.max.x) / 2;
+  const cy = at?.y ?? (view.min.y + view.max.y) / 2;
 
   const id = newId();
   tabManager.transact("Insert image", () => {

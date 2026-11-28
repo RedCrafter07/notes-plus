@@ -141,6 +141,22 @@ impl AssetStore {
         Ok(missing)
     }
 
+    /// Stores a file from disk (a dropped image or PDF) without sending it
+    /// through the webview.
+    pub fn add_file(&self, session: &str, id: &str, path: &Path, mime: &str) -> Result<(), RnpfError> {
+        valid_id(id)?;
+        let dir = self.cache.join(session);
+        fs::create_dir_all(&dir)?;
+        let target = dir.join(id);
+        fs::copy(path, &target)?;
+        let file = AssetFile {
+            mime: mime.to_string(),
+            path: target,
+        };
+        self.session(session)?.lock().unwrap().cached.insert(id.to_string(), file);
+        Ok(())
+    }
+
     /// One attachment's mime type and bytes, if the session has it.
     pub fn read(&self, session: &str, id: &str) -> Result<Option<(String, Vec<u8>)>, RnpfError> {
         valid_id(id)?;
