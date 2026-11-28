@@ -1,6 +1,7 @@
 import { sessionAssets } from "#lib/editor/assets.ts";
 import { startSection } from "#lib/editor/sections.ts";
 import { mergePages } from "#lib/editor/movePage.ts";
+import { resizePage } from "#lib/editor/resizePage.ts";
 import { commands, type ExportRegion, type Layer, type Page } from "#lib/tauri/bindings.ts";
 import { defaultsStore } from "./defaultsStore.svelte";
 import { settingsStore } from "./settingsStore.svelte";
@@ -215,6 +216,14 @@ class ContentManager {
         i === "all" || i === j ? { ...p, ...props } : p,
       );
     });
+  }
+
+  /** Scales pages and everything on them by `k` (one undo step, see resizePage.ts). */
+  public resizePages(indices: number[], k: number) {
+    const which = new Set(indices);
+    this.restructure(which.size === 1 ? "Scale page" : "Scale pages", (pages) =>
+      pages.map((p, i) => (which.has(i) ? resizePage(p, k) : p)),
+    );
   }
 
   /** Replaces a page's export regions (one undo step). */

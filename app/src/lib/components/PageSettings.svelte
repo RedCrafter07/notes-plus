@@ -23,6 +23,8 @@
   import Overlay from "./Overlay.svelte";
   import ColorInput from "./ColorInput.svelte";
   import Slider from "./Slider.svelte";
+  import { factorFor } from "#lib/editor/resizePage.ts";
+  import { canvasManager } from "#lib/editor/state/canvasManager.svelte.ts";
 
   /*
    * Page setup. Every control applies to the page immediately (and is one
@@ -99,6 +101,35 @@
     const { width, height } = formatSize(f, f.prefers);
     const k = 28 / Math.max(width, height);
     return { w: width * k, h: height * k };
+  }
+
+  // Scaling the page together with its content (see resizePage.ts).
+  const SCALE_TO = PAGE_FORMATS.filter((f) => ["a4", "a5", "letter"].includes(f.id));
+  let scalePercent = $state(100);
+  /** The exact factor behind a paper button; the field shows it rounded. */
+  let exactScale = $state<number>();
+  let scaleAllAlike = $state(true);
+  const mm = (u: number) => Math.round((u * 25.4) / 96);
+  /** Pages with exactly this page's size (e.g. every page of one imported PDF). */
+  const alike = $derived(
+    page ? contentManager.pages.flatMap((p, i) => (p.width === page.width && p.height === page.height ? [i] : [])) : [],
+  );
+  $effect(() => {
+    void pageIndex;
+    scalePercent = 100;
+  });
+  function chooseScale(k: number) {
+    exactScale = k;
+    scalePercent = Math.round(k * 1000) / 10;
+  }
+  function applyScale() {
+    const rounded = exactScale !== undefined && Math.round(exactScale * 1000) / 10 === scalePercent;
+    const k = rounded ? exactScale! : scalePercent / 100;
+    if (!page || !(k > 0) || k === 1) return;
+    contentManager.resizePages(scaleAllAlike && alike.length > 1 ? alike : [pageIndex], k);
+    scalePercent = 100;
+    // The page changed size under the view: show all of it again.
+    if (pageIndex === contentManager.currentPage) canvasManager.fitPage();
   }
 
   let pageName = $state("");
@@ -191,6 +222,61 @@
         </p>
       {/if}
     </section>
+
+    {#if !isInfinite(page)}
+      <section class="flex flex-col gap-2">
+        <h2 class="font-semibold text-content-2">Scale page and content</h2>
+        <p class="text-sm text-content-3">
+          Makes the page and everything on it larger or smaller together, e.g. a scan that was
+          imported far too large, so that normal pen widths fit it. Changing the size above
+          instead keeps the content where it is.
+        </p>
+        <div class="flex flex-row flex-wrap items-center gap-2">
+          {#each SCALE_TO as f (f.id)}
+            {@const k = factorFor(page, f.size!)}
+            <button
+              class={[chip(scalePercent === Math.round(k * 1000) / 10), "h-11 px-3"]}
+              onclick={() => chooseScale(k)}
+              title="Scale so the page is as wide as {f.label}"
+            >
+              {f.label} width
+            </button>
+          {/each}
+          <label class="flex flex-row items-center gap-1">
+            <input
+              type="number"
+              min="1"
+              max="1000"
+              step="0.1"
+              bind:value={scalePercent}
+              class="w-24 h-11 px-3 rounded-xl bg-base-2 border-2 border-content-1/10 focus:outline-none focus:border-primary tabular-nums"
+              aria-label="Scale in percent"
+            />
+            <span class="text-content-2">%</span>
+          </label>
+        </div>
+        {#if scalePercent > 0 && scalePercent !== 100}
+          {@const k = scalePercent / 100}
+          <div class="flex flex-row flex-wrap items-center gap-3">
+            <span class="text-sm text-content-2">
+              {mm(page.width)} × {mm(page.height)} mm → {mm(page.width * k)} × {mm(page.height * k)} mm
+            </span>
+            {#if alike.length > 1}
+              <label class="flex flex-row items-center gap-2 text-sm text-content-2">
+                <input type="checkbox" bind:checked={scaleAllAlike} class="w-4 h-4 accent-primary" />
+                All {alike.length} pages of this size
+              </label>
+            {/if}
+            <button
+              class="ml-auto h-11 px-4 rounded-xl border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-base-1 active:scale-95 transition-all"
+              onclick={applyScale}
+            >
+              Scale
+            </button>
+          </div>
+        {/if}
+      </section>
+    {/if}
 
     <section class="flex flex-col gap-2">
       <h2 class="font-semibold text-content-2">Paper</h2>

@@ -211,10 +211,12 @@ say why.
   Checked on a real lecture note (Nov 2026): its PDF page was a cropped
   book scan stored at 2074 x 3045 pt (732 x 1074 mm), not a standard paper
   size, so ink needed widths of 40-50. The PDF import now flags such pages
-  and preselects "A4 width" (factor 0.29, so 50 becomes about 14). What is
-  left: a way to fix notes imported before that, e.g. "Resize page and
-  content" in Page setup (scales the page, its background and every block
-  together, one undo step).
+  and preselects "A4 width" (factor 0.29, so 50 becomes about 14). Notes
+  imported before that: "Scale page and content" in Page setup (done;
+  `resizePage.ts`) scales a page, its background, ink widths, text, ruling
+  and export regions together, to A4/A5/Letter width or a percentage,
+  optionally all pages of the same size, one undo step. Still open: tuning
+  the default zoom and pen presets, if anything still feels off.
 - **Move a selection to another page** (done), and **merge pages** (done).
   "Move to page" in the selection menu: previous, next, a new page after
   this one, or any page by number. Same position, same layer (by position
