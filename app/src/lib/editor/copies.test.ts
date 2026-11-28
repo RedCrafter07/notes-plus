@@ -3,7 +3,7 @@ import type { Block } from "#lib/tauri/bindings.ts";
 import { translateBlock } from "./blocks";
 import { withoutCoveredCopies } from "./copies";
 
-const stroke = (id: string, x: number, color = "#000"): Block => ({
+const stroke = (id: string, x: number, color = "#000"): Extract<Block, { type: "Stroke" }> => ({
   type: "Stroke",
   id,
   color,
