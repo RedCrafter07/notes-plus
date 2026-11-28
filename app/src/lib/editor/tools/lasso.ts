@@ -1,6 +1,7 @@
 import { contentManager } from "#lib/state/contentManager.svelte.ts";
 import type { Block, Point } from "#lib/tauri/bindings.ts";
 import { blockBounds, blockInPolygon, type LassoMode } from "../blocks";
+import { withoutCoveredCopies } from "../copies";
 
 export type LassoSelection = Record<string, { index: number; block: Block }[]>;
 
@@ -29,8 +30,10 @@ export function runSelection(lassoPoints: Point[], mode: LassoMode = "touch"): L
         selectedInLayer.push({ index, block });
     });
 
-    if (selectedInLayer.length > 0) {
-      selection[layer.id] = selectedInLayer;
+    // A duplicate lying on its original: only the copy on top (copies.ts).
+    const picked = withoutCoveredCopies(selectedInLayer);
+    if (picked.length > 0) {
+      selection[layer.id] = picked;
     }
   });
 
